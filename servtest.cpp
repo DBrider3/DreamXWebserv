@@ -15,10 +15,16 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define HEADER_FMT "HTTP/1.1 %d %s\nContent-Length: %ld\nContent-Type: %s\n\n"
+#define RESPONSE_FMT "HTTP/1.1 %d %s\nContent-Length: %ld\nContent-Type: %s\n\n%s"
 
 using namespace std;
-
+/*
+HTTP/1.1 %d %s\n
+Content-Length: %ld\n
+Content-Type: %s\n
+\n
+body
+*/
 typedef struct s_header {
     char*	method;
     char*	uri;
@@ -160,7 +166,7 @@ void find_mime(t_header *header) {
     }
 }
 
-void fill_header(char *header, int status, long len, char *type) {
+void fill_response(char *header, int status, long len, char *type, char *body) {
     char status_text[40];
     switch (status) {
         case 200:
@@ -171,7 +177,7 @@ void fill_header(char *header, int status, long len, char *type) {
         default:
             strcpy(status_text, "Internal Server Error"); break;
     }
-    sprintf(header, HEADER_FMT, status, status_text, len, type);
+    sprintf(header, RESPONSE_FMT, status, status_text, len, type, body);
 }
 
 int main()
@@ -196,6 +202,7 @@ int main()
     
     /* init kqueue */
     int kq;
+
     if ((kq = kqueue()) == -1)
         exit_with_perror("kqueue() error\n" + string(strerror(errno)));
 
@@ -212,6 +219,7 @@ int main()
     struct kevent* curr_event;
     t_header	*header = 0;
     char		r_header[1024];
+
     while (1)
     {
         /*  apply changes and return new events(pending events) */
@@ -273,6 +281,7 @@ int main()
                     change_events(change_list, client_socket, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
                     // cout << "Filter " << curr_event->filter << endl;
                     clients[client_socket] = "";
+                    header->fd = client_socket;
                 }
                 else if (clients.find(curr_event->ident)!= clients.end())
                 {
@@ -319,7 +328,6 @@ int main()
                 if (!strcmp(header->method, "GET"))
                 {
                     //cout << "here if" << endl;
-
                     header->local_uri = header->uri + 1;
                     find_mime(header);
 					if (header->cgi == 1)
@@ -333,8 +341,19 @@ int main()
 	                {
 						stat(header->local_uri, &st);
 						int ct_len = st.st_size;
-                    	fill_header(r_header, 200, ct_len, header->ct_type);
+                        char body[10000];
+                        int bodyfd;
+
+                        bodyfd = open(header->local_uri, O_RDONLY);
+
+                        if (read(bodyfd, body, 10000) < 0)
+                        {
+                            perror("[ERR] Failed to read request.\n");
+                        }
+                       
                         
+                        fill_response(r_header, 200, ct_len, header->ct_type, body);
+                        write(header->fd, r_header, strlen(r_header));
 					}
                 }
                 // else if (!strcmp(header->method, "POST"))

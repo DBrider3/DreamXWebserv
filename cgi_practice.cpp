@@ -136,10 +136,11 @@ int main(int argc, char *argv[]) {
     // env_set["CONTENT_LENGTH"] = ???;
 
     if (!strcmp(command[0], "php-cgi")) {
-      env_set["SCRIPT_NAME"] = "/opt/homebrew/bin/php-cgi";
+      env_set["SCRIPT_NAME"] = "/Users/doyun/Desktop/DreamXWebserv/tester/php-cgi";
 
-    } else if (!strcmp(command[0], "cgi_tester")) {
-      env_set["SCRIPT_NAME"] = "/Users/doyun/Desktop/42doyun/5Circle/webserv/tester/cgi_tester";
+    } 
+    else if (!strcmp(command[0], "cgi_tester")) {
+      env_set["SCRIPT_NAME"] = "/Users/doyun/Desktop/DreamXWebserv/tester/cgi_tester";
     }
 
     environ = setEnviron(env_set);
@@ -155,7 +156,7 @@ int main(int argc, char *argv[]) {
       close(pipe_fd[0]);
       close(pipe_fd[1]);
       if (!strcmp(command[0], "php-cgi"))
-        execve("/tester/php-cgi", command, environ);
+        execve("./tester/php-cgi", command, environ);
       // personal mac -> /opt/homebrew/bin/php-cgi
       // cluster mac  -> 1) install php on host
       //              -> 2) /Users/$(USER)/.brew/bin/php-cgi
