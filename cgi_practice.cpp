@@ -94,8 +94,10 @@ std::string setContentLength(char *query_string) {
 **  execve, dup, dup2, pipe, strerror, errno
 **
 */
-int main(int argc, char *argv[]) {
-  if (argc == 5) {
+int main(int argc, char *argv[]) 
+{
+  if (argc == 4) 
+  {
     char **environ;
     char **command;
     pid_t pid;
@@ -105,7 +107,8 @@ int main(int argc, char *argv[]) {
     command = setCommand(argv[1], argv[2]); //cgi_tester, GET
 
     std::map<std::string, std::string> env_set;
-    for (int i = 0; basic_env[i] != NULL; i++) {
+    for (int i = 0; basic_env[i] != NULL; i++) 
+    {
       std::pair<std::string, std::string> env_temp;
       env_temp.first = basic_env[i];
       env_temp.second = "";
@@ -135,8 +138,8 @@ int main(int argc, char *argv[]) {
     // Content-Length 만큼 body가 들어가게 됨
     // env_set["CONTENT_LENGTH"] = ???;
 
-    if (!strcmp(command[0], "php-cgi")) {
-      env_set["SCRIPT_NAME"] = "/Users/doyun/Desktop/DreamXWebserv/tester/php-cgi";
+    if (!strcmp(command[0], "php")) {
+      env_set["SCRIPT_NAME"] = "/usr/bin/php";
 
     } 
     else if (!strcmp(command[0], "cgi_tester")) {
@@ -155,8 +158,8 @@ int main(int argc, char *argv[]) {
       dup2(pipe_fd[1], STDOUT_FILENO);
       close(pipe_fd[0]);
       close(pipe_fd[1]);
-      if (!strcmp(command[0], "php-cgi"))
-        execve("./tester/php-cgi", command, environ);
+      if (!strcmp(command[0], "php"))
+        execve("/usr/bin/php", command, environ);
       // personal mac -> /opt/homebrew/bin/php-cgi
       // cluster mac  -> 1) install php on host
       //              -> 2) /Users/$(USER)/.brew/bin/php-cgi

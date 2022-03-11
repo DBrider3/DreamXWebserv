@@ -14,6 +14,7 @@
 #include <sstream>
 #include <string.h>
 #include <stdlib.h>
+#include <signal.h>
 
 #define RESPONSE_FMT "HTTP/1.1 %d %s\nContent-Length: %ld\nContent-Type: %s\n\n%s"
 
@@ -25,6 +26,29 @@ Content-Type: %s\n
 \n
 body
 */
+
+static const char *basic_env[] = {
+    "AUTH_TYPE",
+    "CONTENT_LENGTH",
+    "CONTENT_TYPE",
+    "GATEWAY_INTERFACE",
+    "PATH_INFO",
+    "PATH_TRANSLATED",
+    "QUERY_STRING",
+    "REMOTE_ADDR",
+    "REMOTE_IDENT",
+    "REMOTE_USER",
+    "REQUEST_METHOD",
+    "REQUEST_URI",
+    "SCRIPT_NAME",
+    "SERVER_NAME",
+    "SERVER_PORT",
+    "SERVER_PROTOCOL",
+    "SERVER_SOFTWARE",
+    "REDIRECT_STATUS",
+    NULL
+    };
+
 typedef struct s_header {
     char*	method;
     char*	uri;
@@ -35,6 +59,24 @@ typedef struct s_header {
 	int		cgi;
     int		fd;
 }               t_header;
+
+char **setEnviron(std::map<std::string, std::string> env) {
+  char **return_value;
+  std::string temp;
+
+  return_value = (char **)malloc(sizeof(char *) * (env.size() + 1));
+  int i = 0;
+  std::map<std::string, std::string>::iterator it;
+  for (it = env.begin(); it != env.end(); it++) {
+    temp = (*it).first + "=" + (*it).second;
+    char *p = (char *)malloc(temp.size() + 1);
+    strcpy(p, temp.c_str());
+    return_value[i] = p;
+    i++;
+  }
+  return_value[i] = NULL;
+  return (return_value);
+}
 
 static void		scpy(char *new2, char const *s, size_t i, size_t start)
 {
@@ -177,7 +219,9 @@ void fill_response(char *header, int status, long len, char *type, char *body) {
         default:
             strcpy(status_text, "Internal Server Error"); break;
     }
+  
     sprintf(header, RESPONSE_FMT, status, status_text, len, type, body);
+   
 }
 
 int main()
@@ -185,6 +229,8 @@ int main()
     /* init server socket and listen */
     int server_socket;
     struct sockaddr_in server_addr;
+    // char **environ;
+    char foo[4096];
 
     if ((server_socket = socket(PF_INET, SOCK_STREAM, 0)) == -1)
         exit_with_perror("socket() error\n" + string(strerror(errno)));
@@ -205,6 +251,41 @@ int main()
 
     if ((kq = kqueue()) == -1)
         exit_with_perror("kqueue() error\n" + string(strerror(errno)));
+//환경변수 설정
+    std::map<std::string, std::string> env_set;
+
+    // for (int i = 0; basic_env[i] != NULL; i++) 
+    // {
+    //   std::pair<std::string, std::string> env_temp;
+    //   env_temp.first = basic_env[i];
+    //   env_temp.second = "";
+    //   env_set.insert(env_temp);
+    // }
+    // env_set["QUERY_STRING"] = std::to_string(10);
+    // env_set["REQUEST_METHOD"] = "GET";
+    // env_set["REDIRECT_STATUS"] = "CGI";
+    // env_set["SCRIPT_FILENAME"] = std::string(argv[3]);
+    // env_set["SERVER_PROTOCOL"] = "HTTP/1.1";
+    // env_set["PATH_INFO"] = setPathInfo(argv[3]);
+    // env_set["CONTENT_TYPE"] = "application/x-www-form-urlencoded";
+    // // env_set["CONTENT_TYPE"] = "text/plaine";
+    // env_set["GATEWAY_INTERFACE"] = "CGI/1.1";
+    // env_set["PATH_TRANSLATED"] = setPathTranslated(argv[3]);
+    // env_set["REMOTE_ADDR"] = "127.0.0.1";
+    // env_set["REQUEST_URI"] = setPathInfo(argv[3]);
+    // env_set["SERVER_PORT"] = "8090";
+    // env_set["SERVER_PROTOCOL"] = "HTTP/1.1";
+    // env_set["SERVER_SOFTWARE"] = "versbew";
+
+    // if (!strcmp(command[0], "php")) {
+    //   env_set["SCRIPT_NAME"] = "/usr/bin/php";
+
+    // } 
+    // else if (!strcmp(command[0], "cgi_tester")) {
+    //   env_set["SCRIPT_NAME"] = "/Users/doyun/Desktop/DreamXWebserv/tester/cgi_tester";
+    // }
+
+    // environ = setEnviron(env_set);
 
     map<int, string> clients; // map for client socket:data
     vector<struct kevent> change_list; // kevent vector for changelist
@@ -212,7 +293,7 @@ int main()
 
     /* add event for server socket */
     change_events(change_list, server_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
-    cout << "echo server started" << endl;
+    cout << "DreamX server started" << endl;
 
     /* main loop */
     int new_events;
@@ -324,7 +405,7 @@ int main()
                 {
 				struct stat st;
                 //cout << "here 123" << endl;
-
+  
                 if (!strcmp(header->method, "GET"))
                 {
                     //cout << "here if" << endl;
@@ -332,10 +413,40 @@ int main()
                     find_mime(header);
 					if (header->cgi == 1)
 					{
-						system("export REQUEST_METHOD=\"GET\"");
-						system("export SERVER_PROTOCOL=\"HTTP/1.1\"");
-						system("export PATH_INFO=\"/Users/doyun/Desktop/42doyun/5Circle/webserv/test.php\"");
-						system("./tester/cgi_tester");
+						// system("export REQUEST_METHOD=\"GET\"");
+						// system("export SERVER_PROTOCOL=\"HTTP/1.1\"");
+						// system("export PATH_INFO=\"/Users/doyun/Desktop/DreamXWebserv/test.php\"");
+						// system("./tester/cgi_tester");
+                        int pipe_fd[2];
+                        pid_t pid;
+                        char command1[3][100] = {"php", "/Users/doyun/Desktop/DreamXWebserv/test.php", NULL};
+                        char command2[3][20] = {"cgi_tester", "GET", NULL};
+
+                        pipe(pipe_fd);
+                        pid = fork();
+                        if (!pid)
+                        {
+                            dup2(pipe_fd[1], STDOUT_FILENO);
+                            close(pipe_fd[0]);
+                            close(pipe_fd[1]);
+                            if (!strcmp(command1[0], "php"))
+                                execve("/usr/bin/php", command1, NULL);
+                            else if (!strcmp(command2[0], "cgi_tester"))
+                                execve("./tester/cgi_tester", command2, NULL);
+                        }
+                        else
+                        {
+                            int nbytes;
+                            int i = 0;
+            
+                            read(pipe_fd[0], foo, sizeof(foo));                               
+                            fill_response(r_header, 200, strlen(foo), "text/html", foo);
+                            close(pipe_fd[1]);
+                            close(pipe_fd[0]);
+                            write(header->fd, r_header, strlen(r_header));  
+                            wait(NULL);
+                            
+                        } 
 					}
 					else
 	                {
@@ -350,10 +461,9 @@ int main()
                         {
                             perror("[ERR] Failed to read request.\n");
                         }
-                       
-                        
                         fill_response(r_header, 200, ct_len, header->ct_type, body);
-                        write(header->fd, r_header, strlen(r_header));
+                        write(header->fd, r_header, strlen(r_header));                     
+
 					}
                 }
                 // else if (!strcmp(header->method, "POST"))
