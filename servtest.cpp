@@ -325,7 +325,7 @@ int main()
 	/* main loop */
 	int new_events;
 	struct kevent* curr_event;
-	t_header	*header = 0;
+	t_header	*header = 0; // 서버 소켓 갯수만큼 할당 필요
 	char		r_header[1024];
 
 	while (1)
@@ -344,6 +344,7 @@ int main()
 
 		for (int i = 0; i < new_events; ++i)
 		{
+			int server_socket = check_socket(); // 함수 만들기
 			curr_event = &event_list[i];
 			//     cout << "for " << i << endl;
 			// cout << "for Filter " << curr_event->filter << endl;
