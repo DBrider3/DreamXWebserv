@@ -15,9 +15,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <algorithm>
 
 #define RESPONSE_FMT "HTTP/1.1 %d %s\nContent-Length: %ld\nContent-Type: %s\n\n%s"
-
+#define HEADER_SIZE 1024
 using namespace std;
 /*
 HTTP/1.1 %d %s\n
@@ -55,7 +56,7 @@ typedef struct s_header {
 	char*	host;
 	char*	version;
 	char*	local_uri;
-	char ct_type[40];
+	char	ct_type[40];
 	int		cgi;
 	int		fd;
 }               t_header;
@@ -245,13 +246,11 @@ int servBlock_cnt = 5;
 
 int main()
 {
-
 	// char **environ;
 	char foo[4096];
 
-
 	/* init server socket and listen */
-	// server block multi case
+	// server block multi case (여러개의 서버 소켓을 담을 자료구조를 생각해봅시다.)
 	int *server_socket = new int(servBlock_cnt);
 	struct sockaddr_in *server_addr = new sockaddr_in(servBlock_cnt);
 
@@ -277,41 +276,8 @@ int main()
 
 	if ((kq = kqueue()) == -1)
 		exit_with_perror("kqueue() error\n" + string(strerror(errno)));
-//환경변수 설정
-	std::map<std::string, std::string> env_set;
 
-	// for (int i = 0; basic_env[i] != NULL; i++)
-	// {
-	//   std::pair<std::string, std::string> env_temp;
-	//   env_temp.first = basic_env[i];
-	//   env_temp.second = "";
-	//   env_set.insert(env_temp);
-	// }
-	// env_set["QUERY_STRING"] = std::to_string(10);
-	// env_set["REQUEST_METHOD"] = "GET";
-	// env_set["REDIRECT_STATUS"] = "CGI";
-	// env_set["SCRIPT_FILENAME"] = std::string(argv[3]);
-	// env_set["SERVER_PROTOCOL"] = "HTTP/1.1";
-	// env_set["PATH_INFO"] = setPathInfo(argv[3]);
-	// env_set["CONTENT_TYPE"] = "application/x-www-form-urlencoded";
-	// // env_set["CONTENT_TYPE"] = "text/plaine";
-	// env_set["GATEWAY_INTERFACE"] = "CGI/1.1";
-	// env_set["PATH_TRANSLATED"] = setPathTranslated(argv[3]);
-	// env_set["REMOTE_ADDR"] = "127.0.0.1";
-	// env_set["REQUEST_URI"] = setPathInfo(argv[3]);
-	// env_set["SERVER_PORT"] = "8090";
-	// env_set["SERVER_PROTOCOL"] = "HTTP/1.1";
-	// env_set["SERVER_SOFTWARE"] = "versbew";
-
-	// if (!strcmp(command[0], "php")) {
-	//   env_set["SCRIPT_NAME"] = "/usr/bin/php";
-
-	// }
-	// else if (!strcmp(command[0], "cgi_tester")) {
-	//   env_set["SCRIPT_NAME"] = "/Users/doyun/Desktop/DreamXWebserv/tester/cgi_tester";
-	// }
-
-	// environ = setEnviron(env_set);
+	// 환경변수 고이 잠들다. 파시스트(daekim)의 무덤은 맨 밑에...
 
 	map<int, string> clients; // map for client socket:data
 	vector<struct kevent> change_list; // kevent vector for changelist
@@ -325,7 +291,8 @@ int main()
 	/* main loop */
 	int new_events;
 	struct kevent* curr_event;
-	t_header	*header = 0; // 서버 소켓 갯수만큼 할당 필요
+	vector<t_header> headers;
+	// t_header	*header = 0; // 서버 소켓 갯수만큼 할당 필요
 	char		r_header[1024];
 
 	while (1)
@@ -344,7 +311,8 @@ int main()
 
 		for (int i = 0; i < new_events; ++i)
 		{
-			int server_socket = check_socket(); // 함수 만들기
+			// check_socket() 함수에서 효과적으로 해당 socket을 뽑아내는 식으로!
+			int server_socket = check_socket();
 			curr_event = &event_list[i];
 			//     cout << "for " << i << endl;
 			// cout << "for Filter " << curr_event->filter << endl;
@@ -366,20 +334,18 @@ int main()
 				{
 					/* accept new client */
 					int client_socket;
+					t_header header;
 
-					if (header)
-						free(header);
 
-					header = (t_header *)malloc(sizeof(t_header));
-					header->fd = 0;
-					header->cgi = 0;
+					// header = (t_header *)malloc(sizeof(t_header));
+					header.fd = 0;
+					header.cgi = 0;
 
-					header->host = 0;
-					header->local_uri = 0;
-					header->method = 0;
-					header->uri = 0;
-					header->version = 0;
-
+					header.host = 0;
+					header.local_uri = 0;
+					header.method = 0;
+					header.uri = 0;
+					header.version = 0;
 					if ((client_socket = accept(server_socket, NULL, NULL)) == -1)
 						exit_with_perror("accept() error\n" + string(strerror(errno)));
 					cout << "accept new client: " << client_socket << endl;
@@ -388,15 +354,17 @@ int main()
 					/* add event for client socket - add read && write event */
 					change_events(change_list, client_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 					change_events(change_list, client_socket, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
-					// cout << "Filter " << curr_event->filter << endl;
-					clients[client_socket] = "";
-					header->fd = client_socket;
+					header.fd = client_socket;
+					headers.push_back(header);
 				}
-				else if (clients.find(curr_event->ident)!= clients.end())
+				// 일단 함수화로 벡터에서 현재 이벤트와 fd가 동일한 client 찾기
+				else if (findClient(headers, curr_event->ident))
 				{
 					/* read data from client */
 					char buf[1024];
-					int n = read(curr_event->ident, buf, sizeof(buf));
+
+					while (gnl 처럼 쓰기)
+						int n += read(curr_event->ident, buf, sizeof(buf));
 
 					printf("buf\n%s\nThe end\n", buf);
 					if (n <= 0)
@@ -415,14 +383,23 @@ int main()
 							if (!strcmp(strtok(tmp, ": "), "Host"))
 								header->host = strtok(NULL, "\n");
 						}
-
 						header->fd = curr_event->ident;
 						header->method = strtok(result[0], " ");
 						header->uri = strtok(NULL, " ");
 						header->version = strtok(NULL, "\n");
-						// buf[n] = '\0';
-						// clients[curr_event->ident] += buf;
-						// cout << "received data from " << curr_event->ident << ": " << clients[curr_event->ident] << endl;
+
+						// 예시
+						void header_validation()
+						{
+							if (header->method == "GET")
+							{
+
+							}
+							else if (header->method == "POST")
+							{
+
+							}
+						}
 					}
 				}
 			}
@@ -567,3 +544,45 @@ int main()
 	}
 	return (0);
 }
+
+
+
+	/*
+	**
+	환경변수 설정
+	std::map<std::string, std::string> env_set;
+
+	for (int i = 0; basic_env[i] != NULL; i++)
+	{
+	  std::pair<std::string, std::string> env_temp;
+	  env_temp.first = basic_env[i];
+	  env_temp.second = "";
+	  env_set.insert(env_temp);
+	}
+	env_set["QUERY_STRING"] = std::to_string(10);
+	env_set["REQUEST_METHOD"] = "GET";
+	env_set["REDIRECT_STATUS"] = "CGI";
+	env_set["SCRIPT_FILENAME"] = std::string(argv[3]);
+	env_set["SERVER_PROTOCOL"] = "HTTP/1.1";
+	env_set["PATH_INFO"] = setPathInfo(argv[3]);
+	env_set["CONTENT_TYPE"] = "application/x-www-form-urlencoded";
+	// env_set["CONTENT_TYPE"] = "text/plaine";
+	env_set["GATEWAY_INTERFACE"] = "CGI/1.1";
+	env_set["PATH_TRANSLATED"] = setPathTranslated(argv[3]);
+	env_set["REMOTE_ADDR"] = "127.0.0.1";
+	env_set["REQUEST_URI"] = setPathInfo(argv[3]);
+	env_set["SERVER_PORT"] = "8090";
+	env_set["SERVER_PROTOCOL"] = "HTTP/1.1";
+	env_set["SERVER_SOFTWARE"] = "versbew";
+
+	if (!strcmp(command[0], "php")) {
+	  env_set["SCRIPT_NAME"] = "/usr/bin/php";
+
+	}
+	else if (!strcmp(command[0], "cgi_tester")) {
+	  env_set["SCRIPT_NAME"] = "/Users/doyun/Desktop/DreamXWebserv/tester/cgi_tester";
+	}
+
+	environ = setEnviron(env_set);
+	**
+	*/
