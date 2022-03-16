@@ -241,27 +241,36 @@ char **setCommand(std::string command, std::string path) {
   return (return_value);
 }
 
+int servBlock_cnt = 5;
+
 int main()
 {
-	/* init server socket and listen */
-	int server_socket;
-	struct sockaddr_in server_addr;
+
 	// char **environ;
 	char foo[4096];
 
-	if ((server_socket = socket(PF_INET, SOCK_STREAM, 0)) == -1)
-		exit_with_perror("socket() error\n" + string(strerror(errno)));
 
-	memset(&server_addr, 0, sizeof(server_addr));
-	server_addr.sin_family = AF_INET;
-	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-	server_addr.sin_port = htons(8080);
-	if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1)
-		exit_with_perror("bind() error\n" + string(strerror(errno)));
+	/* init server socket and listen */
+	// server block multi case
+	int *server_socket = new int(servBlock_cnt);
+	struct sockaddr_in *server_addr = new sockaddr_in(servBlock_cnt);
 
-	if (listen(server_socket, 5) == -1)
-		exit_with_perror("listen() error\n" + string(strerror(errno)));
-	fcntl(server_socket, F_SETFL, O_NONBLOCK);
+
+	for (int i = 0; i < servBlock_cnt; i++)
+	{
+		if ((server_socket[i] = socket(PF_INET, SOCK_STREAM, 0)) == -1)
+			exit_with_perror("socket() error\n" + string(strerror(errno)));
+		memset(&server_addr[i], 0, sizeof(server_addr[i]));
+		server_addr[i].sin_family = AF_INET;
+		server_addr[i].sin_addr.s_addr = htonl(INADDR_ANY);
+		server_addr[i].sin_port = htons(8080);
+		if (bind(server_socket, (struct sockaddr*)&server_addr[i], sizeof(server_addr[i])) == -1)
+			exit_with_perror("bind() error\n" + string(strerror(errno)));
+
+		if (listen(server_socket[i], 5) == -1)
+			exit_with_perror("listen() error\n" + string(strerror(errno)));
+		fcntl(server_socket[i], F_SETFL, O_NONBLOCK);
+	}
 
 	/* init kqueue */
 	int kq;
@@ -309,7 +318,8 @@ int main()
 	struct kevent event_list[8]; // kevent array for eventlist
 
 	/* add event for server socket */
-	change_events(change_list, server_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+	for (int i = 0; i < servBlock_cnt; i++)
+		change_events(change_list, server_socket[i], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	cout << "DreamX server started" << endl;
 
 	/* main loop */
