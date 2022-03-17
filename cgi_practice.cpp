@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
 
 	}
 	else if (!strcmp(command[0], "cgi_tester")) {
-	  env_set["SCRIPT_NAME"] = "/Users/dcho/Desktop/DreamXWebserv/tester/cgi_tester";
+	  env_set["SCRIPT_NAME"] = "/Users/daekim/subject/cadet/DreamXWebserv/tester/cgi_tester";
 	}
 
 	environ = setEnviron(env_set);

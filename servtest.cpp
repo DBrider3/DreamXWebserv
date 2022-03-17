@@ -190,22 +190,28 @@ void disconnect_client(int client_fd, map<int, string>& clients)
 }
 
 void find_mime(t_header *header) {
+	//uri를 확인하여 file인지 directory인지 체크
+
 	char *ext = strrchr(header->uri, '.');
-	if (ext)
+	if (ext) // file
 	{
-	if (!strcmp(ext, ".html"))
-		strcpy(header->ct_type, "text/html");
-	else if (!strcmp(ext, ".jpg") || !strcmp(ext, ".jpeg"))
-		strcpy(header->ct_type, "image/jpeg");
-	else if (!strcmp(ext, ".png"))
-		strcpy(header->ct_type, "image/png");
-	else if (!strcmp(ext, ".css"))
-		strcpy(header->ct_type, "text/css");
-	else if (!strcmp(ext, ".js"))
-		strcpy(header->ct_type, "text/javascript");
-	else if (!strcmp(ext, ".php") || !strcmp(ext, ".py"))
-		header->cgi = 1;
-	else strcpy(header->ct_type, "text/plain");
+		if (!strcmp(ext, ".html"))
+			strcpy(header->ct_type, "text/html");
+		else if (!strcmp(ext, ".jpg") || !strcmp(ext, ".jpeg"))
+			strcpy(header->ct_type, "image/jpeg");
+		else if (!strcmp(ext, ".png"))
+			strcpy(header->ct_type, "image/png");
+		else if (!strcmp(ext, ".css"))
+			strcpy(header->ct_type, "text/css");
+		else if (!strcmp(ext, ".js"))
+			strcpy(header->ct_type, "text/javascript");
+		else if (!strcmp(ext, ".php") || !strcmp(ext, ".py"))
+			header->cgi = 1;
+		else strcpy(header->ct_type, "text/plain");
+	}
+	else // directory
+	{
+		
 	}
 }
 
@@ -452,7 +458,6 @@ int main()
 							close(pipe_fd[0]);
 							write(header->fd, r_header, strlen(r_header));
 							wait(NULL);
-
 						}
 					}
 					else
