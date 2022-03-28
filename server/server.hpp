@@ -1,8 +1,11 @@
-#include <iostream>
-#include <vector>
+#ifndef SERVER_HPP
+# define SERVER_HPP
 
-class	LocationBlock;
-class	ServerBlock;
+# include <iostream>
+# include <vector>
+# include <string>
+# include <map>
+# include "ServerBlock.hpp"
 
 class Server
 {
@@ -11,71 +14,25 @@ class Server
 	private:    //static private 변수
 
 	private:    //인스턴스 변수
-		vector<string>			index;
-		vector<string>			limit_except;
-		vector<ServerBlock>		server_block;
+		std::vector<std::string>		index;
+		std::vector<std::string>		limit_except;
+		std::vector<ServerBlock>		server_block;
+		
 	public: 	//method
 		Server();
 		Server(const Server& src);
+		//Server(map<string, vector<map<string, vector<string>>>> conf);
 		Server & operator=(const Server& src);
 		~Server();
 
-		composeServer();
-		runServer();
+		void						composeServer(std::map<std::string, std::vector<std::map<std::string, std::vector<std::string> > > > conf);
+		void						runServer();
+		std::vector<std::string>	getIndex();
+		std::vector<std::string>	getLimitExcept();
+		std::vector<ServerBlock>	getServerBlock();	
+		void						setIndex();
+		void						setLimitExcept();
+		void						setServerBlock();	
 };
 
-class ServerBlock
-{
-	public:     //public static 상수
-
-	private:    //static private 변수
-
-	private:    //인스턴스 변수
-		vector<string>		server_name;
-		string				listen;
-		string				client_body_size;
-		string				root;
-		vector<string>		index;
-		string				autoindex;
-		vector<LocationBlock>	location_block;
-
-	public: 	//method
-		ServerBlock();
-		ServerBlock(const ServerBlock& src);
-		ServerBlock & operator=(const ServerBlock& src);
-		~ServerBlock();
-
-		getServerName();
-		getListen();	
-		getClientBodySize();
-		getRoot();
-		getIndex();
-		getAutoindex();
-		getLocationBlock();
-}
-
-class LocationBlock
-{
-	public:     //public static 상수
-
-	private:    //static private 변수
-		
-	private:    //인스턴스 변수
-		string				location_name;
-		string				root;
-		vector<string>		index;
-		string				redirect;
-		vector<string>		error_page;
-
-	public: 	//method
-		LocationBlock();
-		LocationBlock(const LocationBlock& src);
-		LocationBlock & operator=(const LocationBlock& src);
-		~LocationBlock();
-
-		getName();
-		getRoot();
-		getIndex();
-		getRedirect();
-		getErrorPage();
-}
+#endif
