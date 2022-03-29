@@ -268,7 +268,7 @@ int main()
 		memset(&server_addr[i], 0, sizeof(server_addr[i]));
 		server_addr[i].sin_family = AF_INET;
 		server_addr[i].sin_addr.s_addr = htonl(INADDR_ANY);
-		server_addr[i].sin_port = htons(8080);
+		server_addr[i].sin_port = htons(8080); //
 		if (bind(server_socket, (struct sockaddr*)&server_addr[i], sizeof(server_addr[i])) == -1)
 			exit_with_perror("bind() error\n" + string(strerror(errno)));
 

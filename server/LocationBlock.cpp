@@ -1,32 +1,31 @@
-#include "Server.hpp"
+#include "LocationBlock.hpp"
 
-Server::Server()
+LocationBlock::LocationBlock();
+LocationBlock::LocationBlock(const LocationBlock& src);
+LocationBlock & LocationBlock::operator=(const LocationBlock& src);
+LocationBlock::~LocationBlock();
+
+std::string					LocationBlock::getName()
 {
 
 }
 
-Server::Server(const Server& src)
+std::string					LocationBlock::getRoot()
 {
 
 }
 
-
-Server & operator=(const Server& src)
+std::vector<std::string>	LocationBlock::getIndex()
 {
 
 }
 
-Server::~Server()
+std::string					LocationBlock::getRedirect()
 {
 
 }
 
-Server::composeServer()
-{
-
-}
-
-Server::runServer()
+std::vector<std::string>	LocationBlock::getErrorPage()
 {
 
 }

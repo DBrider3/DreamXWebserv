@@ -11,7 +11,7 @@ class ServerBlock
 
 	private:    //인스턴스 변수
 		std::vector<std::string>	server_name;
-		std::string					listen;
+		std::vector<std::string>	listen; //벡터로 만들어주세여
 		std::string					client_body_size;
 		std::string					root;
 		std::vector<std::string>	index;
