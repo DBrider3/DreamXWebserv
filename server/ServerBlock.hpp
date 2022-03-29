@@ -25,7 +25,7 @@ class ServerBlock
 		~ServerBlock();
 
 		std::vector<std::string>	getServerName();
-		std::string					getListen();	
+		std::vector<std::string>	getListen();	
 		std::string					getClientBodySize();
 		std::string					getRoot();
 		std::vector<std::string>	getIndex();

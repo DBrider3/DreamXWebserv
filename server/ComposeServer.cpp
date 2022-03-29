@@ -25,7 +25,7 @@ vector<int> composePort(Server conf_data)
  * 다중 서버에 따른 소켓을 생성해주는 함수입니다.
  */
 
-void composeSocket(int *server_socket, vector<int> ports)
+void composeSocket(vector<int> server_socket, vector<int> ports)
 {
 	struct sockaddr_in *server_addr = new sockaddr_in[ports.size()];
 
@@ -53,18 +53,7 @@ int composeServer(Server conf_data)
 {
     /*port*/
 	vector<int>				ports;
-	int*					server_socket;
-    /*kqueue*/
-	int						kq;
-	map<int, string> 		clients;
-	vector<struct kevent>	change_list;
-	struct kevent			event_list[8];
-	/*events*/
-	int						new_events;
-	struct kevent*			curr_event;
-	vector<t_header>		headers;
-	char					r_header[1024];
-
+	vector<int>				server_socket;
 
 	ports = composePort(conf_data);
 	server_socket = new int(ports.size());
