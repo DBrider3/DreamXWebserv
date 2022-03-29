@@ -2,7 +2,7 @@
 
 ServerBlock::ServerBlock()
 {
-
+	
 }
 
 ServerBlock::ServerBlock(const ServerBlock& src)
@@ -30,10 +30,37 @@ ServerBlock::~ServerBlock()
 
 }
 
-std::vector<std::string>	ServerBlock::getServerName();
-std::string		ServerBlock::getListen();	
-std::string		ServerBlock::getClientBodySize();
-std::string		ServerBlock::getRoot();
-std::vector<std::string>	ServerBlock::getIndex();
-std::string		ServerBlock::getAutoindex();
-std::vector<LocationBlock>	ServerBlock::getLocationBlock();
+std::vector<std::string>	ServerBlock::getServerName()
+{
+
+}
+
+std::string		ServerBlock::getListen()
+{
+
+}
+
+std::string		ServerBlock::getClientBodySize()
+{
+
+}
+
+std::string		ServerBlock::getRoot()
+{
+
+}
+
+std::vector<std::string>	ServerBlock::getIndex()
+{
+
+}
+
+std::string		ServerBlock::getAutoindex()
+{
+
+}
+
+std::vector<LocationBlock>	ServerBlock::getLocationBlock()
+{
+
+}
