@@ -1,21 +1,20 @@
 http {
-	http_version ;
-	index   something;
+	index something;
 	limit_except GET POST DELETE;
 
 	server {
-		server_name page1.com default_server;
+		server_name _ default_server;
 		listen 8080;
 		client_body_size 42m;
 		root /;
 		index index.html test.html error.html;
 		autoindex on;
 
-		location = / uri {
-			#location block 안에 무슨 디렉티브가 오는지 정하자!
-			root value;
-			index value;
-			return 301 http://uri;
+		location = / {
+			root /;
+			index sonkang.html;
+			redirect dcho;
+			error_page 301 http://uri;
 		}
 
 		location ~ \.php$ {
@@ -24,7 +23,7 @@ http {
 			index value;
 		}
 
-		location / {
+		location = / {
 			error_page 404 /404.html;
 		}
 	}
@@ -48,5 +47,4 @@ http {
 			error_page 404 /404.html;
 		}
 	}
-
 }

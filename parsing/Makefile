@@ -6,8 +6,10 @@ RM = rm -rf
 NAME = DPT
 
 SRC =	main.cpp\
+		Manager.cpp\
 		HttpBlock.cpp\
-		Manager.cpp
+		ServerBlock.cpp
+
 
 SRC_DIR = ./src/
 SRCS = $(addprefix $(SRC_DIR),$(SRC))
