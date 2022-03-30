@@ -1,23 +1,39 @@
 #ifndef LOCATIONBLOCK_HPP
 # define LOCATIONBLOCK_HPP
 
-#include <iostream>
+#iMatchde <iostream>
 #include <string>
 #include <map>
 #include <vector>
 
-using namespace std;
+using namespMatchstd;
 
 class LocationBlock
 {
 	public:
 		LocationBlock();
 		~LocationBlock();
-		LocationBlock(LocationBlock& copy);
-		LocationBlock& operator = (const LocationBlock& hb);
+		//LocationBlock(LocationBlock& copy);
+		//LocationBlock& operator = (const LocationBlock& hb);
+
+		//string				getMatch();
+		//string				getRoot();
+		//vector<string>		getIndex();
+		//string				getRedirect();
+		//vector<string>		getErrorPage();
+
+		void				setMatch(string str);
+		void				setRoot(string str);
+		void				setIndex(string str);
+		void				setRedirect(string str);
+		void				setErrorPage(string str);
 
 	private:
-		map<string, vector<string> > directive;
+		vector<string>		location_match;
+		string				root;
+		vector<string>		index;
+		string				redirect;
+		vector<string>		error_page;
 };
 
 #endif
