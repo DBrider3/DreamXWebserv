@@ -1,19 +1,32 @@
 #include "Util.hpp"
 
+vector<string> split(string input, char delimiter)
+{
+	vector<string> answer;
+	stringstream ss(input);
+	string temp;
+
+	while (getline(ss, temp, delimiter))
+		answer.push_back(temp);
+	return answer;
+}
+
+const char* PrintError::what() const throw()
+{
+	return ("[Error] : ");
+}
+
 void exit_with_perror(const string &msg)
 {
 	cerr << msg << endl;
-	exit(1);
+	exit(42);
 }
 
 int     convStoi(string str)
 {
-	char	*tmp;
-	int		ret;
+	stringstream ss(str);
+	int	num;
 
-	tmp = static_cast<char *>(str);
-	ret = 0;
-	for(int i = 0; i < strlen(tmp); i++)
-		ret = ret * 10 + tmp[i];
-	return (ret);
+	ss >> num;
+	return (num);
 }
