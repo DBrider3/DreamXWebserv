@@ -80,10 +80,14 @@ void					ServerBlock::setAutoindex(string str)
 }
 int					ServerBlock::setLocationBlock(LocationBlock tmp_location, vector<string> buf, int idx)
 {
+	/*
+	** buf를 split으로 쪼개어 key값을 비교 후, value들을 tmp_location에 넣어줌
+	** push_back으로 location_block에 넣어줌
+	*/
 	while (buf[idx] != "\t\t}")
 	{
 		vector<string> tmp;
-		tmp = split(buf[idx], ' ');
+		tmp = deleteSemicolon(split(buf[idx], ' '));
 
 		if (tmp[0] == "\t\t\troot")
 		{

@@ -9,7 +9,7 @@ class Manager
 	private:
 		vector<string> buffer;
 		HttpBlock http_block;
-		
+
 	public:
 		/*
 		** canonicalForm part
@@ -28,7 +28,8 @@ class Manager
 		/*
 		** method part
 		*/
-		void	confParsing(string conf);
+		void	fileOpen(string conf);
+		void	confParsing(void);
 		//void serverCompose();
 		//void serverRun();
 };

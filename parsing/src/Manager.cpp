@@ -33,11 +33,14 @@ void	Manager::setBuffer(string input)
 
 int		Manager::setHttpBlock(vector<string> buf)
 {
+	/*
+	** buf를 split으로 쪼개어 key값을 비교 후, value들을 넣어줌
+	*/
 	int res = 1;
 	while (!(buf[res].empty()))
 	{
 		vector<string> tmp;
-		tmp = split(buf[res], ' ');
+		tmp = deleteSemicolon(split(buf[res], ' '));
 
 		if (tmp[0] == "\tindex")
 		{
@@ -60,9 +63,11 @@ int		Manager::setHttpBlock(vector<string> buf)
 	return ++res;
 }
 
-void Manager::confParsing(string conf)
+void	Manager::fileOpen(string conf)
 {
-	
+	/*
+	** 인자 혹은 default파일을 열고 buffer에 저장
+	*/
 	try
 	{
 		ifstream fin(conf);
@@ -82,6 +87,13 @@ void Manager::confParsing(string conf)
 		cerr << e.what() << "Cannot open the File!😵‍" << endl;
 		exit(1);
 	}
+}
+
+void	Manager::confParsing(void)
+{
+	/*
+	** idx를 활용하여 buffer 순회
+	*/
 	try
 	{
 		int idx = 0;

@@ -20,6 +20,7 @@ class PrintError : public std::exception
 		virtual const char* what() const throw();
 };
 
+vector<string>		deleteSemicolon(vector<string> answer);
 vector<string>		split(string input, char delimiter);
 
 #endif
