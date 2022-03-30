@@ -11,7 +11,8 @@ int main(int argc, char **argv)
 			throw(PrintError());
 		else if (argc == 2)
 			conf = argv[1];
-		manager.confParsing(conf);
+		manager.fileOpen(conf);
+		manager.confParsing();
 	}
 	catch(const exception& e)
 	{

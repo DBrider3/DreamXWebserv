@@ -41,6 +41,11 @@ vector<ServerBlock>	HttpBlock::getServerBlock()
 
 int			HttpBlock::setServerBlock(vector<string> buf, int idx)
 {
+	/*
+	** buf를 split으로 쪼개어 key값을 비교 후, value들을 tmp_server에 넣어줌
+	** push_back으로 server_block에 넣어줌
+	*/
+
 	ServerBlock tmp_server;
 
 	while (buf[idx] != "\t}")
@@ -48,7 +53,7 @@ int			HttpBlock::setServerBlock(vector<string> buf, int idx)
 		if (!buf[idx].empty())
 		{
 			vector<string> tmp;
-			tmp = split(buf[idx], ' ');
+			tmp = deleteSemicolon(split(buf[idx], ' '));
 
 			if (tmp[0] == "\t\tserver_name")
 			{
@@ -104,7 +109,7 @@ int			HttpBlock::setServerBlock(vector<string> buf, int idx)
 		idx++;
 	}
 	server_block.push_back(tmp_server);
-	if (buf[++idx].empty())
+	if (buf[++idx].empty()) //함수를 나가서 buf[idx]가 개행이 아닌 server_block을 가르키기 위함
 		return ++idx;
 	return idx;
 }
