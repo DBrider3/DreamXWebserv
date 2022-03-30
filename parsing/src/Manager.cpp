@@ -8,14 +8,19 @@ Manager::~Manager()
 {
 
 }
-//Manager::Manager(Manager& copy)
-//{
+Manager::Manager(Manager& copy)
+{
+	*this = copy;
+}
+Manager& Manager::operator = (const Manager& m)
+{
+	if (this == &m)
+		return (*this);
+	http_block = m.http_block;
+	buffer = m.buffer;
+	return (*this);
+}
 
-//}
-//Manager& Manager::operator = (const Manager& m)
-//{
-
-//}
 // string Manager::get_buffer(void)
 // {
 // 	return (buffer);
@@ -24,21 +29,6 @@ Manager::~Manager()
 void	Manager::setBuffer(string input)
 {
 	buffer.push_back(input);
-}
-
-vector<string> Manager::split(string input, char delimiter)
-{
-	vector<string> answer;
-	stringstream ss(input);
-	string temp;
-
-	while (getline(ss, temp, delimiter))
-		answer.push_back(temp);
-	// 문장 마지막 부분 ';' 삭제 part (refactor 필요)
-	string tmp = answer.back();
-	answer.pop_back();
-	answer.push_back(tmp.substr(0, tmp.length() - 1));
-	return answer;
 }
 
 int		Manager::setHttpBlock(vector<string> buf)
@@ -72,30 +62,41 @@ int		Manager::setHttpBlock(vector<string> buf)
 
 void Manager::confParsing(string conf)
 {
-	ifstream fin(conf);
-	if (fin.is_open())
+	
+	try
 	{
-		string temp;
+		ifstream fin(conf);
+		if (fin.is_open())
+		{
+			string temp;
 
-		while (getline(fin, temp))
-			setBuffer(temp);
-		fin.close();
+			while (getline(fin, temp))
+				setBuffer(temp);
+			fin.close();
+		}
+		else
+			throw(PrintError());
 	}
-	else
-		//printError("File open error!😵‍\n");
-		cout << "error\n" << endl;
-	int idx = 0;
-	if (buffer[idx] == "http {")
-		idx = setHttpBlock(buffer);
-	else
-		cout << " http block parsing error" << endl; // error 처리 (try, except)
-	if (buffer[idx] == "\tserver {")
-		idx = http_block.setServerBlock(buffer, idx);
-	else
-		cout << " server block parsing error" << endl; // error 처리 (try, except)
-	//if (buffer[idx] == "\t\tlocation ")
-	//	idx = http_block.setServerBlock(buffer, idx);
-	//else
-	//	cout << " server block parsing error" << endl; // error 처리 (try, except)
-
+	catch(const exception& e)
+	{
+		cerr << e.what() << "Cannot open the File!😵‍" << endl;
+		exit(1);
+	}
+	try
+	{
+		int idx = 0;
+		if (buffer[idx] == "http {")
+			idx = setHttpBlock(buffer);
+		else
+			throw(PrintError());
+		while (buffer[idx] == "\tserver {")
+			idx = http_block.setServerBlock(buffer, idx);
+		if (http_block.getServerBlock().size() == 0)
+			throw(PrintError());
+	}
+	catch(const exception& e)
+	{
+		cerr << e.what() << "The file configuration is incorrect!😵‍" << endl;
+		exit(1);
+	}
 }

@@ -8,6 +8,23 @@ ServerBlock::~ServerBlock()
 {
 
 }
+ServerBlock::ServerBlock(const ServerBlock& copy)
+{
+	*this = copy;
+}
+ServerBlock& ServerBlock::operator = (const ServerBlock& sb)
+{
+	if (this == &sb)
+		return (*this);
+	server_name = sb.server_name;
+	listen = sb.listen;
+	client_body_size = sb.client_body_size;
+	root = sb.root;
+	index = sb.index;
+	autoindex = sb.autoindex;
+	location_block = sb.location_block;
+	return (*this);
+}
 
 //vector<string>			getServerName()
 //{
@@ -37,22 +54,6 @@ ServerBlock::~ServerBlock()
 // {
 // }
 
-
-vector<string> ServerBlock::split(string input, char delimiter)
-{
-	vector<string> answer;
-	stringstream ss(input);
-	string temp;
-
-	while (getline(ss, temp, delimiter))
-		answer.push_back(temp);
-	// 문장 마지막 부분 ';' 삭제 part (refactor 필요)
-	string tmp = answer.back();
-	answer.pop_back();
-	answer.push_back(tmp.substr(0, tmp.length() - 1));
-	return answer;
-}
-
 void					ServerBlock::setServerName(string str)
 {
 	server_name.push_back(str);
@@ -77,31 +78,41 @@ void					ServerBlock::setAutoindex(string str)
 {
 	autoindex = str;
 }
-int					ServerBlock::setLocationBlock(vector<string> buf, int idx)
+int					ServerBlock::setLocationBlock(LocationBlock tmp_location, vector<string> buf, int idx)
 {
-	LocationBlock tmp_location;
-
-	while (!(buf[idx].empty()))
+	while (buf[idx] != "\t\t}")
 	{
 		vector<string> tmp;
 		tmp = split(buf[idx], ' ');
 
-		if (tmp[0] == "\t\tserver_name")
+		if (tmp[0] == "\t\t\troot")
+		{
+			tmp_location.setRoot(tmp[1]);
+			cout << tmp[1] << endl;
+		}
+		else if (tmp[0] == "\t\t\tindex")
 		{
 			for (size_t i = 1; i < tmp.size(); i++)
 			{
-				tmp_location.setServerName(tmp[i]);
+				tmp_location.setIndex(tmp[i]);
 				cout << tmp[i] << endl;
 			}
 		}
-		else if (tmp[0] == "\t\tclient_body_size")
+		else if (tmp[0] == "\t\t\tredirect")
 		{
-			tmp_location.setClientBodySize(tmp[1]);
+			tmp_location.setRedirect(tmp[1]);
 			cout << tmp[1] << endl;
 		}
-
+		else if (tmp[0] == "\t\t\terror_page")
+		{
+			for (size_t i = 1; i < tmp.size(); i++)
+			{
+				tmp_location.setErrorPage(tmp[i]);
+				cout << tmp[i] << endl;
+			}
+		}
 		idx++;
 	}
 	location_block.push_back(tmp_location);
-	return ++idx;
+	return idx;
 }

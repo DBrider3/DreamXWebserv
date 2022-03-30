@@ -8,7 +8,9 @@ NAME = DPT
 SRC =	main.cpp\
 		Manager.cpp\
 		HttpBlock.cpp\
-		ServerBlock.cpp
+		ServerBlock.cpp\
+		LocationBlock.cpp\
+		Utils.cpp
 
 
 SRC_DIR = ./src/

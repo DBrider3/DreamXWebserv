@@ -1,45 +1,11 @@
 #ifndef SERVERBLOCK_HPP
 # define SERVERBLOCK_HPP
 
-#include <iostream>
-#include <string>
-#include <map>
-#include <vector>
-#include <sstream>
+#include "Utils.hpp"
 #include "LocationBlock.hpp"
-
-
-using namespace std;
 
 class ServerBlock
 {
-	public:
-		ServerBlock();
-		~ServerBlock();
-		//ServerBlock(ServerBlock& copy);
-		//ServerBlock& operator = (const ServerBlock& hb);
-
-		// getter
-		//vector<string>			getServerName();
-		//vector<string>			getListen();
-		//string					getClientBodySize();
-		//string					getRoot();
-		//vector<string>			getIndex();
-		//string					getAutoindex();
-		//vector<LocationBlock>	getLocationBlock();
-
-		// setter
-		void					setServerName(string str);
-		void					setListen(string str);
-		void					setClientBodySize(string str);
-		void					setRoot(string str);
-		void					setIndex(string str);
-		void					setAutoindex(string str);
-		int						setLocationBlock(vector<string> buf, int idx);
-
-	public:
-		vector<string> ServerBlock::split(string input, char delimiter);
-
 	private:
 		vector<string>			server_name;
 		vector<string>			listen;
@@ -48,6 +14,38 @@ class ServerBlock
 		vector<string>			index;
 		string					autoindex;
 		vector<LocationBlock>	location_block;
+
+	public:
+		/*
+		** canonicalForm part
+		*/
+		ServerBlock();
+		~ServerBlock();
+		ServerBlock(const ServerBlock& copy);
+		ServerBlock& operator = (const ServerBlock& sb);
+
+		/*
+		** getter part
+		*/
+		//vector<string>			getServerName();
+		//vector<string>			getListen();
+		//string					getClientBodySize();
+		//string					getRoot();
+		//vector<string>			getIndex();
+		//string					getAutoindex();
+		//vector<LocationBlock>		getLocationBlock();
+
+		/*
+		** setter part
+		*/
+		void						setServerName(string str);
+		void						setListen(string str);
+		void						setClientBodySize(string str);
+		void						setRoot(string str);
+		void						setIndex(string str);
+		void						setAutoindex(string str);
+		int							setLocationBlock(LocationBlock tmp_location, vector<string> buf, int idx);
+
 };
 
 #endif

@@ -9,14 +9,21 @@ LocationBlock::~LocationBlock()
 
 }
 
-//LocationBlock::LocationBlock(LocationBlock& copy)
-//{
-
-//}
-//LocationBlock& LocationBlock::operator = (const LocationBlock& hb)
-//{
-
-//}
+LocationBlock::LocationBlock(const LocationBlock& copy)
+{
+	*this = copy;
+}
+LocationBlock& LocationBlock::operator = (const LocationBlock& lb)
+{
+	if (this == &lb)
+		return (*this);
+	location_match = lb.location_match;
+	root = lb.root;
+	index = lb.index;
+	redirect = lb.redirect;
+	error_page = lb.error_page;
+	return (*this);
+}
 
 //string				LocationBlock::getName()
 //{
