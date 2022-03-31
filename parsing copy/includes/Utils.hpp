@@ -1,16 +1,13 @@
-#ifndef UTIL_HPP
-# define UTIL_HPP
+#ifndef UTILS_HPP
+# define UTILS_HPP
 
+# include <string>
 # include <iostream>
-# include <sstream>
-//# include <fstream>
-# include <cstdlib> //exit()
-# include <string> //getline()
-# include <cstring>
-# include <unistd.h>
-# include <fcntl.h> //close()
-# include <map> // map<>
 # include <vector>
+# include <sstream>
+# include <fstream>
+# include <map>
+# include <exception>
 
 # include <sys/socket.h>
 # include <arpa/inet.h>
@@ -19,17 +16,21 @@
 # include <sys/event.h> //kevent()
 # include <sys/time.h>
 
+# define TRUE 1
+# define FALSE 0
 # define LISTEN_NUM 10
 
 using namespace std;
 
-class PrintError : public exception
+class PrintError : public std::exception
 {
 	public:
 		virtual const char* what() const throw();
 };
 
-int    exit_with_perror(const string& msg);
+vector<string>		deleteSemicolon(vector<string> answer);
+vector<string>		split(string input, char delimiter);
+
 int    convStoi(string str);
 vector<string> split(string input, char delimiter);
 

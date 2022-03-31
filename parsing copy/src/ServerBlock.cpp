@@ -4,17 +4,14 @@ ServerBlock::ServerBlock()
 {
 
 }
-
 ServerBlock::~ServerBlock()
 {
 
 }
-
 ServerBlock::ServerBlock(const ServerBlock& copy)
 {
 	*this = copy;
 }
-
 ServerBlock& ServerBlock::operator = (const ServerBlock& sb)
 {
 	if (this == &sb)
@@ -33,11 +30,10 @@ ServerBlock& ServerBlock::operator = (const ServerBlock& sb)
 //{
 
 //}
-vector<string>			ServerBlock::getListen(void)
-{
-	return (listen);
-}
+//vector<string>			getListen()
+//{
 
+//}
 //string					getClientBodySize()
 //{
 
@@ -62,32 +58,26 @@ void					ServerBlock::setServerName(string str)
 {
 	server_name.push_back(str);
 }
-
 void					ServerBlock::setListen(string str)
 {
 	listen.push_back(str);
 }
-
 void					ServerBlock::setClientBodySize(string str)
 {
 	client_body_size = str;
 }
-
 void					ServerBlock::setRoot(string str)
 {
 	root = str;
 }
-
 void					ServerBlock::setIndex(string str)
 {
 	index.push_back(str);
 }
-
 void					ServerBlock::setAutoindex(string str)
 {
 	autoindex = str;
 }
-
 int					ServerBlock::setLocationBlock(LocationBlock tmp_location, vector<string> buf, int idx)
 {
 	/*
