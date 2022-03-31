@@ -8,7 +8,7 @@ HttpBlock::~HttpBlock()
 {
 
 }
-HttpBlock::HttpBlock(HttpBlock& copy)
+HttpBlock::HttpBlock(const HttpBlock& copy)
 {
 	*this = copy;
 }
@@ -60,7 +60,7 @@ int			HttpBlock::setServerBlock(vector<string> buf, int idx)
 				for (size_t i = 1; i < tmp.size(); i++)
 				{
 					tmp_server.setServerName(tmp[i]);
-					cout << tmp[i] << endl;
+					//cout << tmp[i] << endl;
 				}
 			}
 			else if (tmp[0] == "\t\tlisten")
@@ -68,31 +68,31 @@ int			HttpBlock::setServerBlock(vector<string> buf, int idx)
 				for (size_t i = 1; i < tmp.size(); i++)
 				{
 					tmp_server.setListen(tmp[i]);
-					cout << tmp[i] << endl;
+					//cout << tmp[i] << endl;
 				}
 			}
 			else if (tmp[0] == "\t\tclient_body_size")
 			{
 				tmp_server.setClientBodySize(tmp[1]);
-				cout << tmp[1] << endl;
+				//cout << tmp[1] << endl;
 			}
 			else if (tmp[0] == "\t\troot")
 			{
 				tmp_server.setRoot(tmp[1]);
-				cout << tmp[1] << endl;
+				//cout << tmp[1] << endl;
 			}
 			else if (tmp[0] == "\t\tindex")
 			{
 				for (size_t i = 1; i < tmp.size(); i++)
 				{
 					tmp_server.setIndex(tmp[i]);
-					cout << tmp[i] << endl;
+					//cout << tmp[i] << endl;
 				}
 			}
 			else if (tmp[0] == "\t\tautoindex")
 			{
 				tmp_server.setAutoindex(tmp[1]);
-				cout << tmp[1] << endl;
+				//cout << tmp[1] << endl;
 			}
 			else if (tmp[0] == "\t\tlocation")
 			{
@@ -101,7 +101,7 @@ int			HttpBlock::setServerBlock(vector<string> buf, int idx)
 				for (size_t i = 1; i < tmp.size() - 1; i++)
 				{
 					tmp_location.setMatch(tmp[i]);
-					cout << tmp[i] << endl;
+					//cout << tmp[i] << endl;
 				}
 				idx = tmp_server.setLocationBlock(tmp_location, buf, ++idx);
 			}

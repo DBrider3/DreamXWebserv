@@ -28,7 +28,7 @@ class ServerBlock
 		** getter part
 		*/
 		//vector<string>			getServerName();
-		//vector<string>			getListen();
+		vector<string>				getListen();
 		//string					getClientBodySize();
 		//string					getRoot();
 		//vector<string>			getIndex();

@@ -2,34 +2,29 @@
 #include "../includes/Utils.hpp"
 #include "../includes/Manager.hpp"
 
+#include <errno.h>
 /*
  *
  */
 
 void Manager::check_msg(t_request rmsg)
 {
-	cout << "???" << endl;
 	cout << rmsg.method << endl;
 	cout << rmsg.uri << endl;
 	cout << rmsg.version << endl;
 	for (map<string, vector<string> >::iterator it = rmsg.header.begin(); it != rmsg.header.end(); it++)
 	{
-		cout << "where1" << endl;
 		cout << "key : " << it->first << " / value : " ; 
 		for (vector<string>::iterator itt = it->second.begin(); itt != it->second.end(); itt++)
 		{
-			cout << "where2" << endl;
 			cout << *itt << " " ;
 		}
-		cout << "where3" << endl;
 		cout << endl;
 	}
 	cout << rmsg.cgi << endl;
 	cout << rmsg.fd << endl;
 	for (vector<string>::iterator it = rmsg.body.begin(); it != rmsg.body.end(); it++)
 		cout << *it << endl;
-	cout << "where4" << endl;
-	
 }
 
 void disconnect_client(int client_fd)
@@ -84,7 +79,7 @@ t_request initRequestMsg(int client_socket)
  * sever_socket을 토대로 client_socket을 구성하는 함수입니다.
  */
 
-void setClientsocket(vector<t_request> request_msgs, vector<struct kevent> change_list, uintptr_t server_socket)
+void setClientsocket(vector<t_request> &request_msgs, vector<struct kevent> &change_list, uintptr_t server_socket)
 {
 	/* accept new client */
 	int client_socket;
@@ -107,14 +102,9 @@ void setClientsocket(vector<t_request> request_msgs, vector<struct kevent> chang
 
 int findClient(vector<t_request> request_msgs, int curr_fd)
 {
-	cout << "in findCline function" << endl;
 	for (size_t i = 0; i < request_msgs.size(); i++)
 		if (request_msgs[i].fd == curr_fd)
-		{
-			cout << "???????" << endl;
 			return (i);
-		}
-	cout << "error" << endl;
 	return (-1);
 }
 
@@ -122,7 +112,7 @@ int findClient(vector<t_request> request_msgs, int curr_fd)
  * 버퍼에 담아둔 request를 파싱하여 구조체에 담아주는 작업을 하는 함수입니다.
  */
 
-void parseRequest(t_request request_msg, string request)
+void parseRequest(t_request &request_msg, string request)
 {
 	stringstream ss;
 	vector<string> result; //요청메시지가 한 줄 한 줄 저장되는 변수
@@ -165,19 +155,39 @@ void parseRequest(t_request request_msg, string request)
  * curr_fd가 전달하는 내용을 버퍼에 담아주는 함수입니다.
  */
 
-void readRequest(t_request request_msg, int curr_fd)
+void readRequest(t_request &request_msg, int curr_fd)
 {
     /* read data from client */
-    char buf[1024];
+    char buf[10];
+	stringstream ss;
     string msg;
 	int n;
 	
-    while ((n = read(curr_fd, buf, sizeof(buf))) > 0)
-        msg += static_cast<string> (buf);
-    if (n < 0)
+	n = 0;
+    while ((n = read(curr_fd, buf, sizeof(buf) - 1)) > 0)
+    {
+		if (!buf[0])
+		{
+			cout << "is?\n" << endl;
+			n = 0;
+			break;
+		}
+		cout << " n = " << n << endl;
+		buf[9] = '\0';
+		ss << buf;
+
+		// cout << buf<< endl;
+		//cout << ss.str()<< endl;
+	}
+	msg += ss.str();
+	cout << "here ?? "<< msg << endl;
+	//cout << "errno : "<< errno << endl;
+	cout << "n = " << n << endl;
+    if (n <= 0)
     {
         if (n < 0)
             cerr << "client read error!" << endl;
+		cout << "1\n";
         disconnect_client(curr_fd);
     }
     else
@@ -230,7 +240,6 @@ void Manager::runServer()
 
 		for (int i = 0; i < new_events; ++i)
 		{
-			cout << new_events << endl;
 			curr_event = &event_list[i];
 			if (curr_event->flags & EV_ERROR)
 			{
@@ -239,20 +248,21 @@ void Manager::runServer()
 				else
 				{
 					cerr << "client socket error" << endl;
+					cout << "2\n";
 					disconnect_client(curr_event->ident); // 400 error
 				}
 			}
 			else if (curr_event->filter == EVFILT_READ)
 			{
-				int idx = 0;
+				int idx;
 
+				idx = 0;
 				if (check_socket(curr_event->ident, web_serv.server_socket))
 				{
 					setClientsocket(request_msgs, change_list, curr_event->ident);
 				}
 				else if ((idx = findClient(request_msgs, curr_event->ident)) >= 0)
 				{
-					cout << "after in findCline function" << endl;
 					readRequest(request_msgs[idx], curr_event->ident);
 					check_msg(request_msgs[idx]);
 				}
