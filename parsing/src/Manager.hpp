@@ -23,7 +23,7 @@ class Manager
 		** setter part
 		*/
 		void	setBuffer(string input);
-		int		setHttpBlock(vector<string> buf);
+		int		composeHttpBlock(vector<string> buf);
 
 		/*
 		** method part

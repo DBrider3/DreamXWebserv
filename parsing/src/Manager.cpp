@@ -31,7 +31,7 @@ void	Manager::setBuffer(string input)
 	buffer.push_back(input);
 }
 
-int		Manager::setHttpBlock(vector<string> buf)
+int		Manager::composeHttpBlock(vector<string> buf)
 {
 	/*
 	** buf를 split으로 쪼개어 key값을 비교 후, value들을 넣어줌
@@ -98,11 +98,11 @@ void	Manager::confParsing(void)
 	{
 		int idx = 0;
 		if (buffer[idx] == "http {")
-			idx = setHttpBlock(buffer);
+			idx = composeHttpBlock(buffer);
 		else
 			throw(PrintError());
 		while (buffer[idx] == "\tserver {")
-			idx = http_block.setServerBlock(buffer, idx);
+			idx = http_block.composeServerBlock(buffer, idx);
 		if (http_block.getServerBlock().size() == 0)
 			throw(PrintError());
 	}

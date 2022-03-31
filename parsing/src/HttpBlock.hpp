@@ -32,7 +32,9 @@ class HttpBlock
 		*/
 		void					setIndex(string str);
 		void					setLimitExcept(string str);
-		int						setServerBlock(vector<string> buf, int idx);
+		void					setServerBlock(ServerBlock sb);
+
+		int						composeServerBlock(vector<string> buf, int idx);
 };
 
 #endif

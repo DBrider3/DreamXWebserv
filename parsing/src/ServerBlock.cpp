@@ -4,14 +4,17 @@ ServerBlock::ServerBlock()
 {
 
 }
+
 ServerBlock::~ServerBlock()
 {
 
 }
+
 ServerBlock::ServerBlock(const ServerBlock& copy)
 {
 	*this = copy;
 }
+
 ServerBlock& ServerBlock::operator = (const ServerBlock& sb)
 {
 	if (this == &sb)
@@ -54,31 +57,42 @@ ServerBlock& ServerBlock::operator = (const ServerBlock& sb)
 // {
 // }
 
-void					ServerBlock::setServerName(string str)
+void	ServerBlock::setServerName(string str)
 {
 	server_name.push_back(str);
 }
-void					ServerBlock::setListen(string str)
+
+void	ServerBlock::setListen(string str)
 {
 	listen.push_back(str);
 }
-void					ServerBlock::setClientBodySize(string str)
+
+void	ServerBlock::setClientBodySize(string str)
 {
 	client_body_size = str;
 }
-void					ServerBlock::setRoot(string str)
+
+void	ServerBlock::setRoot(string str)
 {
 	root = str;
 }
-void					ServerBlock::setIndex(string str)
+
+void	ServerBlock::setIndex(string str)
 {
 	index.push_back(str);
 }
-void					ServerBlock::setAutoindex(string str)
+
+void	ServerBlock::setAutoindex(string str)
 {
 	autoindex = str;
 }
-int					ServerBlock::setLocationBlock(LocationBlock tmp_location, vector<string> buf, int idx)
+
+void	ServerBlock::setLocationBlock(LocationBlock lb)
+{
+	location_block.push_back(lb);
+}
+
+int		ServerBlock::composeLocationBlock(LocationBlock tmp_location, vector<string> buf, int idx)
 {
 	/*
 	** buf를 split으로 쪼개어 key값을 비교 후, value들을 tmp_location에 넣어줌
@@ -117,6 +131,6 @@ int					ServerBlock::setLocationBlock(LocationBlock tmp_location, vector<string>
 		}
 		idx++;
 	}
-	location_block.push_back(tmp_location);
+	setLocationBlock(tmp_location);
 	return idx;
 }
