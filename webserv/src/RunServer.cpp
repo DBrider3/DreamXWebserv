@@ -12,6 +12,7 @@ void Manager::check_msg(t_request rmsg)
 	cout << rmsg.method << endl;
 	cout << rmsg.uri << endl;
 	cout << rmsg.version << endl;
+		
 	for (map<string, vector<string> >::iterator it = rmsg.header.begin(); it != rmsg.header.end(); it++)
 	{
 		cout << "key : " << it->first << " / value : " ; 
@@ -68,9 +69,9 @@ t_request initRequestMsg(int client_socket)
 	t_request request_msg;
 
 	request_msg.cgi = 0;
-	request_msg.method = 0;
-	request_msg.uri = 0;
-	request_msg.version = 0;
+	request_msg.method = "";
+	request_msg.uri = "";
+	request_msg.version = "";
 	request_msg.fd = client_socket;
 	return (request_msg);
 }
@@ -117,19 +118,32 @@ void parseRequest(t_request &request_msg, string request)
 	stringstream ss;
 	vector<string> result; //요청메시지가 한 줄 한 줄 저장되는 변수
 	vector<string>::iterator it;
-
+	//char *tmp;
 /*
  * Startline 파싱
  */
 	result = split(request, '\n');
+	// tmp = strtok(const_cast<char*>(result[0].c_str()), " ");
+	// ss << tmp;
+	// request_msg.method = ss.str();
+	// tmp = strtok(NULL, " ");
+	// ss << tmp;
+	// request_msg.uri = ss.str();
+	// tmp = strtok(NULL, "\n");
+	// ss << tmp;
+	// request_msg.version = ss.str();
 	request_msg.method = strtok(const_cast<char*>(result[0].c_str()), " ");
 	request_msg.uri = strtok(NULL, " ");
 	request_msg.version = strtok(NULL, "\n");
-
+	
+	
+	// ss << buf;
+	// }
+	// msg += ss.str();
 /*
  * Header 파싱
  */
-	for (it = result.begin() + 1; it->size() > 0; it++)
+	for (it = result.begin() + 1; it->size() > 1; it++)
 	{
 		stringstream ss(*it);
 		string key;
@@ -166,31 +180,24 @@ void readRequest(t_request &request_msg, int curr_fd)
 	n = 0;
     while ((n = read(curr_fd, buf, sizeof(buf) - 1)) > 0)
     {
-		if (!buf[0])
-		{
-			cout << "is?\n" << endl;
-			n = 0;
-			break;
-		}
-		cout << " n = " << n << endl;
+		// if (!buf[0])
+		// {
+		// 	n = 0;
+		// 	break;
+		// }
 		buf[9] = '\0';
 		ss << buf;
-
-		// cout << buf<< endl;
-		//cout << ss.str()<< endl;
 	}
 	msg += ss.str();
-	cout << "here ?? "<< msg << endl;
-	//cout << "errno : "<< errno << endl;
-	cout << "n = " << n << endl;
-    if (n <= 0)
-    {
-        if (n < 0)
-            cerr << "client read error!" << endl;
-		cout << "1\n";
-        disconnect_client(curr_fd);
-    }
-    else
+
+    // if (n <= 0)
+    // {
+    //     if (n < 0)
+    //         cerr << "client read error!" << endl;
+	// 	cout << "1\n";
+    //     disconnect_client(curr_fd);
+    // }
+    // else
         parseRequest(request_msg, msg);
 }
 

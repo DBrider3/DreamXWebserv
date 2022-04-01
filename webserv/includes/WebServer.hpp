@@ -10,9 +10,9 @@
 //template<int> //vector<int> 형을 return 하려고 하니까 template class 아니라고 에러 떠서 추가함
 
 typedef struct s_request {
-	char*							method;
-	char*							uri;
-	char*							version;
+	string							method;
+	string							uri;
+	string							version;
 	map<string, vector<string> >	header;
 	vector<string>					body;
 	int								cgi;

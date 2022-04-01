@@ -11,6 +11,7 @@ int main(int argc, char **argv)
 		string conf = "default";
 		if (argc > 2)
 			throw(PrintError());
+
 		else if (argc == 2)
 			conf = argv[1];
 		manager.fileOpen(conf);
