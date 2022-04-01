@@ -83,9 +83,9 @@ void setClientsocket(vector<t_request> &request_msgs, vector<struct kevent> &cha
 	int client_socket;
 
    if ((client_socket = accept(server_socket, NULL, NULL)) == -1)
-        exit_with_perror("accept() error\n");
-    cout << "accept new client: " << client_socket << endl;
-    fcntl(client_socket, F_SETFL, O_NONBLOCK);
+		exit_with_perror("accept() error\n");
+	cout << "accept new client: " << client_socket << endl;
+	fcntl(client_socket, F_SETFL, O_NONBLOCK);
 
 	/* add event for client socket - add read && write event */
 	change_events(change_list, client_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
@@ -120,23 +120,10 @@ void parseRequest(t_request &request_msg, string request)
  * Startline 파싱
  */
 	result = split(request, '\n');
-	// tmp = strtok(const_cast<char*>(result[0].c_str()), " ");
-	// ss << tmp;
-	// request_msg.method = ss.str();
-	// tmp = strtok(NULL, " ");
-	// ss << tmp;
-	// request_msg.uri = ss.str();
-	// tmp = strtok(NULL, "\n");
-	// ss << tmp;
-	// request_msg.version = ss.str();
 	request_msg.method = strtok(const_cast<char*>(result[0].c_str()), " ");
 	request_msg.uri = strtok(NULL, " ");
 	request_msg.version = strtok(NULL, "\n");
-	
-	
-	// ss << buf;
-	// }
-	// msg += ss.str();
+
 /*
  * Header 파싱
  */
@@ -168,15 +155,15 @@ void parseRequest(t_request &request_msg, string request)
 
 void readRequest(t_request &request_msg, int curr_fd)
 {
-    /* read data from client */
-    char buf[10];
+	/* read data from client */
+	char buf[10];
 	stringstream ss;
-    string msg;
+	string msg;
 	int n;
 	
 	n = 0;
-    while ((n = read(curr_fd, buf, sizeof(buf) - 1)) > 0)
-    {
+	while ((n = read(curr_fd, buf, sizeof(buf) - 1)) > 0)
+	{
 		// if (!buf[0])
 		// {
 		// 	n = 0;
@@ -187,15 +174,71 @@ void readRequest(t_request &request_msg, int curr_fd)
 	}
 	msg += ss.str();
 
-    // if (n <= 0)
-    // {
-    //     if (n < 0)
-    //         cerr << "client read error!" << endl;
+	// if (n <= 0)
+	// {
+	//     if (n < 0)
+	//         cerr << "client read error!" << endl;
 	// 	cout << "1\n";
-    //     disconnect_client(curr_fd);
-    // }
-    // else
-        parseRequest(request_msg, msg);
+	//     disconnect_client(curr_fd);
+	// }
+	// else
+	parseRequest(request_msg, msg);
+}
+
+int checkMethod(t_request request_msg, vector<string> method)
+{
+	for (vector<string>::iterator it = method.begin(); it != method.end(); it++)
+		if (request_msg.method == *it)
+			return (1);
+	return (0);
+}
+
+
+void sendErrorPage(t_request msgs, string err_num, string err_str)
+{
+	struct stat		st;
+	string			local_uri;
+	string			body; //html읽은 내용 담을 변수
+	char			buf[10];
+	char			r_header[1024];
+	size_t			ct_len;
+	int				bodyfd;
+	int				n;
+	stringstream	ss;
+
+	local_uri = "./error_pages/" + err_num + ".html";
+	stat(local_uri.c_str(), &st);
+	ct_len = st.st_size;
+
+	bodyfd = open(local_uri.c_str(), O_RDONLY);
+
+	n = 0;
+	//cout << "여기는 버퍼 입니다." << endl;
+	while ((n = read(bodyfd, buf, sizeof(buf) - 1)) > 0)
+	{
+		buf[9] = '\0'; //여기에 널이 필요할까?
+		ss << buf;
+		//cout << "buf: "<< buf << endl;
+		body += ss.str();
+		ss.str("");
+		memset(buf, 0, 10);
+	}
+	//if (n < 0)
+		//perror("[ERR] Failed to read request.\n");
+	//cout << "ss!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << ss << endl;
+	//body += ss.str();
+	//cout << "여기는 바디 입니다." << endl;
+	//cout << body << endl;
+	//"HTTP/1.1 %s %s\nContent-Length: %ld\nContent-Type: %s\n\n%s"
+	
+	sprintf(r_header, RESPONSE_FMT, err_num.c_str(), err_str.c_str(), ct_len, "html/text");
+	write(msgs.fd, r_header, strlen(r_header));
+	write(msgs.fd, body.c_str(), body.size());
+	cout << "c_fd" << msgs.fd << endl;
+
+	disconnect_client(msgs.fd);
+	// write(1, r_header, strlen(r_header));
+	// write(1, body.c_str(), body.size());
 }
 
 /*
@@ -213,8 +256,9 @@ void Manager::runServer()
 	int                     new_events;
 	struct kevent*          curr_event;
 	vector<t_request>		request_msgs;
-	//char                    r_header[1024];
-	http_block.getServerBlock();
+	int idx;
+
+	idx = 0;
 	try
 	{
 		kq = kqueue();
@@ -258,9 +302,6 @@ void Manager::runServer()
 			}
 			else if (curr_event->filter == EVFILT_READ)
 			{
-				int idx;
-
-				idx = 0;
 				if (check_socket(curr_event->ident, web_serv.server_socket))
 				{
 					setClientsocket(request_msgs, change_list, curr_event->ident);
@@ -269,6 +310,20 @@ void Manager::runServer()
 				{
 					readRequest(request_msgs[idx], curr_event->ident);
 					//check_msg(request_msgs[idx]);
+				}
+			}
+			else if (curr_event->filter == EVFILT_WRITE)
+			{
+				if ((idx = findClient(request_msgs, curr_event->ident)) >= 0)
+				{
+					if (checkMethod(request_msgs[idx], http_block.getLimitExcept()))
+					{
+	
+					}
+					else
+					{
+						sendErrorPage(request_msgs[idx], "403", "Forbidden");
+					}
 				}
 			}
 		}

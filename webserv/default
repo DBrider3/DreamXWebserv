@@ -1,6 +1,6 @@
 http {
 	index something;
-	limit_except GET POST DELETE;
+	limit_except DELETE;
 
 	server {
 		server_name _ default_server;

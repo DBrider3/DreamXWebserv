@@ -33,8 +33,12 @@ void	HttpBlock::setLimitExcept(string str)
 	limit_except.push_back(str);
 }
 
+vector<string>	HttpBlock::getLimitExcept(void)
+{
+	return (limit_except);
+}
 
-vector<ServerBlock>	HttpBlock::getServerBlock()
+vector<ServerBlock>	HttpBlock::getServerBlock(void)
 {
 	return (server_block);
 }
