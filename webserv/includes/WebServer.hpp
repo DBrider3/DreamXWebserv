@@ -8,7 +8,7 @@
 # include <sys/stat.h>
 # include "ServerBlock.hpp"
 
-# define RESPONSE_FMT "HTTP/1.1 %d %s\nContent-Length: %ld\nContent-Type: %s\n\n"
+# define RESPONSE_FMT "HTTP/1.1 %s %s\nContent-Length: %ld\nContent-Type: %s\n\n%s\n"
 
 //template<int> //vector<int> 형을 return 하려고 하니까 template class 아니라고 에러 떠서 추가함
 

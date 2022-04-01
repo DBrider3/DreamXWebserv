@@ -231,11 +231,13 @@ void sendErrorPage(t_request msgs, string err_num, string err_str)
 	//cout << body << endl;
 	//"HTTP/1.1 %s %s\nContent-Length: %ld\nContent-Type: %s\n\n%s"
 	
-	sprintf(r_header, RESPONSE_FMT, err_num.c_str(), err_str.c_str(), ct_len, "html/text");
+	sprintf(r_header, RESPONSE_FMT, err_num.c_str(), err_str.c_str(), ct_len, "text/html", body.c_str());
 	write(msgs.fd, r_header, strlen(r_header));
-	write(msgs.fd, body.c_str(), body.size());
+	//write(msgs.fd, body.c_str(), body.size());
 	cout << "c_fd" << msgs.fd << endl;
 
+	cout << endl;
+	cout << r_header << endl;
 	disconnect_client(msgs.fd);
 	// write(1, r_header, strlen(r_header));
 	// write(1, body.c_str(), body.size());
