@@ -7,26 +7,23 @@
  *
  */
 
-void Manager::check_msg(t_request rmsg)
-{
-	cout << rmsg.method << endl;
-	cout << rmsg.uri << endl;
-	cout << rmsg.version << endl;
-		
-	for (map<string, vector<string> >::iterator it = rmsg.header.begin(); it != rmsg.header.end(); it++)
-	{
-		cout << "key : " << it->first << " / value : " ; 
-		for (vector<string>::iterator itt = it->second.begin(); itt != it->second.end(); itt++)
-		{
-			cout << *itt << " " ;
-		}
-		cout << endl;
-	}
-	cout << rmsg.cgi << endl;
-	cout << rmsg.fd << endl;
-	for (vector<string>::iterator it = rmsg.body.begin(); it != rmsg.body.end(); it++)
-		cout << *it << endl;
-}
+// void Manager::check_msg(t_request rmsg)
+// {
+// 	cout << rmsg.method << endl;
+// 	cout << rmsg.uri << endl;
+// 	cout << rmsg.version << endl;
+	
+// 	for (map<string, vector<string> >::iterator it = rmsg.header.begin(); it != rmsg.header.end(); it++)
+// 	{
+// 		for (vector<string>::iterator itt = it->second.begin(); itt != it->second.end(); itt++)
+// 			cout << *itt << " " ;
+// 		cout << endl;
+// 	}
+// 	cout << rmsg.cgi << endl;
+// 	cout << rmsg.fd << endl;
+// 	for (vector<string>::iterator it = rmsg.body.begin(); it != rmsg.body.end(); it++)
+// 		cout << *it << endl;
+// }
 
 void disconnect_client(int client_fd)
 {
@@ -271,7 +268,7 @@ void Manager::runServer()
 				else if ((idx = findClient(request_msgs, curr_event->ident)) >= 0)
 				{
 					readRequest(request_msgs[idx], curr_event->ident);
-					check_msg(request_msgs[idx]);
+					//check_msg(request_msgs[idx]);
 				}
 			}
 		}
