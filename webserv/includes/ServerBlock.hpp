@@ -30,10 +30,10 @@ class ServerBlock
 		//vector<string>			getServerName();
 		vector<string>				getListen(void);
 		string						getClientBodySize(void);
-		//string					getRoot();
-		//vector<string>			getIndex();
+		string						getRoot();
+		vector<string>				getIndex();
 		//string					getAutoindex();
-		//vector<LocationBlock>		getLocationBlock();
+		vector<LocationBlock>		getLocationBlock();
 
 		/*
 		** setter part

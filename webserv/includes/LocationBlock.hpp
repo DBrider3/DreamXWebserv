@@ -24,8 +24,8 @@ class LocationBlock
 		/*
 		** getter part
 		*/
-		//string				getMatch();
-		//string				getRoot();
+		vector<string>			getMatch();
+		string					getRoot();
 		//vector<string>		getIndex();
 		//string				getRedirect();
 		//vector<string>		getErrorPage();

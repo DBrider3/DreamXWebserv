@@ -1,7 +1,7 @@
 #include "../includes/WebServer.hpp"
 #include "../includes/Utils.hpp"
 #include "../includes/Manager.hpp"
-
+#include "../includes/ComposeResponse.hpp"
 #include <errno.h>
 /*
  *
@@ -69,7 +69,7 @@ t_request initRequestMsg(int client_socket, ServerBlock server_block)
 	request_msg.uri = "";
 	request_msg.version = "";
 	request_msg.fd = client_socket;
-	request_msg.err_flag = 0;
+	request_msg.err_flag = "";
 	request_msg.err_str = "";
 	request_msg.server_block = server_block;
 	return (request_msg);
@@ -85,7 +85,7 @@ void setClientsocket(vector<t_request> &request_msgs, vector<struct kevent> &cha
 	int client_socket;
 
    if ((client_socket = accept(server_socket, NULL, NULL)) == -1)
-		sendErrorPage(curr_event->ident, "500", "Internal server error"); //클라이언트 생성실패
+		sendErrorPage(server_socket, "500", "Internal server error"); //클라이언트 생성실패
 	cout << "accept new client: " << client_socket << endl;
 	fcntl(client_socket, F_SETFL, O_NONBLOCK);
 
@@ -154,7 +154,7 @@ void parseRequest(t_request &request_msg, string request)
  * Body 파싱
  */
 
-	if (request_msg.header["Content-Length"].begin() > request_msg.server_block.getClientBodySize())
+	if (convStoi(*(request_msg.header["Content-Length"].begin())) > convStoi(request_msg.server_block.getClientBodySize()))
 	{
 		request_msg.err_flag = "413";
 		request_msg.err_str = "Payload Too Large";
@@ -198,7 +198,7 @@ void readRequest(t_request &request_msg, int curr_fd)
 	//     disconnect_client(curr_fd);
 	// }
 	// else
-	parseRequest(request_msg, http_block, msg);
+	parseRequest(request_msg, msg);
 }
 
 int checkMethod(t_request request_msg, vector<string> method)
@@ -273,7 +273,7 @@ void Manager::runServer()
 	int                     new_events;
 	struct kevent*          curr_event;
 	vector<t_request>		request_msgs;
-	int idx;
+	int						idx;
 
 	idx = 0;
 	try
@@ -323,7 +323,7 @@ void Manager::runServer()
 				}
  				else if ((idx = findClient(request_msgs, curr_event->ident)) >= 0)
 				{
-					readRequest(request_msgs[idx], http_block, curr_event->ident);
+					readRequest(request_msgs[idx], curr_event->ident);
 					//check_msg(request_msgs[idx]);
 				}
 			}
@@ -334,13 +334,21 @@ void Manager::runServer()
 					if (request_msgs[idx].err_flag != "")
 						sendErrorPage(request_msgs[idx].fd, request_msgs[idx].err_flag, request_msgs[idx].err_str);
 					if (checkMethod(request_msgs[idx], http_block.getLimitExcept()))
-					{
+					{//정해지면 헤더에 붙여넣자~ yeah~
+						processMethod(request_msgs[idx].server_block, request_msgs[idx]);
+						if (request_msgs[idx].err_flag != "")
+							sendErrorPage(request_msgs[idx].fd, request_msgs[idx].err_flag, request_msgs[idx].err_str);
+						else 
+						string str;
+
 						if(request_msgs[idx].method == "GET")
 						{
-
+							request_msgs[idx].server_block.getRoot()
+							
 						}
 						else if (request_msgs[idx].method == "POST")
 						{
+							
 
 						}
 						else if (request_msgs[idx].method == "DELETE")
@@ -350,7 +358,7 @@ void Manager::runServer()
 					}
 					else
 					{
-						sendErrorPage(request_msgs[idx], "403", "Forbidden");
+						sendErrorPage(request_msgs[idx].fd, "403", "Forbidden");
 					}
 				}
 			}

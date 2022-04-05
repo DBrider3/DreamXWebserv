@@ -25,14 +25,20 @@ LocationBlock& LocationBlock::operator = (const LocationBlock& lb)
 	return (*this);
 }
 
+vector<string>		LocationBlock::getMatch()
+{
+	return (location_match);
+}
+
+
 //string				LocationBlock::getName()
 //{
 
 //}
-//string				LocationBlock::getRoot()
-//{
-
-//}
+string				LocationBlock::getRoot()
+{
+	return (root);
+}
 //vector<string>		LocationBlock::getIndex()
 //{
 
