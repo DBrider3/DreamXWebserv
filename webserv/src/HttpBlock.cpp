@@ -1,4 +1,4 @@
-#include "HttpBlock.hpp"
+#include "../includes/HttpBlock.hpp"
 
 HttpBlock::HttpBlock()
 {
@@ -33,18 +33,17 @@ void	HttpBlock::setLimitExcept(string str)
 	limit_except.push_back(str);
 }
 
+vector<string>	HttpBlock::getLimitExcept(void)
+{
+	return (limit_except);
+}
 
-vector<ServerBlock>	HttpBlock::getServerBlock()
+vector<ServerBlock>	HttpBlock::getServerBlock(void)
 {
 	return (server_block);
 }
 
-void		HttpBlock::setServerBlock(ServerBlock sb)
-{
-	server_block.push_back(sb);
-}
-
-int			HttpBlock::composeServerBlock(vector<string> buf, int idx)
+int			HttpBlock::setServerBlock(vector<string> buf, int idx)
 {
 	/*
 	** buf를 split으로 쪼개어 key값을 비교 후, value들을 tmp_server에 넣어줌
@@ -65,7 +64,7 @@ int			HttpBlock::composeServerBlock(vector<string> buf, int idx)
 				for (size_t i = 1; i < tmp.size(); i++)
 				{
 					tmp_server.setServerName(tmp[i]);
-					//cout << tmp[i] << endl;
+//					cout << tmp[i] << endl;
 				}
 			}
 			else if (tmp[0] == "\t\tlisten")
@@ -73,31 +72,31 @@ int			HttpBlock::composeServerBlock(vector<string> buf, int idx)
 				for (size_t i = 1; i < tmp.size(); i++)
 				{
 					tmp_server.setListen(tmp[i]);
-					//cout << tmp[i] << endl;
+//					cout << tmp[i] << endl;
 				}
 			}
 			else if (tmp[0] == "\t\tclient_body_size")
 			{
 				tmp_server.setClientBodySize(tmp[1]);
-				//cout << tmp[1] << endl;
+//				cout << tmp[1] << endl;
 			}
 			else if (tmp[0] == "\t\troot")
 			{
 				tmp_server.setRoot(tmp[1]);
-				//cout << tmp[1] << endl;
+//				cout << tmp[1] << endl;
 			}
 			else if (tmp[0] == "\t\tindex")
 			{
 				for (size_t i = 1; i < tmp.size(); i++)
 				{
 					tmp_server.setIndex(tmp[i]);
-					//cout << tmp[i] << endl;
+//					cout << tmp[i] << endl;
 				}
 			}
 			else if (tmp[0] == "\t\tautoindex")
 			{
 				tmp_server.setAutoindex(tmp[1]);
-				//cout << tmp[1] << endl;
+//				cout << tmp[1] << endl;
 			}
 			else if (tmp[0] == "\t\tlocation")
 			{
@@ -106,14 +105,14 @@ int			HttpBlock::composeServerBlock(vector<string> buf, int idx)
 				for (size_t i = 1; i < tmp.size() - 1; i++)
 				{
 					tmp_location.setMatch(tmp[i]);
-					//cout << tmp[i] << endl;
+//					cout << tmp[i] << endl;
 				}
-				idx = tmp_server.composeLocationBlock(tmp_location, buf, ++idx);
+				idx = tmp_server.setLocationBlock(tmp_location, buf, ++idx);
 			}
 		}
 		idx++;
 	}
-	setServerBlock(tmp_server);
+	server_block.push_back(tmp_server);
 	if (buf[++idx].empty()) //함수를 나가서 buf[idx]가 개행이 아닌 server_block을 가르키기 위함
 		return ++idx;
 	return idx;

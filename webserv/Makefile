@@ -1,15 +1,17 @@
 CC = clang++
-CPPFLAGS = -Wall -Wextra -Werror -std=c++98
+CPPFLAGS = -Wall -Wextra -Werror -std=c++98 -fsanitize=address -g3
 
 RM = rm -rf
 
-NAME = DPT
+NAME = DreamX
 
 SRC =	main.cpp\
 		Manager.cpp\
 		HttpBlock.cpp\
 		ServerBlock.cpp\
 		LocationBlock.cpp\
+		ComposeServer.cpp\
+		RunServer.cpp\
 		Utils.cpp
 
 

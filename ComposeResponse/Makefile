@@ -6,12 +6,7 @@ RM = rm -rf
 NAME = DPT
 
 SRC =	main.cpp\
-		Manager.cpp\
-		HttpBlock.cpp\
-		ServerBlock.cpp\
-		LocationBlock.cpp\
-		Utils.cpp
-
+		ComposeResponse.cpp
 
 SRC_DIR = ./src/
 SRCS = $(addprefix $(SRC_DIR),$(SRC))
@@ -20,15 +15,13 @@ OBJ = $(SRC:.cpp=.o)
 OBJ_DIR = ./obj/
 OBJS = $(addprefix $(OBJ_DIR), $(OBJ))
 
-INC = ./includes/
-
 all : $(NAME)
 
 $(NAME) : $(OBJS)
-		$(CC) $(CPPFLAGS) -I $(INC) $^ \
+		$(CC) $(CPPFLAGS) $^ \
 		-o $@
 
-$(OBJ_DIR)%.o : $(SRC_DIR)%.cpp
+$(OBJ_DIR)%.o : $(SRC_DIR)/%.cpp
 		@mkdir -p $(OBJ_DIR)
 		$(CC) $(CPPFLAGS) -o $@ -c $<
 

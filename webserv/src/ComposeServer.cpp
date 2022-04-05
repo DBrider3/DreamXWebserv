@@ -1,20 +1,20 @@
-#include "WebServer.hpp"
-#include "HttpBlock.hpp"
-#include "Util.hpp"
+#include "../includes/WebServer.hpp"
+#include "../includes/Manager.hpp"
+#include "../includes/Utils.hpp"
 
 /*
  * 서버내 포트번호를 컨테이너에 담아주는 작업을 하는 함수입니다.
  */
 
-void composePort(HttpBlock conf_data, t_servinfo web_serv)
+vector<int> composePort(HttpBlock conf_data, t_servinfo &web_serv)
 {
 	int port;
 
-	for (int i = 0; i < conf_data.getServerBlock().size(); i++)
+	for (size_t i = 0; i < conf_data.getServerBlock().size(); i++)
 	{ // HttpBlock 내부에 getter필요
 		try
 		{
-			port = convStoi(conf_data.getServerBlock()[i].getListen()[0]);
+			port = convStoi((conf_data.getServerBlock()[i]).getListen()[0]);
 			if (port < 0 || port > 65536)
 				throw (PrintError());
 			web_serv.ports.push_back(port);
@@ -24,18 +24,19 @@ void composePort(HttpBlock conf_data, t_servinfo web_serv)
 			cerr << e.what() << "port error" << endl;
 		}
 	}
+	return (web_serv.ports);
 }
 
 /*
  * 다중 서버에 따른 소켓을 생성해주는 함수입니다.
  */
 
-void composeSocket(t_servinfo web_serv)
+vector<int> composeSocket(t_servinfo &web_serv)
 {
 	struct sockaddr_in *server_addr = new sockaddr_in[web_serv.ports.size()];
 	int temp;
 
-	for (int i = 0; i < web_serv.ports.size(); i++)
+	for (size_t i = 0; i < web_serv.ports.size(); i++)
 	{
 		try
 		{
@@ -61,7 +62,7 @@ void composeSocket(t_servinfo web_serv)
 				{
 					cerr << e.what() << "listen() error" << endl;
 				}
-				
+
 			}
 			catch(const exception& e)
 			{
@@ -73,15 +74,15 @@ void composeSocket(t_servinfo web_serv)
 			cerr << e.what() << "socket() error" << endl;
 		}
 	}
+	return (web_serv.server_socket);
 }
 
 /*
  * Serversocket 구성 및 전처리 작업을 하는 함수입니다.
  */
 
-int composeServer(HttpBlock conf_data, t_servinfo web_serv)
+void Manager::composeServer()
 {
-	composePort(conf_data, web_serv);
-	composeSocket(web_serv);	 
-	return (0);
+	web_serv.ports = composePort(http_block, web_serv);
+	web_serv.server_socket = composeSocket(web_serv);
 }

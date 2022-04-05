@@ -2,11 +2,15 @@
 # define UTIL_HPP
 
 # include <iostream>
+# include <sstream>
+//# include <fstream>
 # include <cstdlib> //exit()
-# include <string>
+# include <string> //getline()
 # include <cstring>
 # include <unistd.h>
 # include <fcntl.h> //close()
+# include <map> // map<>
+# include <vector>
 
 # include <sys/socket.h>
 # include <arpa/inet.h>
@@ -15,22 +19,18 @@
 # include <sys/event.h> //kevent()
 # include <sys/time.h>
 
-# define LISTEN_NUM 10 
+# define LISTEN_NUM 10
 
 using namespace std;
 
-typedef struct s_request {
-	char*							method;
-	char*							uri;
-	char*							version;
-	map<string, vector<string> >	header;
-	char							ct_type[40];
-	char*							local_uri;
-	int								cgi;
-	int								fd;
-}               t_request;
+class PrintError : public exception
+{
+	public:
+		virtual const char* what() const throw();
+};
 
 int    exit_with_perror(const string& msg);
-int     convStoi(string str);
+int    convStoi(string str);
+vector<string> split(string input, char delimiter);
 
 #endif
