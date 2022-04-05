@@ -30,6 +30,7 @@ ServerBlock& ServerBlock::operator = (const ServerBlock& sb)
 //{
 
 //}
+
 vector<string>			ServerBlock::getListen()
 {
 	return (listen);
@@ -38,21 +39,24 @@ string					ServerBlock::getClientBodySize()
 {
 	return (client_body_size);
 }
-//string					ServerBlock::getRoot()
-//{
+string					ServerBlock::getRoot()
+{
+	return (root);
+}
 
-//}
-//vector<string>			ServerBlock::getIndex()
-//{
+vector<string>			ServerBlock::getIndex()
+{
+	return (index);
+}
 
-//}
 //string					ServerBlock::getAutoindex()
 //{
 
 //}
-// vector<LocationBlock>	ServerBlock::getLocationBlock()
-// {
-// }
+vector<LocationBlock>	ServerBlock::getLocationBlock()
+{
+	return (location_block);
+}
 
 void					ServerBlock::setServerName(string str)
 {
