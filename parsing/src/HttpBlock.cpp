@@ -39,7 +39,12 @@ vector<ServerBlock>	HttpBlock::getServerBlock()
 	return (server_block);
 }
 
-int			HttpBlock::setServerBlock(vector<string> buf, int idx)
+void		HttpBlock::setServerBlock(ServerBlock sb)
+{
+	server_block.push_back(sb);
+}
+
+int			HttpBlock::composeServerBlock(vector<string> buf, int idx)
 {
 	/*
 	** buf를 split으로 쪼개어 key값을 비교 후, value들을 tmp_server에 넣어줌
@@ -103,12 +108,12 @@ int			HttpBlock::setServerBlock(vector<string> buf, int idx)
 					tmp_location.setMatch(tmp[i]);
 					//cout << tmp[i] << endl;
 				}
-				idx = tmp_server.setLocationBlock(tmp_location, buf, ++idx);
+				idx = tmp_server.composeLocationBlock(tmp_location, buf, ++idx);
 			}
 		}
 		idx++;
 	}
-	server_block.push_back(tmp_server);
+	setServerBlock(tmp_server);
 	if (buf[++idx].empty()) //함수를 나가서 buf[idx]가 개행이 아닌 server_block을 가르키기 위함
 		return ++idx;
 	return idx;

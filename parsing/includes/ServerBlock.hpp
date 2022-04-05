@@ -44,7 +44,8 @@ class ServerBlock
 		void						setRoot(string str);
 		void						setIndex(string str);
 		void						setAutoindex(string str);
-		int							setLocationBlock(LocationBlock tmp_location, vector<string> buf, int idx);
+		void						setLocationBlock(LocationBlock lb);
+		int							composeLocationBlock(LocationBlock tmp_location, vector<string> buf, int idx);
 
 };
 
