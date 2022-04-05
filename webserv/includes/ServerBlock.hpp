@@ -29,7 +29,7 @@ class ServerBlock
 		*/
 		//vector<string>			getServerName();
 		vector<string>				getListen(void);
-		//string					getClientBodySize();
+		string						getClientBodySize(void);
 		//string					getRoot();
 		//vector<string>			getIndex();
 		//string					getAutoindex();

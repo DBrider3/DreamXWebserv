@@ -26,7 +26,7 @@ ServerBlock& ServerBlock::operator = (const ServerBlock& sb)
 	return (*this);
 }
 
-//vector<string>			getServerName()
+//vector<string>			ServerBlock::getServerName()
 //{
 
 //}
@@ -34,23 +34,23 @@ vector<string>			ServerBlock::getListen()
 {
 	return (listen);
 }
-//string					getClientBodySize()
+string					ServerBlock::getClientBodySize()
+{
+	return (client_body_size);
+}
+//string					ServerBlock::getRoot()
 //{
 
 //}
-//string					getRoot()
+//vector<string>			ServerBlock::getIndex()
 //{
 
 //}
-//vector<string>			getIndex()
+//string					ServerBlock::getAutoindex()
 //{
 
 //}
-//string					getAutoindex()
-//{
-
-//}
-// vector<LocationBlock>	getLocationBlock()
+// vector<LocationBlock>	ServerBlock::getLocationBlock()
 // {
 // }
 

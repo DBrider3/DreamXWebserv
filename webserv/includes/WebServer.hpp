@@ -18,8 +18,10 @@ typedef struct s_request {
 	string							version;
 	map<string, vector<string> >	header;
 	vector<string>					body;
-	int								cgi;
 	int								fd;
+	string							err_flag; //현재 작업이 에러 시, 이벤트에 있는 read/write를 소모시키기 위해 플래그를 사용함.  
+	string							err_str;
+	ServerBlock						server_block;
 }               t_request;
 
 typedef struct s_servinfo

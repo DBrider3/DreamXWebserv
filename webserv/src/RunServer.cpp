@@ -61,15 +61,17 @@ void change_events(vector<struct kevent>& change_list, uintptr_t ident, int16_t 
  * header를 초기화하고, client_socket을 저장하는 함수입니다.
  */
 
-t_request initRequestMsg(int client_socket)
+t_request initRequestMsg(int client_socket, ServerBlock server_block)
 {
 	t_request request_msg;
 
-	request_msg.cgi = 0;
 	request_msg.method = "";
 	request_msg.uri = "";
 	request_msg.version = "";
 	request_msg.fd = client_socket;
+	request_msg.err_flag = 0;
+	request_msg.err_str = "";
+	request_msg.server_block = server_block;
 	return (request_msg);
 }
 
@@ -77,13 +79,13 @@ t_request initRequestMsg(int client_socket)
  * sever_socket을 토대로 client_socket을 구성하는 함수입니다.
  */
 
-void setClientsocket(vector<t_request> &request_msgs, vector<struct kevent> &change_list, uintptr_t server_socket)
+void setClientsocket(vector<t_request> &request_msgs, vector<struct kevent> &change_list, uintptr_t server_socket, ServerBlock server_block)
 {
 	/* accept new client */
 	int client_socket;
 
    if ((client_socket = accept(server_socket, NULL, NULL)) == -1)
-		exit_with_perror("accept() error\n");
+		sendErrorPage(curr_event->ident, "500", "Internal server error"); //클라이언트 생성실패
 	cout << "accept new client: " << client_socket << endl;
 	fcntl(client_socket, F_SETFL, O_NONBLOCK);
 
@@ -91,7 +93,7 @@ void setClientsocket(vector<t_request> &request_msgs, vector<struct kevent> &cha
 	change_events(change_list, client_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	change_events(change_list, client_socket, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
 
-	request_msgs.push_back(initRequestMsg(client_socket));
+	request_msgs.push_back(initRequestMsg(client_socket, server_block));
 }
 
 /*
@@ -124,6 +126,12 @@ void parseRequest(t_request &request_msg, string request)
 	request_msg.uri = strtok(NULL, " ");
 	request_msg.version = strtok(NULL, "\n");
 
+	if (request_msg.uri.size() > 8190)
+	{
+		request_msg.err_flag = "414";
+		request_msg.err_str = "Request-URI too long";
+		return ;
+	}
 /*
  * Header 파싱
  */
@@ -145,6 +153,13 @@ void parseRequest(t_request &request_msg, string request)
 /*
  * Body 파싱
  */
+
+	if (request_msg.header["Content-Length"].begin() > request_msg.server_block.getClientBodySize())
+	{
+		request_msg.err_flag = "413";
+		request_msg.err_str = "Payload Too Large";
+		return ;
+	}
 	while (++it != result.end())
 		request_msg.body.push_back(*it);
 }
@@ -176,13 +191,14 @@ void readRequest(t_request &request_msg, int curr_fd)
 
 	// if (n <= 0)
 	// {
+	//	sendErrorPage(curr_event->ident, "400", "Bad request"); //의문.3 에러 처리 방법이 명확하게 떠오르지 않음.. ????
 	//     if (n < 0)
 	//         cerr << "client read error!" << endl;
 	// 	cout << "1\n";
 	//     disconnect_client(curr_fd);
 	// }
 	// else
-	parseRequest(request_msg, msg);
+	parseRequest(request_msg, http_block, msg);
 }
 
 int checkMethod(t_request request_msg, vector<string> method)
@@ -193,8 +209,7 @@ int checkMethod(t_request request_msg, vector<string> method)
 	return (0);
 }
 
-
-void sendErrorPage(t_request msgs, string err_num, string err_str)
+void sendErrorPage(int curr_fd, string err_num, string err_str)
 {
 	struct stat		st;
 	string			local_uri;
@@ -232,13 +247,13 @@ void sendErrorPage(t_request msgs, string err_num, string err_str)
 	//"HTTP/1.1 %s %s\nContent-Length: %ld\nContent-Type: %s\n\n%s"
 	
 	sprintf(r_header, RESPONSE_FMT, err_num.c_str(), err_str.c_str(), ct_len, "text/html", body.c_str());
-	write(msgs.fd, r_header, strlen(r_header));
-	//write(msgs.fd, body.c_str(), body.size());
-	cout << "c_fd" << msgs.fd << endl;
+	write(curr_fd, r_header, strlen(r_header));
+	//write(curr_fd, body.c_str(), body.size());
+	cout << "c_fd" << curr_fd << endl;
 
 	cout << endl;
 	cout << r_header << endl;
-	disconnect_client(msgs.fd);
+	disconnect_client(curr_fd);// 서버 소켓일 경우 터지도록 해야하나?
 	// write(1, r_header, strlen(r_header));
 	// write(1, body.c_str(), body.size());
 }
@@ -285,7 +300,7 @@ void Manager::runServer()
 	//cout << "new_event : " << new_events << endl;
 
 		if (new_events == -1)
-			;
+			sendErrorPage(curr_event->ident, "500", "Internal server error"); //kq관리 실패
 		change_list.clear();
 
 		for (int i = 0; i < new_events; ++i)
@@ -294,23 +309,21 @@ void Manager::runServer()
 			if (curr_event->flags & EV_ERROR)
 			{
 				if (check_socket(curr_event->ident, web_serv.server_socket))
-					exit_with_perror("server socket error"); // 500 error
-				else
 				{
-					cerr << "client socket error" << endl;
-					cout << "2\n";
-					disconnect_client(curr_event->ident); // 400 error
-				}
+					sendErrorPage(curr_event->ident, "500", "Internal server error"); //의문.1 서버 에러시, 어디로 명확하게 전달되는 것이 확인되지 않음. ????
+				}	//의문 .2 서버 에러시, 서버를 종료시켜야하나 ????
+				else
+					sendErrorPage(curr_event->ident, "400", "Bad Request");
 			}
 			else if (curr_event->filter == EVFILT_READ)
 			{
 				if (check_socket(curr_event->ident, web_serv.server_socket))
 				{
-					setClientsocket(request_msgs, change_list, curr_event->ident);
+					setClientsocket(request_msgs, change_list, curr_event->ident, http_block.getServerBlock()[i]); //event의 index와 server index의 상관관계 재확인 필요,
 				}
-				else if ((idx = findClient(request_msgs, curr_event->ident)) >= 0)
+ 				else if ((idx = findClient(request_msgs, curr_event->ident)) >= 0)
 				{
-					readRequest(request_msgs[idx], curr_event->ident);
+					readRequest(request_msgs[idx], http_block, curr_event->ident);
 					//check_msg(request_msgs[idx]);
 				}
 			}
@@ -318,9 +331,22 @@ void Manager::runServer()
 			{
 				if ((idx = findClient(request_msgs, curr_event->ident)) >= 0)
 				{
+					if (request_msgs[idx].err_flag != "")
+						sendErrorPage(request_msgs[idx].fd, request_msgs[idx].err_flag, request_msgs[idx].err_str);
 					if (checkMethod(request_msgs[idx], http_block.getLimitExcept()))
 					{
-	
+						if(request_msgs[idx].method == "GET")
+						{
+
+						}
+						else if (request_msgs[idx].method == "POST")
+						{
+
+						}
+						else if (request_msgs[idx].method == "DELETE")
+						{
+
+						}
 					}
 					else
 					{
