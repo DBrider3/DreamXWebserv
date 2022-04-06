@@ -4,6 +4,7 @@
 #include "HttpBlock.hpp"
 #include "Utils.hpp"
 #include "WebServer.hpp"
+#include "ComposeResponse.hpp"
 
 class Manager
 {
@@ -11,6 +12,7 @@ class Manager
 		vector<string>	buffer;
 		HttpBlock		http_block;
 		t_servinfo		web_serv; //server_socket_fd 배열, port 번호 배열
+		ComposeResponse compRespons;
 
 
 	public:
@@ -43,7 +45,7 @@ class Manager
 		void 	composeServer(void);
 		void 	runServer(void);
 
-		t_request rmsg;
+//		t_request rmsg;
 		void 	check_msg(t_request rmsg);
 };
 

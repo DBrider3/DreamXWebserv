@@ -21,7 +21,7 @@ LocationBlock& LocationBlock::operator = (const LocationBlock& lb)
 	root = lb.root;
 	index = lb.index;
 	redirect = lb.redirect;
-	error_page = lb.error_page;
+	// error_page = lb.error_page;
 	return (*this);
 }
 
@@ -39,14 +39,16 @@ string				LocationBlock::getRoot()
 {
 	return (root);
 }
-//vector<string>		LocationBlock::getIndex()
-//{
 
-//}
-//string				LocationBlock::getRedirect()
-//{
+vector<string>		LocationBlock::getIndex()
+{
+	return (index);
+}
 
-//}
+vector<string>		LocationBlock::getRedirect()
+{
+	return (redirect);
+}
 //vector<string>		LocationBlock::getErrorPage()
 //{
 
@@ -66,9 +68,9 @@ void				LocationBlock::setIndex(string str)
 }
 void				LocationBlock::setRedirect(string str)
 {
-	redirect = str;
+	redirect.push_back(str);
 }
-void				LocationBlock::setErrorPage(string str)
-{
-	error_page.push_back(str);
-}
+// void				LocationBlock::setErrorPage(string str)
+// {
+// 	error_page.push_back(str);
+// }

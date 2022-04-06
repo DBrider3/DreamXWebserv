@@ -7,24 +7,6 @@
  *
  */
 
-// void Manager::check_msg(t_request rmsg)
-// {
-// 	cout << rmsg.method << endl;
-// 	cout << rmsg.uri << endl;
-// 	cout << rmsg.version << endl;
-	
-// 	for (map<string, vector<string> >::iterator it = rmsg.header.begin(); it != rmsg.header.end(); it++)
-// 	{
-// 		for (vector<string>::iterator itt = it->second.begin(); itt != it->second.end(); itt++)
-// 			cout << *itt << " " ;
-// 		cout << endl;
-// 	}
-// 	cout << rmsg.cgi << endl;
-// 	cout << rmsg.fd << endl;
-// 	for (vector<string>::iterator it = rmsg.body.begin(); it != rmsg.body.end(); it++)
-// 		cout << *it << endl;
-// }
-
 void disconnect_client(int client_fd)
 {
 	cout << "client disconnected: " << client_fd << endl;
@@ -72,7 +54,54 @@ t_request initRequestMsg(int client_socket, ServerBlock server_block)
 	request_msg.err_flag = "";
 	request_msg.err_str = "";
 	request_msg.server_block = server_block;
+	request_msg.port = server_block.getListen()[0];
 	return (request_msg);
+}
+
+
+void sendErrorPage(int curr_fd, string err_num, string err_str)
+{
+	struct stat		st;
+	string			local_uri;
+	string			body; //html읽은 내용 담을 변수
+	char			buf[10];
+	char			r_header[1024];
+	size_t			ct_len;
+	int				bodyfd;
+	int				n;
+	stringstream	ss;
+
+	local_uri = "./error_pages/" + err_num + ".html";
+	stat(local_uri.c_str(), &st);
+	ct_len = st.st_size;
+
+	bodyfd = open(local_uri.c_str(), O_RDONLY);
+
+	n = 0;
+	while ((n = read(bodyfd, buf, sizeof(buf) - 1)) > 0)
+	{
+		buf[9] = '\0';
+		ss << buf;
+		body += ss.str();
+		ss.str("");
+		memset(buf, 0, 10);
+	}
+	sprintf(r_header, ERROR_FMT, err_num.c_str(), err_str.c_str(), ct_len, "text/html", body.c_str());
+	write(curr_fd, r_header, strlen(r_header));
+	cout << "c_fd" << curr_fd << endl;
+
+	cout << endl;
+	cout << r_header << endl;
+	disconnect_client(curr_fd);
+}
+
+void sendRedirectPage(int curr_fd, string err_num, string err_str, string redirect)
+{
+	char			r_header[1024];
+
+	sprintf(r_header, REDIRECT_FMT, err_num.c_str(), err_str.c_str(), redirect.c_str());
+	write(curr_fd, r_header, strlen(r_header));
+	disconnect_client(curr_fd);
 }
 
 /*
@@ -209,55 +238,6 @@ int checkMethod(t_request request_msg, vector<string> method)
 	return (0);
 }
 
-void sendErrorPage(int curr_fd, string err_num, string err_str)
-{
-	struct stat		st;
-	string			local_uri;
-	string			body; //html읽은 내용 담을 변수
-	char			buf[10];
-	char			r_header[1024];
-	size_t			ct_len;
-	int				bodyfd;
-	int				n;
-	stringstream	ss;
-
-	local_uri = "./error_pages/" + err_num + ".html";
-	stat(local_uri.c_str(), &st);
-	ct_len = st.st_size;
-
-	bodyfd = open(local_uri.c_str(), O_RDONLY);
-
-	n = 0;
-	//cout << "여기는 버퍼 입니다." << endl;
-	while ((n = read(bodyfd, buf, sizeof(buf) - 1)) > 0)
-	{
-		buf[9] = '\0'; //여기에 널이 필요할까?
-		ss << buf;
-		//cout << "buf: "<< buf << endl;
-		body += ss.str();
-		ss.str("");
-		memset(buf, 0, 10);
-	}
-	//if (n < 0)
-		//perror("[ERR] Failed to read request.\n");
-	//cout << "ss!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << ss << endl;
-	//body += ss.str();
-	//cout << "여기는 바디 입니다." << endl;
-	//cout << body << endl;
-	//"HTTP/1.1 %s %s\nContent-Length: %ld\nContent-Type: %s\n\n%s"
-	
-	sprintf(r_header, RESPONSE_FMT, err_num.c_str(), err_str.c_str(), ct_len, "text/html", body.c_str());
-	write(curr_fd, r_header, strlen(r_header));
-	//write(curr_fd, body.c_str(), body.size());
-	cout << "c_fd" << curr_fd << endl;
-
-	cout << endl;
-	cout << r_header << endl;
-	disconnect_client(curr_fd);// 서버 소켓일 경우 터지도록 해야하나?
-	// write(1, r_header, strlen(r_header));
-	// write(1, body.c_str(), body.size());
-}
-
 /*
  * 서버 실행하는 함수입니다.
  */
@@ -268,7 +248,7 @@ void Manager::runServer()
 
 	map<int, string>        clients; // map for client socket:data
 	vector<struct kevent>   change_list; // kevent vector for changelist
-	struct kevent           event_list[8]; // kevent array for eventlist
+	struct kevent           event_list[8]; // kevent array for eventlistcompRespo
 
 	int                     new_events;
 	struct kevent*          curr_event;
@@ -335,25 +315,13 @@ void Manager::runServer()
 						sendErrorPage(request_msgs[idx].fd, request_msgs[idx].err_flag, request_msgs[idx].err_str);
 					if (checkMethod(request_msgs[idx], http_block.getLimitExcept()))
 					{//정해지면 헤더에 붙여넣자~ yeah~
-						processMethod(request_msgs[idx].server_block, request_msgs[idx]);
+						compRespons.processMethod(request_msgs[idx].server_block, request_msgs[idx]);
 						if (request_msgs[idx].err_flag != "")
-							sendErrorPage(request_msgs[idx].fd, request_msgs[idx].err_flag, request_msgs[idx].err_str);
-						else 
-						string str;
-
-						if(request_msgs[idx].method == "GET")
 						{
-							request_msgs[idx].server_block.getRoot()
-							
-						}
-						else if (request_msgs[idx].method == "POST")
-						{
-							
-
-						}
-						else if (request_msgs[idx].method == "DELETE")
-						{
-
+							if (request_msgs[idx].err_flag == "301")
+								sendRedirectPage(request_msgs[idx].fd, request_msgs[idx].err_flag, request_msgs[idx].err_str, request_msgs[idx].redirect);
+							else
+								sendErrorPage(request_msgs[idx].fd, request_msgs[idx].err_flag, request_msgs[idx].err_str);
 						}
 					}
 					else

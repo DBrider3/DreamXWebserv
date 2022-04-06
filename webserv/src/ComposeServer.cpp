@@ -62,7 +62,6 @@ vector<int> composeSocket(t_servinfo &web_serv)
 				{
 					cerr << e.what() << "listen() error" << endl;
 				}
-
 			}
 			catch(const exception& e)
 			{

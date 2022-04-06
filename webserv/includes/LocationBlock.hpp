@@ -9,8 +9,8 @@ class LocationBlock
 		vector<string>		location_match;
 		string				root;
 		vector<string>		index;
-		string				redirect;
-		vector<string>		error_page;
+		vector<string>		redirect;
+		//vector<string>		error_page;
 
 	public:
 		/*
@@ -26,8 +26,8 @@ class LocationBlock
 		*/
 		vector<string>			getMatch();
 		string					getRoot();
-		//vector<string>		getIndex();
-		//string				getRedirect();
+		vector<string>			getIndex();
+		vector<string>			getRedirect();
 		//vector<string>		getErrorPage();
 		
 		/*
@@ -37,7 +37,7 @@ class LocationBlock
 		void					setRoot(string str);
 		void					setIndex(string str);
 		void					setRedirect(string str);
-		void					setErrorPage(string str);
+		//void					setErrorPage(string str);
 };
 
 #endif

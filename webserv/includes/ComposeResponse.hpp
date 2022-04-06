@@ -7,6 +7,7 @@
 #include <vector>
 #include "ServerBlock.hpp"
 #include "WebServer.hpp"
+
 using namespace std;
 
 typedef struct	s_header
@@ -31,10 +32,10 @@ class ComposeResponse
 		/*
 		** canonicalForm part
 		*/
-		ComposeResponse();
-		~ComposeResponse();
-		ComposeResponse(ComposeResponse& copy);
-		ComposeResponse& operator = (const ComposeResponse& cr);
+		// ComposeResponse();
+		// ~ComposeResponse();
+		// ComposeResponse(ComposeResponse& copy);
+		// ComposeResponse& operator = (const ComposeResponse& cr);
 
 		/*
 		** getter part
@@ -45,15 +46,20 @@ class ComposeResponse
 		/*
 		** setter part
 		*/
-		void 	setServerIndex(string root_index);
-		void	findMime(void);
-		void	processMethod(ServerBlock server_block, t_request request_uri);
-};
-
-
-		void	ComposeResponse::setServerIndex(string root_index)
+		void 	setServerIndex(string root_index)
 		{
 			server_index.push_back(root_index);
 		}
+		void	findMime(void);
+		void	processMethod(ServerBlock server_block, t_request &request_msg);
+		int		checkUri(ServerBlock server_block, t_request &request_msg);
+		void	checkAutoIndex(ServerBlock server_block);
+};
+
+
+		// void	ComposeResponse::setServerIndex(string root_index)
+		// {
+		// 	server_index.push_back(root_index);
+		// }
 
 #endif

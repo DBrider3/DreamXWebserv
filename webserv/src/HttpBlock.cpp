@@ -98,6 +98,14 @@ int			HttpBlock::setServerBlock(vector<string> buf, int idx)
 				tmp_server.setAutoindex(tmp[1]);
 //				cout << tmp[1] << endl;
 			}
+			else if (tmp[0] == "\t\terror_page")
+			{
+				for (size_t i = 1; i < tmp.size(); i++)
+				{
+					tmp_server.setErrorPage(tmp[i]);
+//					cout << tmp[i] << endl;
+				}
+			}
 			else if (tmp[0] == "\t\tlocation")
 			{
 				LocationBlock tmp_location;
