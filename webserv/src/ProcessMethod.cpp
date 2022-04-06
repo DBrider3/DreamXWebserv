@@ -1,7 +1,5 @@
 #include "../includes/ComposeResponse.hpp"
 
-
-
 void ComposeResponse::checkAutoIndex(ServerBlock server_block)
 {
 	string root_index;
@@ -58,8 +56,8 @@ int ComposeResponse::checkUri(ServerBlock server_block, t_request &request_msg)
 					header.local_uri = it->getIndex()[0];
 					if (*(it->getRedirect().begin()) != "")
 					{
-						request_msg.err_flag = "301";
-						request_msg.err_str = "Moved permanently";
+						request_msg.state_flag = "301";
+						request_msg.state_str = "Moved permanently";
 						request_msg.redirect = it->getRedirect().back();
 						return (-1);
 					}
@@ -68,8 +66,8 @@ int ComposeResponse::checkUri(ServerBlock server_block, t_request &request_msg)
 			}
 			if (it == server_block.getLocationBlock().end())
 			{
-				request_msg.err_flag = "404";
-				request_msg.err_str = "Not found";
+				request_msg.state_flag = "404";
+				request_msg.state_str = "Not found";
 				return (-1);
 			}
 		}
@@ -93,6 +91,23 @@ void ComposeResponse::processMethod(ServerBlock server_block, t_request &request
 	}
 	else if (request_msg.method == "DELETE")
 	{
-
+		if (!access(request_msg.uri.c_str(), F_OK))
+		{
+			if (!unlink(request_msg.uri.c_str()))
+			{
+				request_msg.state_flag = "200";
+				request_msg.state_str = "OK";
+			}
+			else	
+			{
+				request_msg.state_flag = "403";
+				request_msg.state_str = "Forbidden";
+			}
+		}
+		else
+		{
+			request_msg.state_flag = "404";
+			request_msg.state_str = "Not found";
+		}
 	}
 }
