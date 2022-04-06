@@ -1,4 +1,3 @@
-#include "../includes/WebServer.hpp"
 #include "../includes/Utils.hpp"
 #include "../includes/Manager.hpp"
 #include "../includes/ComposeResponse.hpp"
@@ -7,7 +6,7 @@
  *
  */
 
-void disconnect_client(int client_fd)
+void disconnect_client(int client_fd) //고쳐야함 소멸자불러야함
 {
 	cout << "client disconnected: " << client_fd << endl;
 	close(client_fd);
@@ -43,23 +42,16 @@ void change_events(vector<struct kevent>& change_list, uintptr_t ident, int16_t 
  * header를 초기화하고, client_socket을 저장하는 함수입니다.
  */
 
-t_request initRequestMsg(int client_socket, ServerBlock server_block)
+void ComposeResponse::initRequestMsg()
 {
-	t_request request_msg;
-
-	request_msg.method = "";
-	request_msg.uri = "";
-	request_msg.version = "";
-	request_msg.fd = client_socket;
-	request_msg.state_flag = "";
-	request_msg.state_str = "";
-	request_msg.server_block = server_block;
-	request_msg.port = server_block.getListen()[0];
-	return (request_msg);
+	getRequest().method = "";
+	getRequest().uri = "";
+	getRequest().version = "";
+	return ;
 }
 
 
-void sendStatePage(int curr_fd, string state_num, string state_str)
+void sendStatePage(int socket_fd, string state_flag, string state_str)
 {
 	struct stat		st;
 	string			local_uri;
@@ -71,7 +63,7 @@ void sendStatePage(int curr_fd, string state_num, string state_str)
 	int				n;
 	stringstream	ss;
 
-	local_uri = "./state_pages/" + state_num + ".html";
+	local_uri = "./state_pages/" + state_flag + ".html";
 	stat(local_uri.c_str(), &st);
 	ct_len = st.st_size;
 
@@ -86,29 +78,25 @@ void sendStatePage(int curr_fd, string state_num, string state_str)
 		ss.str("");
 		memset(buf, 0, 10);
 	}
-	sprintf(r_header, STATE_FMT, state_num.c_str(), state_str.c_str(), ct_len, "text/html", body.c_str());
-	write(curr_fd, r_header, strlen(r_header));
-	cout << "c_fd" << curr_fd << endl;
-
-	cout << endl;
-	cout << r_header << endl;
-	disconnect_client(curr_fd);
+	sprintf(r_header, STATE_FMT, state_flag.c_str(), state_str.c_str(), ct_len, "text/html", body.c_str());
+	write(socket_fd, r_header, strlen(r_header));
+	disconnect_client(socket_fd);
 }
 
-void sendRedirectPage(int curr_fd, string state_num, string state_str, string redirect)
+void ComposeResponse::sendRedirectPage()
 {
 	char			r_header[1024];
 
-	sprintf(r_header, REDIRECT_FMT, state_num.c_str(), state_str.c_str(), redirect.c_str());
-	write(curr_fd, r_header, strlen(r_header));
-	disconnect_client(curr_fd);
+	sprintf(r_header, REDIRECT_FMT, getResponse().state_flag.c_str(), getResponse().state_str.c_str(), getResponse().redirect_uri.c_str());
+	write(getClientFd(), r_header, strlen(r_header));
+	disconnect_client(getClientFd());
 }
 
 /*
  * sever_socket을 토대로 client_socket을 구성하는 함수입니다.
  */
 
-void setClientsocket(vector<t_request> &request_msgs, vector<struct kevent> &change_list, uintptr_t server_socket, ServerBlock server_block)
+void ComposeResponse::setClientsocket(vector<struct kevent> &change_list, uintptr_t server_socket, ServerBlock server_block)
 {
 	/* accept new client */
 	int client_socket;
@@ -122,17 +110,20 @@ void setClientsocket(vector<t_request> &request_msgs, vector<struct kevent> &cha
 	change_events(change_list, client_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	change_events(change_list, client_socket, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
 
-	request_msgs.push_back(initRequestMsg(client_socket, server_block));
+	setServerBlock(server_block);
+	setPort(server_block.getListen()[0]);
+	setClientFd(client_socket);
+	initRequestMsg();
 }
 
 /*
  * curr_fd가 client_socket목록에 있는지 체크하는 함수입니다.
  */
 
-int findClient(vector<t_request> request_msgs, int curr_fd)
+int findClient(vector<ComposeResponse> compose_response, int curr_fd)
 {
-	for (size_t i = 0; i < request_msgs.size(); i++)
-		if (request_msgs[i].fd == curr_fd)
+	for (size_t i = 0; i < compose_response.size(); i++)
+		if (compose_response[i].getClientFd() == curr_fd)
 			return (i);
 	return (-1);
 }
@@ -141,24 +132,23 @@ int findClient(vector<t_request> request_msgs, int curr_fd)
  * 버퍼에 담아둔 request를 파싱하여 구조체에 담아주는 작업을 하는 함수입니다.
  */
 
-void parseRequest(t_request &request_msg, string request)
+void ComposeResponse::parseRequest(string request)
 {
 	stringstream ss;
 	vector<string> result; //요청메시지가 한 줄 한 줄 저장되는 변수
 	vector<string>::iterator it;
-	//char *tmp;
 /*
  * Startline 파싱
  */
 	result = split(request, '\n');
-	request_msg.method = strtok(const_cast<char*>(result[0].c_str()), " ");
-	request_msg.uri = strtok(NULL, " ");
-	request_msg.version = strtok(NULL, "\n");
+	getRequest().method = strtok(const_cast<char*>(result[0].c_str()), " ");
+	getRequest().uri = strtok(NULL, " ");
+	getRequest().version = strtok(NULL, "\n");
 
-	if (request_msg.uri.size() > 8190)
+	if (getRequest().uri.size() > 8190)
 	{
-		request_msg.state_flag = "414";
-		request_msg.state_str = "Request-URI too long";
+		getResponse().state_flag = "414";
+		getResponse().state_str = "Request-URI too long";
 		return ;
 	}
 /*
@@ -176,28 +166,28 @@ void parseRequest(t_request &request_msg, string request)
 
 		for (int i = 0; getline(ss, val_tmp, ' '); i++)
 			val.push_back(val_tmp);
-		request_msg.header[key] = val;
+		getRequest().header[key] = val;
 	}
 
 /*
  * Body 파싱
  */
 
-	if (convStoi(*(request_msg.header["Content-Length"].begin())) > convStoi(request_msg.server_block.getClientBodySize()))
+	if (convStoi(*(getRequest().header["Content-Length"].begin())) > convStoi(getServerBlock().getClientBodySize()))
 	{
-		request_msg.state_flag = "413";
-		request_msg.state_str = "Payload Too Large";
+		getResponse().state_flag = "413";
+		getResponse().state_str = "Payload Too Large";
 		return ;
 	}
 	while (++it != result.end())
-		request_msg.body.push_back(*it);
+		getRequest().body.push_back(*it);
 }
 
 /*
  * curr_fd가 전달하는 내용을 버퍼에 담아주는 함수입니다.
  */
 
-void readRequest(t_request &request_msg, int curr_fd)
+void ComposeResponse::readRequest()
 {
 	/* read data from client */
 	char buf[10];
@@ -206,7 +196,7 @@ void readRequest(t_request &request_msg, int curr_fd)
 	int n;
 	
 	n = 0;
-	while ((n = read(curr_fd, buf, sizeof(buf) - 1)) > 0)
+	while ((n = read(getClientFd(), buf, sizeof(buf) - 1)) > 0)
 	{
 		// if (!buf[0])
 		// {
@@ -227,13 +217,13 @@ void readRequest(t_request &request_msg, int curr_fd)
 	//     disconnect_client(curr_fd);
 	// }
 	// else
-	parseRequest(request_msg, msg);
+	parseRequest(msg);
 }
 
-int checkMethod(t_request request_msg, vector<string> method)
+int ComposeResponse::checkMethod(vector<string> method_limit)
 {
-	for (vector<string>::iterator it = method.begin(); it != method.end(); it++)
-		if (request_msg.method == *it)
+	for (vector<string>::iterator it = method_limit.begin(); it != method_limit.end(); it++)
+		if (getRequest().method == *it)
 			return (1);
 	return (0);
 }
@@ -245,14 +235,15 @@ int checkMethod(t_request request_msg, vector<string> method)
 void Manager::runServer()
 {
 	int 					kq;
-
 	map<int, string>        clients; // map for client socket:data
 	vector<struct kevent>   change_list; // kevent vector for changelist
 	struct kevent           event_list[8]; // kevent array for eventlistcompRespo
 
 	int                     new_events;
 	struct kevent*          curr_event;
-	vector<t_request>		request_msgs;
+	// vector<t_request>		request_msgs;
+	vector<ComposeResponse> compose_response;
+
 	int						idx;
 
 	idx = 0;
@@ -299,34 +290,35 @@ void Manager::runServer()
 			{
 				if (check_socket(curr_event->ident, web_serv.server_socket))
 				{
-					setClientsocket(request_msgs, change_list, curr_event->ident, http_block.getServerBlock()[i]); //event의 index와 server index의 상관관계 재확인 필요,
+					compose_response.push_back(ComposeResponse());
+					compose_response[i].setClientsocket(change_list, curr_event->ident, http_block.getServerBlock()[i]); //event의 index와 server index의 상관관계 재확인 필요,
 				}
- 				else if ((idx = findClient(request_msgs, curr_event->ident)) >= 0)
+ 				else if ((idx = findClient(compose_response, curr_event->ident)) >= 0)
 				{
-					readRequest(request_msgs[idx], curr_event->ident);
+					compose_response[idx].readRequest();
 					//check_msg(request_msgs[idx]);
 				}
 			}
 			else if (curr_event->filter == EVFILT_WRITE)
 			{
-				if ((idx = findClient(request_msgs, curr_event->ident)) >= 0)
+				if ((idx = findClient(compose_response, curr_event->ident)) >= 0)
 				{
-					if (request_msgs[idx].state_flag != "")
-						sendStatePage(request_msgs[idx].fd, request_msgs[idx].state_flag, request_msgs[idx].state_str);
-					if (checkMethod(request_msgs[idx], http_block.getLimitExcept()))
+					if (compose_response[idx].getResponse().state_flag != "")  //compose_response[idx].readRequest();했을 때 에러가 있다면 먼저 띄워줌
+						sendStatePage(compose_response[idx].getClientFd(), compose_response[idx].getResponse().state_flag, compose_response[idx].getResponse().state_str);
+					if (compose_response[idx].checkMethod(http_block.getLimitExcept()))
 					{//정해지면 헤더에 붙여넣자~ yeah~
-						compRespons.processMethod(request_msgs[idx].server_block, request_msgs[idx]);
-						if (request_msgs[idx].state_flag != "")
+						compose_response[idx].processMethod();
+						if (compose_response[idx].getResponse().state_flag != "")
 						{
-							if (request_msgs[idx].state_flag == "301")
-								sendRedirectPage(request_msgs[idx].fd, request_msgs[idx].state_flag, request_msgs[idx].state_str, request_msgs[idx].redirect);
+							if (compose_response[idx].getResponse().state_flag == "301")
+								compose_response[idx].sendRedirectPage();
 							else
-								sendStatePage(request_msgs[idx].fd, request_msgs[idx].state_flag, request_msgs[idx].state_str);
+								sendStatePage(compose_response[idx].getClientFd(), compose_response[idx].getResponse().state_flag, compose_response[idx].getResponse().state_str);
 						}
 					}
 					else
 					{
-						sendStatePage(request_msgs[idx].fd, "403", "Forbidden");
+						sendStatePage(compose_response[idx].getClientFd(), "403", "Forbidden");
 					}
 				}
 			}

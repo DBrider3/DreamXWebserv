@@ -20,7 +20,6 @@ Manager& Manager::operator = (const Manager& m)
 	buffer = m.buffer;
 	return (*this);
 }
-
 // string Manager::get_buffer(void)
 // {
 // 	return (buffer);
