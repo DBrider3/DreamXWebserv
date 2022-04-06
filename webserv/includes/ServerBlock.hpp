@@ -13,6 +13,7 @@ class ServerBlock
 		string					root;
 		vector<string>			index;
 		string					autoindex;
+		vector<string>			error_page;
 		vector<LocationBlock>	location_block;
 
 	public:
@@ -32,7 +33,7 @@ class ServerBlock
 		string						getClientBodySize(void);
 		string						getRoot();
 		vector<string>				getIndex();
-		//string					getAutoindex();
+		string						getAutoindex();
 		vector<LocationBlock>		getLocationBlock();
 
 		/*
@@ -44,6 +45,7 @@ class ServerBlock
 		void						setRoot(string str);
 		void						setIndex(string str);
 		void						setAutoindex(string str);
+		void						setErrorPage(string str);
 		int							setLocationBlock(LocationBlock tmp_location, vector<string> buf, int idx);
 
 };

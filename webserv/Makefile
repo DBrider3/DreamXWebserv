@@ -12,7 +12,8 @@ SRC =	main.cpp\
 		LocationBlock.cpp\
 		ComposeServer.cpp\
 		RunServer.cpp\
-		Utils.cpp
+		Utils.cpp\
+		ProcessMethod.cpp
 
 
 SRC_DIR = ./src/

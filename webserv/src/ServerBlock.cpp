@@ -35,10 +35,12 @@ vector<string>			ServerBlock::getListen()
 {
 	return (listen);
 }
+
 string					ServerBlock::getClientBodySize()
 {
 	return (client_body_size);
 }
+
 string					ServerBlock::getRoot()
 {
 	return (root);
@@ -49,10 +51,11 @@ vector<string>			ServerBlock::getIndex()
 	return (index);
 }
 
-//string					ServerBlock::getAutoindex()
-//{
+string					ServerBlock::getAutoindex()
+{
+	return (autoindex);
+}
 
-//}
 vector<LocationBlock>	ServerBlock::getLocationBlock()
 {
 	return (location_block);
@@ -62,26 +65,37 @@ void					ServerBlock::setServerName(string str)
 {
 	server_name.push_back(str);
 }
+
 void					ServerBlock::setListen(string str)
 {
 	listen.push_back(str);
 }
+
 void					ServerBlock::setClientBodySize(string str)
 {
 	client_body_size = str;
 }
+
 void					ServerBlock::setRoot(string str)
 {
 	root = str;
 }
+
 void					ServerBlock::setIndex(string str)
 {
 	index.push_back(str);
 }
+
 void					ServerBlock::setAutoindex(string str)
 {
 	autoindex = str;
 }
+
+void	ServerBlock::setErrorPage(string str)
+{
+	error_page.push_back(str);
+}
+
 int					ServerBlock::setLocationBlock(LocationBlock tmp_location, vector<string> buf, int idx)
 {
 	/*
@@ -106,19 +120,22 @@ int					ServerBlock::setLocationBlock(LocationBlock tmp_location, vector<string>
 //				cout << tmp[i] << endl;
 			}
 		}
-		else if (tmp[0] == "\t\t\tredirect")
-		{
-			tmp_location.setRedirect(tmp[1]);
-//			cout << tmp[1] << endl;
-		}
-		else if (tmp[0] == "\t\t\terror_page")
+		else if (tmp[0] == "\t\t\treturn")
 		{
 			for (size_t i = 1; i < tmp.size(); i++)
 			{
-				tmp_location.setErrorPage(tmp[i]);
+				tmp_location.setRedirect(tmp[i]);
 //				cout << tmp[i] << endl;
 			}
 		}
+//		else if (tmp[0] == "\t\t\terror_page")
+//		{
+//			for (size_t i = 1; i < tmp.size(); i++)
+//			{
+//				tmp_location.setErrorPage(tmp[i]);
+////				cout << tmp[i] << endl;
+//			}
+//		}
 		idx++;
 	}
 	location_block.push_back(tmp_location);

@@ -14,8 +14,7 @@ http {
 		location = /example {
 			root www/html/;
 			index sonkang.html;
-			redirect dcho;
-			error_page 301 http://uri;
+			return 301 dcho;
 		}
 		
 		location = /form.php {\
@@ -26,6 +25,23 @@ http {
 
 	server {
 		server_name page2.com;
+		listen 8081;
+		client_body_size 42m;
+		root /;
+		index index.html test.html error.html;
+		error_page 404 /404.html;
+		autoindex on;
+
+		location = /example {
+			#location block 안에 무슨 디렉티브가 오는지 정하자!
+			root value;
+			index value1.html;
+			return 301 http://page1.com;
+		}
+	}
+
+	server {
+		server_name page1.com;
 		listen 8081;
 		client_body_size 42m;
 		root /;

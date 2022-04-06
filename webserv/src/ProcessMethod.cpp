@@ -1,69 +1,113 @@
 #include "../includes/ComposeResponse.hpp"
 
-void ComposeResponse::processMethod(ServerBlock server_block, t_request request_msg)
+void ComposeResponse::checkAutoIndex(ServerBlock server_block)
 {
 	string root_index;
-	string	location_uri;
-	string request_uri;
-	size_t location_uri_pos;
-	vector<LocationBlock>::iterator it;
+	vector<string>::iterator it;
 
-	request_uri = request_msg.uri;
-	for (vector<string>::iterator it = server_block.getIndex().begin(); it != server_block.getIndex().end(); it++)
+	if (server_block.getAutoindex() == "on")
 	{
-		root_index = server_block.getRoot() + *it;
-		//if (access(root_index.c_str(), F_OK))
-		setServerIndex(root_index);	
-	}
-	header.local_uri = getServerIndex()[0];
-
-	/*
-	** checking location of request uri
-	*/	
-	location_uri_pos = request_uri.find_first_of("/");
-	location_uri = request_uri.substr(location_uri_pos); //두번째 인자를 넘기지 않으면 자동으로 str 맨 끝까지 복사한다.
-	
-	for (it = server_block.getLocationBlock().begin(); it != server_block.getLocationBlock().end(); it++)
-	{
-		//for (vector<string>::iterator it = it.getMatch(); it != server_block.getLocationBlock().end(); it++)
-		if (location_uri.compare(it->getMatch().back()) == 0)
+		for (it = server_block.getIndex().begin(); it != server_block.getIndex().end(); it++)
 		{
-			processLocation();
-			break ;
+			root_index = server_block.getRoot() + *it;
+			setServerIndex(root_index);
 		}
 	}
-	if (it == server_block.getLocationBlock().end())
+}
+
+int findIndex(ServerBlock server_block, string uri)
+{
+	int i;
+	vector<string>::iterator it;
+
+	i = 0;
+	for (it = server_block.getIndex().begin(); it != server_block.getIndex().end(); it++)
 	{
-		request_msg.err_flag = "404";
-		request_msg.err_str = "Not found";
+		if (*it == uri.erase(0, 1))
+			return (i);
+		i++;
 	}
-	
-	// if (location_uri.compare(0, /*키값의 size*/,/* 맵의 키값을 찾아야함*/))
-	// {
-	// 	server_block.getLocationBlock().getRoot();
-	// }
-	// else if()//php인지 확인
-	// {
+	return (-1);
+}
 
-	// }
-	// else //에러처리
-	// {
+int ComposeResponse::checkUri(ServerBlock server_block, t_request &request_msg)
+{
+	string location_uri;
+	string request_uri;
+	vector<LocationBlock>::iterator it;
+	int		idx;
 
-	// }
-
-	if(request_msgs[idx].method == "GET")
+	request_uri = request_msg.uri;
+	if (request_uri == "/")
+		header.local_uri = *(server_block.getIndex().begin()); // 1번
+	else
 	{
-		request_msgs[idx].server_block.getRoot()
-		
-	}
-	else if (request_msgs[idx].method == "POST")
-	{
-		
-
-	}
-	else if (request_msgs[idx].method == "DELETE")
-	{
-
+		if ((idx = findIndex(server_block, request_uri)) > -1) //완전 일치
+			header.local_uri = server_block.getIndex()[idx];
+		else
+		{
+			location_uri = request_uri.erase(0, 1); //두번째 인자를 넘기지 않으면 자동으로 str 맨 끝까지 복사한다.
+			
+			for (it = server_block.getLocationBlock().begin(); it != server_block.getLocationBlock().end(); it++)
+			{
+				//for (vector<string>::iterator it = it.getMatch(); it != server_block.getLocationBlock().end(); it++)
+				if (location_uri.compare(it->getMatch().back()) == 0)
+				{
+					header.local_uri = it->getIndex()[0];
+					if (*(it->getRedirect().begin()) != "")
+					{
+						request_msg.state_flag = "301";
+						request_msg.state_str = "Moved permanently";
+						request_msg.redirect = it->getRedirect().back();
+						return (-1);
+					}
+					break ;
+				}
+			}
+			if (it == server_block.getLocationBlock().end())
+			{
+				request_msg.state_flag = "404";
+				request_msg.state_str = "Not found";
+				return (-1);
+			}
+		}
 	}
 	return (0);
+}
+
+void ComposeResponse::processMethod(ServerBlock server_block, t_request &request_msg)
+{
+	if (request_msg.method == "GET")
+	{
+		if (checkUri(server_block, request_msg))
+			return ;
+		checkAutoIndex(server_block);
+	}
+	else if (request_msg.method == "POST")
+	{
+		if (checkUri(server_block, request_msg))
+			return ;
+		checkAutoIndex(server_block);
+	}
+	else if (request_msg.method == "DELETE")
+	{
+		if (!access(request_msg.uri.c_str(), F_OK))
+		{
+			if (!unlink(request_msg.uri.c_str()))
+			{
+				request_msg.state_flag = "200";
+				request_msg.state_str = "OK";
+			}
+			else	
+			{
+				request_msg.state_flag = "403";
+				request_msg.state_str = "Forbidden";
+			}
+		}
+		else
+		{
+			request_msg.state_flag = "404";
+			request_msg.state_str = "Not found";
+		}
+	}
 }

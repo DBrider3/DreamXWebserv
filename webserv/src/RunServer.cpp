@@ -7,24 +7,6 @@
  *
  */
 
-// void Manager::check_msg(t_request rmsg)
-// {
-// 	cout << rmsg.method << endl;
-// 	cout << rmsg.uri << endl;
-// 	cout << rmsg.version << endl;
-	
-// 	for (map<string, vector<string> >::iterator it = rmsg.header.begin(); it != rmsg.header.end(); it++)
-// 	{
-// 		for (vector<string>::iterator itt = it->second.begin(); itt != it->second.end(); itt++)
-// 			cout << *itt << " " ;
-// 		cout << endl;
-// 	}
-// 	cout << rmsg.cgi << endl;
-// 	cout << rmsg.fd << endl;
-// 	for (vector<string>::iterator it = rmsg.body.begin(); it != rmsg.body.end(); it++)
-// 		cout << *it << endl;
-// }
-
 void disconnect_client(int client_fd)
 {
 	cout << "client disconnected: " << client_fd << endl;
@@ -69,10 +51,57 @@ t_request initRequestMsg(int client_socket, ServerBlock server_block)
 	request_msg.uri = "";
 	request_msg.version = "";
 	request_msg.fd = client_socket;
-	request_msg.err_flag = "";
-	request_msg.err_str = "";
+	request_msg.state_flag = "";
+	request_msg.state_str = "";
 	request_msg.server_block = server_block;
+	request_msg.port = server_block.getListen()[0];
 	return (request_msg);
+}
+
+
+void sendStatePage(int curr_fd, string state_num, string state_str)
+{
+	struct stat		st;
+	string			local_uri;
+	string			body; //html읽은 내용 담을 변수
+	char			buf[10];
+	char			r_header[1024];
+	size_t			ct_len;
+	int				bodyfd;
+	int				n;
+	stringstream	ss;
+
+	local_uri = "./state_pages/" + state_num + ".html";
+	stat(local_uri.c_str(), &st);
+	ct_len = st.st_size;
+
+	bodyfd = open(local_uri.c_str(), O_RDONLY);
+
+	n = 0;
+	while ((n = read(bodyfd, buf, sizeof(buf) - 1)) > 0)
+	{
+		buf[9] = '\0';
+		ss << buf;
+		body += ss.str();
+		ss.str("");
+		memset(buf, 0, 10);
+	}
+	sprintf(r_header, STATE_FMT, state_num.c_str(), state_str.c_str(), ct_len, "text/html", body.c_str());
+	write(curr_fd, r_header, strlen(r_header));
+	cout << "c_fd" << curr_fd << endl;
+
+	cout << endl;
+	cout << r_header << endl;
+	disconnect_client(curr_fd);
+}
+
+void sendRedirectPage(int curr_fd, string state_num, string state_str, string redirect)
+{
+	char			r_header[1024];
+
+	sprintf(r_header, REDIRECT_FMT, state_num.c_str(), state_str.c_str(), redirect.c_str());
+	write(curr_fd, r_header, strlen(r_header));
+	disconnect_client(curr_fd);
 }
 
 /*
@@ -85,7 +114,7 @@ void setClientsocket(vector<t_request> &request_msgs, vector<struct kevent> &cha
 	int client_socket;
 
    if ((client_socket = accept(server_socket, NULL, NULL)) == -1)
-		sendErrorPage(server_socket, "500", "Internal server error"); //클라이언트 생성실패
+		sendStatePage(server_socket, "500", "Internal server error"); //클라이언트 생성실패
 	cout << "accept new client: " << client_socket << endl;
 	fcntl(client_socket, F_SETFL, O_NONBLOCK);
 
@@ -128,8 +157,8 @@ void parseRequest(t_request &request_msg, string request)
 
 	if (request_msg.uri.size() > 8190)
 	{
-		request_msg.err_flag = "414";
-		request_msg.err_str = "Request-URI too long";
+		request_msg.state_flag = "414";
+		request_msg.state_str = "Request-URI too long";
 		return ;
 	}
 /*
@@ -156,8 +185,8 @@ void parseRequest(t_request &request_msg, string request)
 
 	if (convStoi(*(request_msg.header["Content-Length"].begin())) > convStoi(request_msg.server_block.getClientBodySize()))
 	{
-		request_msg.err_flag = "413";
-		request_msg.err_str = "Payload Too Large";
+		request_msg.state_flag = "413";
+		request_msg.state_str = "Payload Too Large";
 		return ;
 	}
 	while (++it != result.end())
@@ -191,7 +220,7 @@ void readRequest(t_request &request_msg, int curr_fd)
 
 	// if (n <= 0)
 	// {
-	//	sendErrorPage(curr_event->ident, "400", "Bad request"); //의문.3 에러 처리 방법이 명확하게 떠오르지 않음.. ????
+	//	sendStatePage(curr_event->ident, "400", "Bad request"); //의문.3 에러 처리 방법이 명확하게 떠오르지 않음.. ????
 	//     if (n < 0)
 	//         cerr << "client read error!" << endl;
 	// 	cout << "1\n";
@@ -209,55 +238,6 @@ int checkMethod(t_request request_msg, vector<string> method)
 	return (0);
 }
 
-void sendErrorPage(int curr_fd, string err_num, string err_str)
-{
-	struct stat		st;
-	string			local_uri;
-	string			body; //html읽은 내용 담을 변수
-	char			buf[10];
-	char			r_header[1024];
-	size_t			ct_len;
-	int				bodyfd;
-	int				n;
-	stringstream	ss;
-
-	local_uri = "./error_pages/" + err_num + ".html";
-	stat(local_uri.c_str(), &st);
-	ct_len = st.st_size;
-
-	bodyfd = open(local_uri.c_str(), O_RDONLY);
-
-	n = 0;
-	//cout << "여기는 버퍼 입니다." << endl;
-	while ((n = read(bodyfd, buf, sizeof(buf) - 1)) > 0)
-	{
-		buf[9] = '\0'; //여기에 널이 필요할까?
-		ss << buf;
-		//cout << "buf: "<< buf << endl;
-		body += ss.str();
-		ss.str("");
-		memset(buf, 0, 10);
-	}
-	//if (n < 0)
-		//perror("[ERR] Failed to read request.\n");
-	//cout << "ss!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << ss << endl;
-	//body += ss.str();
-	//cout << "여기는 바디 입니다." << endl;
-	//cout << body << endl;
-	//"HTTP/1.1 %s %s\nContent-Length: %ld\nContent-Type: %s\n\n%s"
-	
-	sprintf(r_header, RESPONSE_FMT, err_num.c_str(), err_str.c_str(), ct_len, "text/html", body.c_str());
-	write(curr_fd, r_header, strlen(r_header));
-	//write(curr_fd, body.c_str(), body.size());
-	cout << "c_fd" << curr_fd << endl;
-
-	cout << endl;
-	cout << r_header << endl;
-	disconnect_client(curr_fd);// 서버 소켓일 경우 터지도록 해야하나?
-	// write(1, r_header, strlen(r_header));
-	// write(1, body.c_str(), body.size());
-}
-
 /*
  * 서버 실행하는 함수입니다.
  */
@@ -268,7 +248,7 @@ void Manager::runServer()
 
 	map<int, string>        clients; // map for client socket:data
 	vector<struct kevent>   change_list; // kevent vector for changelist
-	struct kevent           event_list[8]; // kevent array for eventlist
+	struct kevent           event_list[8]; // kevent array for eventlistcompRespo
 
 	int                     new_events;
 	struct kevent*          curr_event;
@@ -300,7 +280,7 @@ void Manager::runServer()
 	//cout << "new_event : " << new_events << endl;
 
 		if (new_events == -1)
-			sendErrorPage(curr_event->ident, "500", "Internal server error"); //kq관리 실패
+			sendStatePage(curr_event->ident, "500", "Internal server error"); //kq관리 실패
 		change_list.clear();
 
 		for (int i = 0; i < new_events; ++i)
@@ -310,10 +290,10 @@ void Manager::runServer()
 			{
 				if (check_socket(curr_event->ident, web_serv.server_socket))
 				{
-					sendErrorPage(curr_event->ident, "500", "Internal server error"); //의문.1 서버 에러시, 어디로 명확하게 전달되는 것이 확인되지 않음. ????
+					sendStatePage(curr_event->ident, "500", "Internal server error"); //의문.1 서버 에러시, 어디로 명확하게 전달되는 것이 확인되지 않음. ????
 				}	//의문 .2 서버 에러시, 서버를 종료시켜야하나 ????
 				else
-					sendErrorPage(curr_event->ident, "400", "Bad Request");
+					sendStatePage(curr_event->ident, "400", "Bad Request");
 			}
 			else if (curr_event->filter == EVFILT_READ)
 			{
@@ -331,34 +311,22 @@ void Manager::runServer()
 			{
 				if ((idx = findClient(request_msgs, curr_event->ident)) >= 0)
 				{
-					if (request_msgs[idx].err_flag != "")
-						sendErrorPage(request_msgs[idx].fd, request_msgs[idx].err_flag, request_msgs[idx].err_str);
+					if (request_msgs[idx].state_flag != "")
+						sendStatePage(request_msgs[idx].fd, request_msgs[idx].state_flag, request_msgs[idx].state_str);
 					if (checkMethod(request_msgs[idx], http_block.getLimitExcept()))
 					{//정해지면 헤더에 붙여넣자~ yeah~
-						processMethod(request_msgs[idx].server_block, request_msgs[idx]);
-						if (request_msgs[idx].err_flag != "")
-							sendErrorPage(request_msgs[idx].fd, request_msgs[idx].err_flag, request_msgs[idx].err_str);
-						else 
-						string str;
-
-						if(request_msgs[idx].method == "GET")
+						compRespons.processMethod(request_msgs[idx].server_block, request_msgs[idx]);
+						if (request_msgs[idx].state_flag != "")
 						{
-							request_msgs[idx].server_block.getRoot()
-							
-						}
-						else if (request_msgs[idx].method == "POST")
-						{
-							
-
-						}
-						else if (request_msgs[idx].method == "DELETE")
-						{
-
+							if (request_msgs[idx].state_flag == "301")
+								sendRedirectPage(request_msgs[idx].fd, request_msgs[idx].state_flag, request_msgs[idx].state_str, request_msgs[idx].redirect);
+							else
+								sendStatePage(request_msgs[idx].fd, request_msgs[idx].state_flag, request_msgs[idx].state_str);
 						}
 					}
 					else
 					{
-						sendErrorPage(request_msgs[idx].fd, "403", "Forbidden");
+						sendStatePage(request_msgs[idx].fd, "403", "Forbidden");
 					}
 				}
 			}
