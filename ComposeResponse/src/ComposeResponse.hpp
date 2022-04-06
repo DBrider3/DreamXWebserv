@@ -4,42 +4,43 @@
 #include <iostream>
 #include <string>
 #include <cstring>
+#include <fstream>
 #include <map>
+#include <vector>
+#include <exception>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 using namespace std;
+#define PHPCGI "/Users/dcho/Born2Code/DreamXWebserv/ComposeResponse/php-cgi"
 
-static const char *basic_env[] = {
-	"AUTH_TYPE",
-	"CONTENT_LENGTH",
-	"CONTENT_TYPE",
-	"GATEWAY_INTERFACE",
-	"PATH_INFO",
-	"PATH_TRANSLATED",
-	"QUERY_STRING",
-	"REMOTE_ADDR",
-	"REMOTE_IDENT",
-	"REMOTE_USER",
-	"REQUEST_METHOD",
-	"REQUEST_URI",
-	"SCRIPT_NAME",
-	"SERVER_NAME",
-	"SERVER_PORT",
-	"SERVER_PROTOCOL",
-	"SERVER_SOFTWARE",
-	"REDIRECT_STATUS",
-	NULL
-	};
+typedef struct s_request {
+	string	method;
+	string	uri; // requset uri
+	string	local_uri; // root를 뺀 uri
+	string	version;
+
+	// server block 내부 변수
+	string	client_body_size;
+	string	port;
+	string	root;
+}				t_request;
 
 typedef struct	s_header
 {
-	string	uri;
-	string	local_uri;
 	string	date;
-	int		ct_length;
+	int		ct_len;
 	string	ct_type;
 	int		cgi;
 	string 	query;
 }				t_header;
+
+class PrintError : public std::exception
+{
+	public:
+		virtual const char* what() const throw();
+};
 
 class ComposeResponse
 {
@@ -47,7 +48,8 @@ class ComposeResponse
 		t_header	header;
 		string		body;
 		string		response;
-		std::map<std::string, std::string> env_set;
+		t_request	request;
+		map<string, string> env_set;
 
 
 	public:
@@ -55,6 +57,7 @@ class ComposeResponse
 		** canonicalForm part
 		*/
 		ComposeResponse();
+		ComposeResponse(t_request req);
 		~ComposeResponse();
 		ComposeResponse(ComposeResponse& copy);
 		ComposeResponse& operator = (const ComposeResponse& cr);
@@ -70,7 +73,9 @@ class ComposeResponse
 		void	parseQuery(void);
 		void	findMime(void);
 		void	setEnv(void);
-		//char**	ConvToChar(void);
+		char**	convToChar(map<string, string> m, int flag);
+		//char**	setCommand(string command, string path);
+		void	coreResponse(void);
 };
 
 #endif

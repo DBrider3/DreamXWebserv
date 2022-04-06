@@ -2,9 +2,34 @@
 
 int	main(void)
 {
-	ComposeResponse c;
+	try
+	{
+		t_request r;
+		//char** env;
 
-	c.findMime();
-	c.parseQuery();
+		r.root = "/Users/dcho/Born2Code/DreamXWebserv";
+		r.local_uri = "/testcode/form_up.php";
+		r.method = "GET";
+		r.uri = "/testcode/form_up.php";
+		r.port = "80";
+		r.version = "HTTP/1.1";
+		ComposeResponse c(r);
+		c.parseQuery();
+		c.findMime();
+		c.setEnv();
+		//env = c.convToChar();
+
+		//cout << "1" << endl;
+		// int i = 0;
+		// while (env[i] != NULL)
+		// 	cout << env[i++] << endl;
+		c.coreResponse();
+
+	}
+	catch(const std::exception& e)
+	{
+		cerr << e.what() << "request message error" << endl;
+	}
+
 	return 0;
 }
