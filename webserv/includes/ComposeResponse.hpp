@@ -1,31 +1,53 @@
 #ifndef COMPOSERESPONSE_HPP
 # define COMPOSERESPONSE_HPP
 
-#include <iostream>
-#include <string>
-#include <cstring>
-#include <vector>
-#include "ServerBlock.hpp"
-#include "WebServer.hpp"
+# include <iostream>
+# include <string>
+# include <cstring>
+# include <vector>
+# include <map>
+# include <sys/stat.h>
+# include "ServerBlock.hpp"
+
+# define STATE_FMT "HTTP/1.1 %s %s\nContent-Length: %ld\nContent-Type: %s\n\n%s\n"
+# define REDIRECT_FMT "HTTP/1.1 %s %s\nLocation: %s\n"
 
 using namespace std;
 
-typedef struct	s_header
+//template<int> //vector<int> 형을 return 하려고 하니까 template class 아니라고 에러 떠서 추가함
+
+typedef struct s_request {
+	string							method;
+	string							uri;
+	string							version;
+	map<string, vector<string> >	header;
+	vector<string>					body;
+}               t_request;
+
+typedef struct	s_response
 {
 	string	local_uri;
 	string	date;
 	int		ct_length;
 	string	ct_type;
 	int		cgi;
-}				t_header;
+	string	state_flag; //현재 작업이 에러 시, 이벤트에 있는 read/write를 소모시키기 위해 플래그를 사용함.  
+	string	state_str; //빼야함
+	string	redirect_uri;
+}				t_response;
 
-class ComposeResponse
+class ComposeResponse //clientpro
 {
 	private:
-		t_header		header;
+		t_response		response; //t_response
+		t_request 		request;
+		//서버블록 
 		string			body;
 		string			response;
+		int				client_fd;
 		vector<string>	server_index; //서버 블록 내 index 절대 경로 담아둠
+		ServerBlock		server_block;
+		string			port;
 
 
 	public:
@@ -40,21 +62,67 @@ class ComposeResponse
 		/*
 		** getter part
 		*/
-		string	getServerIndex();
+		string				getServerIndex();
+
+		ServerBlock 		getServerBlock()
+		{
+			return (server_block);
+		}
+
+		t_request	getRequest()
+		{
+			return (request);
+		}
+
+		t_response	getResponse()
+		{
+			return (response);
+		}
+
+		int		getClientFd()
+		{
+			return (client_fd);
+		}
 
 
 		/*
 		** setter part
 		*/
-		void 	setServerIndex(string root_index)
+		void 		setServerBlock(ServerBlock server_block)
+		{
+			this->server_block = server_block;
+		}
+
+		void		setPort(string port)
+		{
+			this->port = port;
+		}
+
+		void		setClientFd(int client_socket)
+		{
+			this->client_fd = client_socket;
+		}
+
+		void		setClientsocket(vector<struct kevent> &change_list, uintptr_t server_socket, ServerBlock server_block);
+		void 		setServerIndex(string root_index)
 		{
 			server_index.push_back(root_index);
 		}
-		void	findMime(void);
-		void	processMethod(ServerBlock server_block, t_request &request_msg);
-		int		checkUri(ServerBlock server_block, t_request &request_msg);
-		void	checkAutoIndex(ServerBlock server_block);
+		void		findMime(void);
+		void 		initRequestMsg();
+		void		processMethod();
+		int			checkUri(ServerBlock server_block, t_request &request_msg);
+		void		checkAutoIndex(ServerBlock server_block);
+		void		readRequest();
+		void		parseRequest(string msg);
+		void		sendRedirectPage();
+		int			checkMethod(vector<string> method);
+		int			checkUri();
+		void		checkAutoIndex();
+		int			findIndex(string uri);
 };
+
+
 
 
 		// void	ComposeResponse::setServerIndex(string root_index)
