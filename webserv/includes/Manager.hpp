@@ -3,7 +3,7 @@
 
 #include "HttpBlock.hpp"
 #include "Utils.hpp"
-#include "ComposeResponse.hpp"
+#include "ClientControl.hpp"
 
 typedef struct s_servinfo
 {
@@ -18,8 +18,8 @@ class Manager
 		vector<string>	buffer;
 		HttpBlock		http_block;
 		t_servinfo		web_serv; //server_socket_fd 배열, port 번호 배열
-		//ComposeResponse compRespons;
-		// vector<ComposeResponse> compose_response; //
+		//ClientControl compRespons;
+		// vector<ClientControl> compose_response; //
 
 	public:
 		/*
@@ -49,6 +49,8 @@ class Manager
 		void	fileOpen(string conf);
 		void	confParsing(void);
 		void 	composeServer(void);
+		void	composePort(void);
+		void	composeSocket(void);
 		void 	runServer(void);
 
 //		t_request rmsg;

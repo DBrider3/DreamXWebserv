@@ -20,8 +20,8 @@ class ServerBlock
 		/*
 		** canonicalForm part
 		*/
-		ServerBlock();
-		~ServerBlock();
+		ServerBlock(void);
+		~ServerBlock(void);
 		ServerBlock(const ServerBlock& copy);
 		ServerBlock& operator = (const ServerBlock& sb);
 
@@ -31,10 +31,10 @@ class ServerBlock
 		//vector<string>			getServerName();
 		vector<string>				getListen(void);
 		string						getClientBodySize(void);
-		string						getRoot();
-		vector<string>				getIndex();
-		string						getAutoindex();
-		vector<LocationBlock>		getLocationBlock();
+		string						getRoot(void);
+		vector<string>				getIndex(void);
+		string						getAutoindex(void);
+		vector<LocationBlock>		getLocationBlock(void);
 
 		/*
 		** setter part

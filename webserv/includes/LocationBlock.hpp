@@ -16,18 +16,18 @@ class LocationBlock
 		/*
 		** canonicalForm part
 		*/
-		LocationBlock();
-		~LocationBlock();
+		LocationBlock(void);
+		~LocationBlock(void);
 		LocationBlock(const LocationBlock& copy);
 		LocationBlock& operator = (const LocationBlock& lb);
 
 		/*
 		** getter part
 		*/
-		vector<string>			getMatch();
-		string					getRoot();
-		vector<string>			getIndex();
-		vector<string>			getRedirect();
+		vector<string>			getMatch(void);
+		string					getRoot(void);
+		vector<string>			getIndex(void);
+		vector<string>			getRedirect(void);
 		//vector<string>		getErrorPage();
 		
 		/*

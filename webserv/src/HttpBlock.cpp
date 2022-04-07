@@ -121,7 +121,7 @@ int			HttpBlock::setServerBlock(vector<string> buf, int idx)
 		idx++;
 	}
 	server_block.push_back(tmp_server);
-	if (buf[++idx].empty()) //함수를 나가서 buf[idx]가 개행이 아닌 server_block을 가르키기 위함
+	if (buf[++idx].empty()) //함수를 나가서 buf[idx]가 개행이 아닌 server_block을 가리키기 위함
 		return ++idx;
 	return idx;
 }
