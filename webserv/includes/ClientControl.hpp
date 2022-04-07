@@ -36,7 +36,7 @@ typedef struct	s_response
 	string	redirect_uri;
 }				t_response;
 
-class ComposeResponse //clientpro
+class ClientControl //clientpro
 {
 	private:
 		t_response		response; //t_response
@@ -54,32 +54,32 @@ class ComposeResponse //clientpro
 		/*
 		** canonicalForm part
 		*/
-		// ComposeResponse();
-		// ~ComposeResponse();
-		// ComposeResponse(ComposeResponse& copy);
-		// ComposeResponse& operator = (const ComposeResponse& cr);
+		// ClientControl();
+		// ~ClientControl();
+		// ClientControl(ClientControl& copy);
+		// ClientControl& operator = (const ClientControl& cr);
 
 		/*
 		** getter part
 		*/
-		string				getServerIndex();
+		string				getServerIndex(void);
 
-		ServerBlock 		getServerBlock()
+		ServerBlock 		getServerBlock(void)
 		{
 			return (server_block);
 		}
 
-		t_request	getRequest()
+		t_request	getRequest(void)
 		{
 			return (request);
 		}
 
-		t_response	getResponse()
+		t_response	getResponse(void)
 		{
 			return (response);
 		}
 
-		int		getClientFd()
+		int		getClientFd(void)
 		{
 			return (client_fd);
 		}
@@ -109,25 +109,21 @@ class ComposeResponse //clientpro
 			server_index.push_back(root_index);
 		}
 		void		findMime(void);
-		void 		initRequestMsg();
-		void		processMethod();
+		void 		initRequestMsg(void);
+		void		processMethod(void);
 		int			checkUri(ServerBlock server_block, t_request &request_msg);
 		void		checkAutoIndex(ServerBlock server_block);
-		void		readRequest();
+		void		readRequest(void);
 		void		parseRequest(string msg);
-		void		sendRedirectPage();
+		void		sendRedirectPage(void);
 		int			checkMethod(vector<string> method);
-		int			checkUri();
-		void		checkAutoIndex();
+		int			checkUri(void);
+		void		checkAutoIndex(void);
 		int			findIndex(string uri);
+		int			deleteFile(void);
+		//int		getFile();
+		//int		postFile();
 };
 
-
-
-
-		// void	ComposeResponse::setServerIndex(string root_index)
-		// {
-		// 	server_index.push_back(root_index);
-		// }
 
 #endif

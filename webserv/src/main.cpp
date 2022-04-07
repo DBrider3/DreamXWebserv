@@ -1,6 +1,5 @@
 #include "../includes/Manager.hpp"
 #include "../includes/Utils.hpp"
-#include "../includes/WebServer.hpp"
 
 int main(int argc, char **argv)
 {

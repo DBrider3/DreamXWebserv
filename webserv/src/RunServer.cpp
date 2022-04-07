@@ -1,22 +1,22 @@
 #include "../includes/Utils.hpp"
 #include "../includes/Manager.hpp"
-#include "../includes/ComposeResponse.hpp"
+#include "../includes/ClientControl.hpp"
 #include <errno.h>
 /*
  *
  */
 
-void disconnect_client(int client_fd) //고쳐야함 소멸자불러야함
+void disconnectSocket(int socket_fd) //고쳐야함 소멸자불러야함
 {
-	cout << "client disconnected: " << client_fd << endl;
-	close(client_fd);
+	cout << "Disconnet Socket!!  socket_fd : " << socket_fd << endl;
+	close(socket_fd);
 }
 
 /*
  * 현재 fd가 서버소켓인지 검사하는 함수입니다.
  */
 
-int check_socket(int curr_fd, vector<int> server_socket)
+int checkSocket(int curr_fd, vector<int> server_socket)
 {
 	for (size_t i = 0; i < server_socket.size(); i++)
 		if (server_socket[i] == curr_fd)
@@ -28,7 +28,7 @@ int check_socket(int curr_fd, vector<int> server_socket)
  * 소켓을 기반으로 list에 특정 이벤트 생성
  */
 
-void change_events(vector<struct kevent>& change_list, uintptr_t ident, int16_t filter,
+void changeEvents(vector<struct kevent>& change_list, uintptr_t ident, int16_t filter,
 		uint16_t flags, uint32_t fflags, intptr_t data, void *udata)
 {
 	struct kevent temp_event;
@@ -42,7 +42,7 @@ void change_events(vector<struct kevent>& change_list, uintptr_t ident, int16_t 
  * header를 초기화하고, client_socket을 저장하는 함수입니다.
  */
 
-void ComposeResponse::initRequestMsg()
+void ClientControl::initRequestMsg()
 {
 	getRequest().method = "";
 	getRequest().uri = "";
@@ -80,35 +80,36 @@ void sendStatePage(int socket_fd, string state_flag, string state_str)
 	}
 	sprintf(r_header, STATE_FMT, state_flag.c_str(), state_str.c_str(), ct_len, "text/html", body.c_str());
 	write(socket_fd, r_header, strlen(r_header));
-	disconnect_client(socket_fd);
+	disconnectSocket(socket_fd);
 }
 
-void ComposeResponse::sendRedirectPage()
+void ClientControl::sendRedirectPage()
 {
 	char			r_header[1024];
 
 	sprintf(r_header, REDIRECT_FMT, getResponse().state_flag.c_str(), getResponse().state_str.c_str(), getResponse().redirect_uri.c_str());
 	write(getClientFd(), r_header, strlen(r_header));
-	disconnect_client(getClientFd());
+	disconnectSocket(getClientFd());
 }
 
 /*
  * sever_socket을 토대로 client_socket을 구성하는 함수입니다.
  */
 
-void ComposeResponse::setClientsocket(vector<struct kevent> &change_list, uintptr_t server_socket, ServerBlock server_block)
+void ClientControl::setClientsocket(vector<struct kevent> &change_list, uintptr_t server_socket, ServerBlock server_block)
 {
 	/* accept new client */
 	int client_socket;
 
    if ((client_socket = accept(server_socket, NULL, NULL)) == -1)
 		sendStatePage(server_socket, "500", "Internal server error"); //클라이언트 생성실패
+			client_control.erase()
 	cout << "accept new client: " << client_socket << endl;
 	fcntl(client_socket, F_SETFL, O_NONBLOCK);
 
 	/* add event for client socket - add read && write event */
-	change_events(change_list, client_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
-	change_events(change_list, client_socket, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+	changeEvents(change_list, client_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+	changeEvents(change_list, client_socket, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
 
 	setServerBlock(server_block);
 	setPort(server_block.getListen()[0]);
@@ -120,10 +121,10 @@ void ComposeResponse::setClientsocket(vector<struct kevent> &change_list, uintpt
  * curr_fd가 client_socket목록에 있는지 체크하는 함수입니다.
  */
 
-int findClient(vector<ComposeResponse> compose_response, int curr_fd)
+int findClient(vector<ClientControl> client_control, int curr_fd)
 {
-	for (size_t i = 0; i < compose_response.size(); i++)
-		if (compose_response[i].getClientFd() == curr_fd)
+	for (size_t i = 0; i < client_control.size(); i++)
+		if (client_control[i].getClientFd() == curr_fd)
 			return (i);
 	return (-1);
 }
@@ -132,7 +133,7 @@ int findClient(vector<ComposeResponse> compose_response, int curr_fd)
  * 버퍼에 담아둔 request를 파싱하여 구조체에 담아주는 작업을 하는 함수입니다.
  */
 
-void ComposeResponse::parseRequest(string request)
+void ClientControl::parseRequest(string request)
 {
 	stringstream ss;
 	vector<string> result; //요청메시지가 한 줄 한 줄 저장되는 변수
@@ -187,9 +188,11 @@ void ComposeResponse::parseRequest(string request)
  * curr_fd가 전달하는 내용을 버퍼에 담아주는 함수입니다.
  */
 
-void ComposeResponse::readRequest()
+void ClientControl::readRequest()
 {
-	/* read data from client */
+	/*
+	** read data from client
+	*/
 	char buf[10];
 	stringstream ss;
 	string msg;
@@ -214,13 +217,13 @@ void ComposeResponse::readRequest()
 	//     if (n < 0)
 	//         cerr << "client read error!" << endl;
 	// 	cout << "1\n";
-	//     disconnect_client(curr_fd);
+	//     disconnectSocket(curr_fd);
 	// }
 	// else
 	parseRequest(msg);
 }
 
-int ComposeResponse::checkMethod(vector<string> method_limit)
+int ClientControl::checkMethod(vector<string> method_limit)
 {
 	for (vector<string>::iterator it = method_limit.begin(); it != method_limit.end(); it++)
 		if (getRequest().method == *it)
@@ -235,18 +238,15 @@ int ComposeResponse::checkMethod(vector<string> method_limit)
 void Manager::runServer()
 {
 	int 					kq;
+	int						idx;
 	map<int, string>        clients; // map for client socket:data
 	vector<struct kevent>   change_list; // kevent vector for changelist
 	struct kevent           event_list[8]; // kevent array for eventlistcompRespo
 
 	int                     new_events;
 	struct kevent*          curr_event;
-	// vector<t_request>		request_msgs;
-	vector<ComposeResponse> compose_response;
+	vector<ClientControl>	client_control;
 
-	int						idx;
-
-	idx = 0;
 	try
 	{
 		kq = kqueue();
@@ -261,65 +261,64 @@ void Manager::runServer()
 
 	/*server_socket 연결을 위한 읽기 이벤트 등록*/
 	for (size_t i = 0; i < web_serv.ports.size(); i++)
-		change_events(change_list, web_serv.server_socket[i], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+		changeEvents(change_list, web_serv.server_socket[i], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 
 	while (1)
 	{
-	//cout << "change_list: " << change_list[0].ident << endl;
-
 		new_events = kevent(kq, &change_list[0], change_list.size(), event_list, 8, NULL);
-	//cout << "new_event : " << new_events << endl;
 
 		if (new_events == -1)
 			sendStatePage(curr_event->ident, "500", "Internal server error"); //kq관리 실패
 		change_list.clear();
-
+		idx = 0;
 		for (int i = 0; i < new_events; ++i)
 		{
 			curr_event = &event_list[i];
 			if (curr_event->flags & EV_ERROR)
 			{
-				if (check_socket(curr_event->ident, web_serv.server_socket))
+				if (checkSocket(curr_event->ident, web_serv.server_socket))
 				{
 					sendStatePage(curr_event->ident, "500", "Internal server error"); //의문.1 서버 에러시, 어디로 명확하게 전달되는 것이 확인되지 않음. ????
 				}	//의문 .2 서버 에러시, 서버를 종료시켜야하나 ????
 				else
+				{
 					sendStatePage(curr_event->ident, "400", "Bad Request");
+					client_control[findClient(client_control, curr_event->ident)].erase();
+				}
 			}
 			else if (curr_event->filter == EVFILT_READ)
 			{
-				if (check_socket(curr_event->ident, web_serv.server_socket))
+				if (checkSocket(curr_event->ident, web_serv.server_socket))
 				{
-					compose_response.push_back(ComposeResponse());
-					compose_response[i].setClientsocket(change_list, curr_event->ident, http_block.getServerBlock()[i]); //event의 index와 server index의 상관관계 재확인 필요,
+					client_control.push_back(ClientControl());
+					client_control[i].setClientsocket(change_list, curr_event->ident, http_block.getServerBlock()[i]);
 				}
- 				else if ((idx = findClient(compose_response, curr_event->ident)) >= 0)
+ 				else if ((idx = findClient(client_control, curr_event->ident)) >= 0)
 				{
-					compose_response[idx].readRequest();
+					client_control[idx].readRequest();
 					//check_msg(request_msgs[idx]);
 				}
 			}
 			else if (curr_event->filter == EVFILT_WRITE)
 			{
-				if ((idx = findClient(compose_response, curr_event->ident)) >= 0)
+				if ((idx = findClient(client_control, curr_event->ident)) >= 0)
 				{
-					if (compose_response[idx].getResponse().state_flag != "")  //compose_response[idx].readRequest();했을 때 에러가 있다면 먼저 띄워줌
-						sendStatePage(compose_response[idx].getClientFd(), compose_response[idx].getResponse().state_flag, compose_response[idx].getResponse().state_str);
-					if (compose_response[idx].checkMethod(http_block.getLimitExcept()))
-					{//정해지면 헤더에 붙여넣자~ yeah~
-						compose_response[idx].processMethod();
-						if (compose_response[idx].getResponse().state_flag != "")
+					if (client_control[idx].getResponse().state_flag != "")  //client_control[idx].readRequest();했을 때 에러가 있다면 먼저 띄워줌
+						sendStatePage(client_control[idx].getClientFd(), client_control[idx].getResponse().state_flag, client_control[idx].getResponse().state_str);
+					if (client_control[idx].checkMethod(http_block.getLimitExcept()))
+					{
+						client_control[idx].processMethod();
+						if (client_control[idx].getResponse().state_flag != "")
 						{
-							if (compose_response[idx].getResponse().state_flag == "301")
-								compose_response[idx].sendRedirectPage();
+							if (client_control[idx].getResponse().state_flag == "301")
+								client_control[idx].sendRedirectPage();
 							else
-								sendStatePage(compose_response[idx].getClientFd(), compose_response[idx].getResponse().state_flag, compose_response[idx].getResponse().state_str);
+								sendStatePage(client_control[idx].getClientFd(), client_control[idx].getResponse().state_flag, client_control[idx].getResponse().state_str);
 						}
 					}
 					else
-					{
-						sendStatePage(compose_response[idx].getClientFd(), "403", "Forbidden");
-					}
+						sendStatePage(client_control[idx].getClientFd(), "403", "Forbidden");
+					client_control[idx].erase();
 				}
 			}
 		}

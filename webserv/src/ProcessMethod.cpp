@@ -1,21 +1,18 @@
-#include "../includes/ComposeResponse.hpp"
+#include "../includes/ClientControl.hpp"
 
-void ComposeResponse::checkAutoIndex()
+void ClientControl::checkAutoIndex()
 {
-	string root_index;
 	vector<string>::iterator it;
 
 	if (getServerBlock().getAutoindex() == "on")
 	{
 		for (it = getServerBlock().getIndex().begin(); it != getServerBlock().getIndex().end(); it++)
-		{
-			root_index = getServerBlock().getRoot() + *it;
-			setServerIndex(root_index);
-		}
+			setServerIndex(*it);
+		getResponse().local_uri = "autoindex.html";
 	}
 }
 
-int ComposeResponse::findIndex(string uri)
+int ClientControl::findIndex(string uri)
 {
 	int i;
 	vector<string>::iterator it;
@@ -30,7 +27,7 @@ int ComposeResponse::findIndex(string uri)
 	return (-1);
 }
 
-int ComposeResponse::checkUri()
+int ClientControl::checkUri()
 {
 	string location_uri;
 	string request_uri;
@@ -38,8 +35,14 @@ int ComposeResponse::checkUri()
 	int		idx;
 
 	request_uri = getRequest().uri;
-	if (request_uri == "/")
+	if (request_uri == "/" && getServerBlock().getAutoindex() != "on")
+	{
 		getResponse().local_uri = *(getServerBlock().getIndex().begin()); // 1번
+	}
+	else if (request_uri == "/" && getServerBlock().getAutoindex() == "on") // autoindex
+	{
+		checkAutoIndex();
+	}
 	else
 	{
 		if ((idx = findIndex(request_uri)) > -1) //완전 일치
@@ -74,39 +77,44 @@ int ComposeResponse::checkUri()
 	return (0);
 }
 
-void ComposeResponse::processMethod()
+void ClientControl::deleteFile()
+{
+	if (!access(getRequest().uri.c_str(), F_OK)) //directory도 삭제가 되는지 확인해야함
+	{
+		if (!unlink(getRequest().uri.c_str()))
+		{
+			getResponse().state_flag = "200";
+			getResponse().state_str = "OK";
+		}
+		else	
+		{
+			getResponse().state_flag = "403";
+			getResponse().state_str = "Forbidden";
+		}
+	}
+	else
+	{
+		getResponse().state_flag = "404";
+		getResponse().state_str = "Not found";
+	}
+}
+
+void ClientControl::processMethod()
 {
 	if (getRequest().method == "GET")
 	{
 		if (checkUri())
 			return ;
-		checkAutoIndex();
+		//getFile();
 	}
 	else if (getRequest().method == "POST")
 	{
 		if (checkUri())
 			return ;
-		checkAutoIndex();
+		//postFile();
 	}
 	else if (getRequest().method == "DELETE")
 	{
-		if (!access(getRequest().uri.c_str(), F_OK))
-		{
-			if (!unlink(getRequest().uri.c_str()))
-			{
-				getResponse().state_flag = "200";
-				getResponse().state_str = "OK";
-			}
-			else	
-			{
-				getResponse().state_flag = "403";
-				getResponse().state_str = "Forbidden";
-			}
-		}
-		else
-		{
-			getResponse().state_flag = "404";
-			getResponse().state_str = "Not found";
-		}
+		deleteFile();
 	}
 }
