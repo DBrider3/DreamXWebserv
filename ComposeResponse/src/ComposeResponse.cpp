@@ -3,11 +3,13 @@
 ComposeResponse::ComposeResponse()
 {
 	header.query = "";
+	header.cgi = 0;
 }
 
 ComposeResponse::ComposeResponse(t_request req) // 생성자에서 request 객체 받기
 {
 	header.query = "";
+	header.cgi = 0;
 	request = req;
 }
 
@@ -80,7 +82,10 @@ void		ComposeResponse::setEnv(void)
 	 env_set["CONTENT_TYPE"] = header.ct_type;
 	env_set["GATEWAY_INTERFACE"] = "CGI/1.1";
 	env_set["REMOTE_ADDR"] = "127.0.0.1"; // 그대로 넣어 주면 될듯(?)
-	env_set["REQUEST_URI"] = request.uri + "?" + header.query; // uri (상대 경로)
+	if (!header.query.empty())
+		env_set["REQUEST_URI"] = request.uri + "?" + header.query; // uri (상대 경로)
+	else
+		env_set["REQUEST_URI"] = request.uri;
 	env_set["SERVER_PORT"] = request.port; // request.port
 	env_set["SERVER_SOFTWARE"] = "DPT"; // 간지템
 	env_set["SCRIPT_NAME"] = request.local_uri; // uri (상대 경로)
@@ -147,16 +152,34 @@ const char* PrintError::what() const throw()
 //   return (return_value);
 // }
 
+void		ComposeResponse::fillResponse(void)
+{
+	char	res[10000]; // 크기를 알 수 없으니 임시로 10000 설정 추후 이 부분에 대해 방안모색
+	if (header.ct_len < 100)
+		sprintf(res, RESPONSE_FMT, 200, "OK", header.ct_len, header.ct_type.c_str(), body.c_str());
+	else //chunk
+	{
+		
+	}
+	cout << res << endl;
+	//write(header->fd, res, strlen(res))); //fd 수정
+}
+
 void		ComposeResponse::coreResponse(void)
 {
 	struct stat st;
 	string path_info = request.root + request.local_uri;
 
+	//char bbody[100000];
 	stat((path_info).c_str(), &st);
 	header.ct_len = st.st_size;
+	//cout << "header.ct_len : " << header.ct_len << endl;
+	cout << "path_info : " << path_info << endl;
+	cout << "method : " << request.method << endl;
+	//cout << "header.cgi : " << header.cgi << endl;
 	if (header.ct_len < 0)
 			throw (PrintError());
-	else if (header.ct_len < 10000) //42MB = 44040192 이지만 chunk 처리 쉽게 하려고 100으로 둠
+	else// if (header.ct_len < 10000) //42MB = 44040192 이지만 chunk 처리 쉽게 하려고 100으로 둠
 	{
 		if (!header.cgi)
 		{
@@ -165,7 +188,6 @@ void		ComposeResponse::coreResponse(void)
 				ifstream fin(path_info);
 				if (fin.is_open())
 				{
-					//string ;
 					char c;
 					while (fin.get(c))
 						body += c;
@@ -179,51 +201,79 @@ void		ComposeResponse::coreResponse(void)
 				cerr << e.what() << "Cannot open the File!😵‍" << endl;
 				exit(1);
 			}
+			//fillResponse();
 		}
 		else
 		{
-			int pipe_fd[2];
 			pid_t pid;
-			//char **command1 = setCommand("php", "/Users/sonkang/Desktop/DreamXWebserv/test.php");
 			map<string, string> cmd;
-			char foo[100];
-
-			cmd["php-cgi"] = path_info;
-			pipe(pipe_fd);
-			pid = fork();
-			//memset((char *)foo, '\0', 1024);
-			if (!pid)
+			if (request.method == "GET")
 			{
-				dup2(pipe_fd[1], STDOUT_FILENO);
-				close(pipe_fd[0]);
-				close(pipe_fd[1]);
+				FILE *fOut = tmpfile();
+				long fdOut = fileno(fOut);
 
-				execve(PHPCGI, convToChar(cmd, 0), convToChar(env_set, 1));
-				// else if (!strcmp(command2[0], "cgi_tester"))
-				// 	execve("./tester/cgi_tester", command2, NULL);
-			}
-			else
-			{
-				// while (read(pipe_fd[0], foo, sizeof(foo)) > 0)
-        		// 	body += static_cast<string> (foo);
-				//ssize_t i;
-				int res;
-				while (1)
+				cmd["php-cgi"] = path_info;
+				pid = fork();
+				if (!pid)
 				{
-					res = read(pipe_fd[0], foo, sizeof(foo));
-					cout << "!!!!!!!!!!res : " << res << endl;
-					body += static_cast<string> (foo);
-					//cout << "str "<< str << endl;
-					// if (res < 100)
-					// 	break;
+    				dup2(fdOut, STDOUT_FILENO);
+					execve(PHPCGI, convToChar(cmd, 0), convToChar(env_set, 1));
 				}
-				close(pipe_fd[1]);
-				close(pipe_fd[0]);
-				// fill_response(r_header, 200, strlen(foo), "text/html", foo);
-				// write(header->fd, r_header, strlen(r_header));
-				wait(NULL);
+				else
+				{
+					waitpid(pid, NULL, 0);
+					lseek(fdOut, 0, SEEK_SET);
+					char foo[1024] = {0,};
+					int res = 0;
+					
+					while ((res = read(fdOut, foo, 1024)) > 0)
+					{
+						foo[res] = 0;
+						body += static_cast<string> (foo);
+						memset(foo, 0, sizeof(foo));
+						if (res == -1)
+							throw (PrintError());
+					}
+				}
+				string search = "Content-type: ";
+				header.ct_type = body.substr(body.find(search) + 14, body.find("\r\n\r\n") - body.find(search) - 14);
+				body = body.substr(body.find("\r\n\r\n") + 4, body.size() - body.find("\r\n\r\n") - 5);
 			}
+			else if (request.method == "POST")
+			{
+				FILE *fOut = tmpfile();
+				long fdOut = fileno(fOut);
+
+				cmd["php-cgi"] = path_info;
+				pid = fork();
+				if (!pid)
+				{
+    				dup2(fdOut, STDOUT_FILENO);
+					execve(PHPCGI, convToChar(cmd, 0), convToChar(env_set, 1));
+				}
+				else
+				{
+					waitpid(pid, NULL, 0);
+					lseek(fdOut, 0, SEEK_SET);
+					char foo[1024] = {0,};
+					int res = 0;
+					
+					while ((res = read(fdOut, foo, 1024)) > 0)
+					{
+						foo[res] = 0;
+						body += static_cast<string> (foo);
+						memset(foo, 0, sizeof(foo));
+						if (res == -1)
+							throw (PrintError());
+					}
+				}
+				//cout << body << endl;
+				string search = "Content-type: ";
+				header.ct_type = body.substr(body.find(search) + 14, body.find("\r\n\r\n") - body.find(search) - 14);
+				body = body.substr(body.find("\r\n\r\n") + 4, body.size() - body.find("\r\n\r\n") - 4);
+				cout << "search : " << header.ct_type << endl;
+			}
+			fillResponse();
 		}
-		cout << "body : " << body << endl;
 	}
 }
