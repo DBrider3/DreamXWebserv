@@ -311,7 +311,6 @@ void Manager::runServer()
 				}
  				else if ((it = findClient(client_control, curr_event->ident)) != client_control.end())
 				{
-						cout << "out " << it->getClientFd()) << endl;
 					it->readRequest();
 					//check_msg(request_msgs[idx]);
 				}
@@ -320,12 +319,12 @@ void Manager::runServer()
 			{
 				if ((it = findClient(client_control, curr_event->ident)) != client_control.end())
 				{
-					if (it->getResponse().state_flag != "")  //it->readRequest();했을 때 에러가 있다면 먼저 띄워줌
+					if (!(it->getResponse().state_flag.empty()))  //it->readRequest();했을 때 에러가 있다면 먼저 띄워줌
 						sendStatePage(it->getClientFd(), it->getResponse().state_flag, it->getResponse().state_str);
 					if (it->checkMethod(http_block.getLimitExcept()))
 					{
 						it->processMethod();
-						if (it->getResponse().state_flag != "")
+						if (!(it->getResponse().state_flag.empty()))
 						{
 							if (it->getResponse().state_flag == "301")
 								it->sendRedirectPage();
