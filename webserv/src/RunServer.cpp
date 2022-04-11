@@ -290,7 +290,7 @@ void Manager::runServer()
 		changeEvents(change_list, web_serv.server_socket[i], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 
 	while (1)
-	// for (int i = 0; i < 30; i++)
+	//for (int j = 0; j < 30; j++)
 	{
 		new_events = kevent(kq, &change_list[0], change_list.size(), event_list, 8, NULL);
 		
@@ -319,7 +319,7 @@ void Manager::runServer()
 				if (checkSocket(curr_event->ident, web_serv.server_socket))
 				{
 					client_control.push_back(ClientControl());
-					if (client_control[i].setClientsocket(change_list, curr_event->ident, http_block.getServerBlock()[i]))
+					if (client_control.back().setClientsocket(change_list, curr_event->ident, http_block.getServerBlock()[client_control.size() - 1]))
 						client_control.pop_back();
 				}
  				else if ((it = findClient(client_control, curr_event->ident)) != client_control.end())
@@ -331,6 +331,7 @@ void Manager::runServer()
 			{
 				if ((it = findClient(client_control, curr_event->ident)) != client_control.end() && it->getRead() == 1)
 				{
+					cout << "here\n";
 					if (!(it->getResponse().state_flag.empty()))  //it->readRequest();했을 때 에러가 있다면 먼저 띄워줌
 						sendStatePage(it->getClientFd(), it->getResponse().state_flag, it->getResponse().state_str);
 					if (it->checkMethod(http_block.getLimitExcept()))

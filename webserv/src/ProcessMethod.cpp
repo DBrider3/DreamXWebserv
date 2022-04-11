@@ -15,11 +15,13 @@ int ClientControl::findIndex(string uri)
 {
 	int i;
 	vector<string>::iterator it;
+	vector<string> temp = getServerBlock().getIndex();
 
 	i = 0;
-	for (it = getServerBlock().getIndex().begin(); it != getServerBlock().getIndex().end(); it++)
+	uri.erase(0, 1);
+	for (it = temp.begin(); it != temp.end(); it++)
 	{
-		if (*it == uri.erase(0, 1))
+		if (*it == uri)
 			return (i);
 		i++;
 	}
@@ -31,6 +33,7 @@ int ClientControl::checkUri()
 	string location_uri;
 	string request_uri;
 	vector<LocationBlock>::iterator it;
+	vector<LocationBlock> temp = getServerBlock().getLocationBlock();
 	int		idx;
 
 	request_uri = getRequest().uri;
@@ -52,7 +55,7 @@ int ClientControl::checkUri()
 		{
 			location_uri = request_uri.erase(0, 1); //두번째 인자를 넘기지 않으면 자동으로 str 맨 끝까지 복사한다.
 			
-			for (it = getServerBlock().getLocationBlock().begin(); it != getServerBlock().getLocationBlock().end(); it++)
+			for (it = temp.begin(); it != temp.end(); it++)
 			{
 				if (location_uri.compare(it->getMatch().back()) == 0)
 				{
@@ -71,7 +74,7 @@ int ClientControl::checkUri()
 					break ;
 				}
 			}
-			if (it == getServerBlock().getLocationBlock().end())
+			if (it == temp.end())
 			{
 				setStateFlag("404");
 				setStateStr("Not found");
