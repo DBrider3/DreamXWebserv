@@ -13,7 +13,8 @@
 #include <unistd.h>
 
 using namespace std;
-#define PHPCGI "/Users/dcho/Born2Code/DreamXWebserv/ComposeResponse/php-cgi"
+# define PHPCGI "/Users/dcho/Born2Code/DreamXWebserv/ComposeResponse/php-cgi"
+# define RESPONSE_FMT "HTTP/1.1 %d %s\nContent-Length: %d\nContent-Type: %s\n\n%s"
 
 typedef struct s_request {
 	string	method;
@@ -76,6 +77,7 @@ class ComposeResponse
 		char**	convToChar(map<string, string> m, int flag);
 		//char**	setCommand(string command, string path);
 		void	coreResponse(void);
+		void	fillResponse(void);
 };
 
 #endif
