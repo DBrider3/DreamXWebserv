@@ -7,12 +7,12 @@ int	main(void)
 		t_request r;
 		//char** env;
 
-		//r.root = "/Users/dcho/Born2Code/DreamXWebserv";
-		r.root = "/Users/songju/Desktop/DreamXWebserv";
-		r.local_uri = "/testcode/form_up.php";
+		r.root = "/Users/dcho/Born2Code/DreamXWebserv";
+		//r.root = "/Users/songju/Desktop/DreamXWebserv";
+		r.local_uri = "/testcode/test.php";
 		//r.local_uri = "/testcode/test.html";
 		r.method = "GET";
-		r.uri = "/testcode/form_up.php";
+		r.uri = "/testcode/test.php";
 		//r.uri = "/testcode/test.html";
 		r.port = "80";
 		r.version = "HTTP/1.1";

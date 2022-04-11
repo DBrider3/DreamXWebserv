@@ -207,11 +207,11 @@ void		ComposeResponse::coreResponse(void)
 			/*
 			** php-cgi response header + body 계산해서 동적할당후 초기화
 			*/
-			// char *foo = (char*)malloc(sizeof(char) * header.ct_len + 54);
-			// memset(foo, 1, header.ct_len + 53);
-			char foo[100];
-			
-			
+			 char *foo = (char*)malloc(sizeof(char) * header.ct_len + 54);
+			 memset(foo, 1, header.ct_len + 53);
+			//char foo[100];
+
+
 			printf("foo : %lu\n", strlen(foo));
 			cmd["php-cgi"] = path_info;
 			pipe(pipe_fd);
@@ -234,19 +234,21 @@ void		ComposeResponse::coreResponse(void)
 				** 예상하는바 execve, fork, pipe를 이용하면 무조건 fd를 이용하게 되는데
 				** 방식을 바꾸거나 read에서 탈출하는 해결방안을 모색할 필요가 있음
 				*/
+				waitpid(pid, NULL, 0);
 				int res;
-				res = read(pipe_fd[0], foo, strlen(foo));
+				res = read(pipe_fd[0], foo, strlen(foo)); // 동적 페이지는 처리가 안됨.
 					body += static_cast<string> (foo);
-				cout << "????\n";
 				close(pipe_fd[1]);
 				close(pipe_fd[0]);
-				cout << body << endl;
+				//cout << body << endl;
+				//cout << "----------------------------------" << endl;
 				// fill_response(r_header, 200, strlen(foo), "text/html", foo);
 				// write(header->fd, r_header, strlen(r_header));
-				waitpid(pid, NULL, 0);
 			}
-			//header.ct_type = body.substr(body.find("Content-type: ") + 14, body.find("\n\n") - body.find("Content-type: ") - 14);
-			//cout << header.ct_type << "\n";
+			string search = "Content-type: ";
+			header.ct_type = body.substr(body.find(search) + 14, body.find("\r\n\r\n") - body.find(search) - 14);
+			body = body.substr(body.find("\r\n\r\n") + 4, body.size() - body.find("\r\n\r\n") - 5);
+			fillResponse();
 		}
 	}
 }
