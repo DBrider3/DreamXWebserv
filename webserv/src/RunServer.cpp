@@ -46,6 +46,7 @@ void ClientControl::initRequestMsg()
 {
 	getRequest().method = "";
 	getRequest().uri = "";
+	getRequest().query_str = "";
 	getRequest().version = "";
 	return ;
 }
@@ -96,14 +97,16 @@ void ClientControl::sendRedirectPage()
  * sever_socket을 토대로 client_socket을 구성하는 함수입니다.
  */
 
-void ClientControl::setClientsocket(vector<struct kevent> &change_list, uintptr_t server_socket, ServerBlock server_block)
+int ClientControl::setClientsocket(vector<struct kevent> &change_list, uintptr_t server_socket, ServerBlock server_block)
 {
 	/* accept new client */
 	int client_socket;
 
-   if ((client_socket = accept(server_socket, NULL, NULL)) == -1)
+   	if ((client_socket = accept(server_socket, NULL, NULL)) == -1)
+	{
 		sendStatePage(server_socket, "500", "Internal server error"); //클라이언트 생성실패
-			client_control.erase()
+		return (-1);
+	}
 	cout << "accept new client: " << client_socket << endl;
 	fcntl(client_socket, F_SETFL, O_NONBLOCK);
 
@@ -115,18 +118,21 @@ void ClientControl::setClientsocket(vector<struct kevent> &change_list, uintptr_
 	setPort(server_block.getListen()[0]);
 	setClientFd(client_socket);
 	initRequestMsg();
+	return (0);
 }
 
 /*
  * curr_fd가 client_socket목록에 있는지 체크하는 함수입니다.
  */
 
-int findClient(vector<ClientControl> client_control, int curr_fd)
+vector<ClientControl>::iterator findClient(vector<ClientControl> client_control, int curr_fd)
 {
-	for (size_t i = 0; i < client_control.size(); i++)
-		if (client_control[i].getClientFd() == curr_fd)
-			return (i);
-	return (-1);
+	vector<ClientControl>::iterator it;
+
+	for (it = client_control.begin(); it != client_control.end(); it++)
+		if (it->getClientFd() == curr_fd)
+			return (it);
+	return (it);
 }
 
 /*
@@ -138,6 +144,7 @@ void ClientControl::parseRequest(string request)
 	stringstream ss;
 	vector<string> result; //요청메시지가 한 줄 한 줄 저장되는 변수
 	vector<string>::iterator it;
+	char *temp;
 /*
  * Startline 파싱
  */
@@ -152,6 +159,12 @@ void ClientControl::parseRequest(string request)
 		getResponse().state_str = "Request-URI too long";
 		return ;
 	}
+	if ((temp = strtok(const_cast<char*>(getRequest().uri.c_str()), "?")) != NULL)
+	{
+		getRequest().query_str = strtok(NULL, "\0");
+		getRequest().uri = temp;
+	}
+
 /*
  * Header 파싱
  */
@@ -246,6 +259,7 @@ void Manager::runServer()
 	int                     new_events;
 	struct kevent*          curr_event;
 	vector<ClientControl>	client_control;
+	vector<ClientControl>::iterator it;
 
 	try
 	{
@@ -283,7 +297,8 @@ void Manager::runServer()
 				else
 				{
 					sendStatePage(curr_event->ident, "400", "Bad Request");
-					client_control[findClient(client_control, curr_event->ident)].erase();
+					it = findClient(client_control, curr_event->ident);
+					client_control.erase(it);
 				}
 			}
 			else if (curr_event->filter == EVFILT_READ)
@@ -291,34 +306,36 @@ void Manager::runServer()
 				if (checkSocket(curr_event->ident, web_serv.server_socket))
 				{
 					client_control.push_back(ClientControl());
-					client_control[i].setClientsocket(change_list, curr_event->ident, http_block.getServerBlock()[i]);
+					if (client_control[i].setClientsocket(change_list, curr_event->ident, http_block.getServerBlock()[i]))
+						client_control.pop_back();
 				}
- 				else if ((idx = findClient(client_control, curr_event->ident)) >= 0)
+ 				else if ((it = findClient(client_control, curr_event->ident)) != client_control.end())
 				{
-					client_control[idx].readRequest();
+						cout << "out " << it->getClientFd()) << endl;
+					it->readRequest();
 					//check_msg(request_msgs[idx]);
 				}
 			}
 			else if (curr_event->filter == EVFILT_WRITE)
 			{
-				if ((idx = findClient(client_control, curr_event->ident)) >= 0)
+				if ((it = findClient(client_control, curr_event->ident)) != client_control.end())
 				{
-					if (client_control[idx].getResponse().state_flag != "")  //client_control[idx].readRequest();했을 때 에러가 있다면 먼저 띄워줌
-						sendStatePage(client_control[idx].getClientFd(), client_control[idx].getResponse().state_flag, client_control[idx].getResponse().state_str);
-					if (client_control[idx].checkMethod(http_block.getLimitExcept()))
+					if (it->getResponse().state_flag != "")  //it->readRequest();했을 때 에러가 있다면 먼저 띄워줌
+						sendStatePage(it->getClientFd(), it->getResponse().state_flag, it->getResponse().state_str);
+					if (it->checkMethod(http_block.getLimitExcept()))
 					{
-						client_control[idx].processMethod();
-						if (client_control[idx].getResponse().state_flag != "")
+						it->processMethod();
+						if (it->getResponse().state_flag != "")
 						{
-							if (client_control[idx].getResponse().state_flag == "301")
-								client_control[idx].sendRedirectPage();
+							if (it->getResponse().state_flag == "301")
+								it->sendRedirectPage();
 							else
-								sendStatePage(client_control[idx].getClientFd(), client_control[idx].getResponse().state_flag, client_control[idx].getResponse().state_str);
+								sendStatePage(it->getClientFd(), it->getResponse().state_flag, it->getResponse().state_str);
 						}
 					}
 					else
-						sendStatePage(client_control[idx].getClientFd(), "403", "Forbidden");
-					client_control[idx].erase();
+						sendStatePage(it->getClientFd(), "403", "Forbidden");
+					client_control.erase(it);//iterator로 삭제 가능 
 				}
 			}
 		}
