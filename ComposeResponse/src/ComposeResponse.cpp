@@ -168,9 +168,10 @@ void		ComposeResponse::coreResponse(void)
 	//char bbody[100000];
 	stat((path_info).c_str(), &st);
 	header.ct_len = st.st_size;
-	cout << "header.ct_len : " << header.ct_len << endl;
+	//cout << "header.ct_len : " << header.ct_len << endl;
 	cout << "path_info : " << path_info << endl;
-	cout << "header.cgi : " << header.cgi << endl;
+	cout << "method : " << request.method << endl;
+	//cout << "header.cgi : " << header.cgi << endl;
 	if (header.ct_len < 0)
 			throw (PrintError());
 	else// if (header.ct_len < 10000) //42MB = 44040192 이지만 chunk 처리 쉽게 하려고 100으로 둠
@@ -201,54 +202,97 @@ void		ComposeResponse::coreResponse(void)
 		{
 			int pipe_fd[2];
 			pid_t pid;
-			//char **command1 = setCommand("php", "/Users/sonkang/Desktop/DreamXWebserv/test.php");
 			map<string, string> cmd;
-			cout << "header.ct_len in parent: " << header.ct_len << endl;
-			/*
-			** php-cgi response header + body 계산해서 동적할당후 초기화
-			*/
-			 char *foo = (char*)malloc(sizeof(char) * header.ct_len + 54);
-			 memset(foo, 1, header.ct_len + 53);
-			//char foo[100];
-
-
-			printf("foo : %lu\n", strlen(foo));
-			cmd["php-cgi"] = path_info;
-			pipe(pipe_fd);
-			pid = fork();
-			if (!pid)
+			if (request.method == "GET")
 			{
-				dup2(pipe_fd[1], STDOUT_FILENO);
-				close(pipe_fd[0]);
-				close(pipe_fd[1]);
-
-				execve(PHPCGI, convToChar(cmd, 0), convToChar(env_set, 1));
-				// else if (!strcmp(command2[0], "cgi_tester"))
-				// 	execve("./tester/cgi_tester", command2, NULL);
-			}
-			else
-			{
+				//cout << "header.ct_len in parent: " << header.ct_len << endl;
 				/*
-				** 정확한 size 계산을 통해 while을 안쓰고 한방에 read
-				** 이유는 while만 돌면 read에서 탈출이 안됨
-				** 예상하는바 execve, fork, pipe를 이용하면 무조건 fd를 이용하게 되는데
-				** 방식을 바꾸거나 read에서 탈출하는 해결방안을 모색할 필요가 있음
+				** php-cgi response header + body 계산해서 동적할당후 초기화
 				*/
-				waitpid(pid, NULL, 0);
-				int res;
-				res = read(pipe_fd[0], foo, strlen(foo)); // 동적 페이지는 처리가 안됨.
-					body += static_cast<string> (foo);
-				close(pipe_fd[1]);
-				close(pipe_fd[0]);
-				//cout << body << endl;
-				//cout << "----------------------------------" << endl;
-				// fill_response(r_header, 200, strlen(foo), "text/html", foo);
-				// write(header->fd, r_header, strlen(r_header));
+				char *foo = (char*)malloc(sizeof(char) * header.ct_len + 54);
+				memset(foo, 1, header.ct_len + 53);
+				//char foo[100];
+
+				//printf("foo : %lu\n", strlen(foo));
+				cmd["php-cgi"] = path_info;
+				pipe(pipe_fd);
+				pid = fork();
+				if (!pid)
+				{
+					dup2(pipe_fd[1], STDOUT_FILENO);
+					close(pipe_fd[0]);
+					close(pipe_fd[1]);
+
+					execve(PHPCGI, convToChar(cmd, 0), convToChar(env_set, 1));
+					// else if (!strcmp(command2[0], "cgi_tester"))
+					// 	execve("./tester/cgi_tester", command2, NULL);
+				}
+				else
+				{
+					/*
+					** 정확한 size 계산을 통해 while을 안쓰고 한방에 read
+					** 이유는 while만 돌면 read에서 탈출이 안됨
+					** 예상하는바 execve, fork, pipe를 이용하면 무조건 fd를 이용하게 되는데
+					** 방식을 바꾸거나 read에서 탈출하는 해결방안을 모색할 필요가 있음
+					*/
+					waitpid(pid, NULL, 0);
+					int res;
+					res = read(pipe_fd[0], foo, strlen(foo)); // 동적 페이지는 처리가 안됨.
+						body += static_cast<string> (foo);
+					cout << "res : " << res << endl;
+					cout << "body : " << body << endl;
+					close(pipe_fd[1]);
+					close(pipe_fd[0]);
+					//cout << body << endl;
+					//cout << "----------------------------------" << endl;
+					// fill_response(r_header, 200, strlen(foo), "text/html", foo);
+					// write(header->fd, r_header, strlen(r_header));
+				}
+				string search = "Content-type: ";
+				header.ct_type = body.substr(body.find(search) + 14, body.find("\r\n\r\n") - body.find(search) - 14);
+				body = body.substr(body.find("\r\n\r\n") + 4, body.size() - body.find("\r\n\r\n") - 5);
 			}
-			string search = "Content-type: ";
-			header.ct_type = body.substr(body.find(search) + 14, body.find("\r\n\r\n") - body.find(search) - 14);
-			body = body.substr(body.find("\r\n\r\n") + 4, body.size() - body.find("\r\n\r\n") - 5);
-			fillResponse();
+			else if (request.method == "POST")
+			{
+				FILE *fOut = tmpfile();
+				long fdOut = fileno(fOut);
+
+				cmd["php-cgi"] = path_info;
+				pid = fork();
+				if (!pid)
+				{
+    				dup2(fdOut, STDOUT_FILENO);
+					execve(PHPCGI, convToChar(cmd, 0), convToChar(env_set, 1));
+					// else if (!strcmp(command2[0], "cgi_tester"))
+					// 	execve("./tester/cgi_tester", command2, NULL);
+				}
+				else
+				{
+					waitpid(pid, NULL, 0);
+					lseek(fdOut, 0, SEEK_SET);
+					char foo[1024] = {0,};
+					int res = 0;
+					
+					while ((res = read(fdOut, foo, 1024)) > 0)
+					{
+						foo[res] = 0;
+						body += static_cast<string> (foo);
+						memset(foo, 0, sizeof(foo));
+						if (res == -1)
+							throw (PrintError());
+					}
+					//while ((res = recv(pipe_fd[0], foo, sizeof(foo), 0)) != -1)
+					//{
+					//	cout << res << endl;
+					//	body += static_cast<string> (foo);
+					//}
+				}
+				cout << body << endl;
+				//string search = "Content-type: ";
+				//header.ct_type = body.substr(body.find(search) + 14, body.find("\r\n\r\n") - body.find(search) - 14);
+				//body = body.substr(body.find("\r\n\r\n") + 4, body.size() - body.find("\r\n\r\n") - 5);
+			}
+			//fillResponse();
 		}
 	}
 }
