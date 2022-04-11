@@ -4,14 +4,17 @@ ServerBlock::ServerBlock()
 {
 
 }
+
 ServerBlock::~ServerBlock()
 {
 
 }
+
 ServerBlock::ServerBlock(const ServerBlock& copy)
 {
 	*this = copy;
 }
+
 ServerBlock& ServerBlock::operator = (const ServerBlock& sb)
 {
 	if (this == &sb)

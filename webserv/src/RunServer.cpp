@@ -8,7 +8,7 @@
 
 void disconnectSocket(int socket_fd) //고쳐야함 소멸자불러야함
 {
-	cout << "Disconnet Socket!!  socket_fd : " << socket_fd << endl;
+	cout << "Disconnect Socket!!  socket_fd : " << socket_fd << endl;
 	close(socket_fd);
 }
 
@@ -44,10 +44,10 @@ void changeEvents(vector<struct kevent>& change_list, uintptr_t ident, int16_t f
 
 void ClientControl::initRequestMsg()
 {
-	getRequest().method = "";
-	getRequest().uri = "";
-	getRequest().query_str = "";
-	getRequest().version = "";
+	setMethod("");
+	setUri("");
+	setQuery("");
+	setVersion("");
 	return ;
 }
 
@@ -108,6 +108,7 @@ int ClientControl::setClientsocket(vector<struct kevent> &change_list, uintptr_t
 		return (-1);
 	}
 	cout << "accept new client: " << client_socket << endl;
+	setRead(0);
 	fcntl(client_socket, F_SETFL, O_NONBLOCK);
 
 	/* add event for client socket - add read && write event */
@@ -125,7 +126,7 @@ int ClientControl::setClientsocket(vector<struct kevent> &change_list, uintptr_t
  * curr_fd가 client_socket목록에 있는지 체크하는 함수입니다.
  */
 
-vector<ClientControl>::iterator findClient(vector<ClientControl> client_control, int curr_fd)
+vector<ClientControl>::iterator findClient(vector<ClientControl> &client_control, int curr_fd)
 {
 	vector<ClientControl>::iterator it;
 
@@ -144,25 +145,30 @@ void ClientControl::parseRequest(string request)
 	stringstream ss;
 	vector<string> result; //요청메시지가 한 줄 한 줄 저장되는 변수
 	vector<string>::iterator it;
-	char *temp;
+	map<string, vector<string> > header_tmp;
+	string	temp;
 /*
  * Startline 파싱
  */
 	result = split(request, '\n');
-	getRequest().method = strtok(const_cast<char*>(result[0].c_str()), " ");
-	getRequest().uri = strtok(NULL, " ");
-	getRequest().version = strtok(NULL, "\n");
+	setMethod(strtok(const_cast<char*>(result[0].c_str()), " "));
+	setUri(strtok(NULL, " "));
+	setVersion(strtok(NULL, "\n"));
 
 	if (getRequest().uri.size() > 8190)
 	{
-		getResponse().state_flag = "414";
-		getResponse().state_str = "Request-URI too long";
+		setStateFlag("414");
+		setStateStr("Request-URI too long");
 		return ;
 	}
-	if ((temp = strtok(const_cast<char*>(getRequest().uri.c_str()), "?")) != NULL)
+
+	if (getRequest().uri.find('?') != string::npos)
 	{
-		getRequest().query_str = strtok(NULL, "\0");
-		getRequest().uri = temp;
+		ss << getRequest().uri;
+		getline(ss, temp, '?');
+		setUri(temp);
+		getline(ss, temp, '\0');
+		setQuery(temp);
 	}
 
 /*
@@ -180,21 +186,25 @@ void ClientControl::parseRequest(string request)
 
 		for (int i = 0; getline(ss, val_tmp, ' '); i++)
 			val.push_back(val_tmp);
-		getRequest().header[key] = val;
+		header_tmp[key] = val;
 	}
+	setHeader(header_tmp);
+
 
 /*
  * Body 파싱
  */
-
-	if (convStoi(*(getRequest().header["Content-Length"].begin())) > convStoi(getServerBlock().getClientBodySize()))
+	if (getRequest().header["Content-Length"].size() > 0)
 	{
-		getResponse().state_flag = "413";
-		getResponse().state_str = "Payload Too Large";
-		return ;
+		if(convStoi(*(getRequest().header["Content-Length"].begin())) > convStoi(getServerBlock().getClientBodySize()))
+		{
+			setStateFlag("413");
+			setStateStr("Payload Too Large");
+			return ;
+		}
 	}
 	while (++it != result.end())
-		getRequest().body.push_back(*it);
+		setBody(*it);
 }
 
 /*
@@ -211,6 +221,7 @@ void ClientControl::readRequest()
 	string msg;
 	int n;
 	
+	setRead(1);
 	n = 0;
 	while ((n = read(getClientFd(), buf, sizeof(buf) - 1)) > 0)
 	{
@@ -274,13 +285,15 @@ void Manager::runServer()
 	}
 
 	/*server_socket 연결을 위한 읽기 이벤트 등록*/
+
 	for (size_t i = 0; i < web_serv.ports.size(); i++)
 		changeEvents(change_list, web_serv.server_socket[i], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 
 	while (1)
+	// for (int i = 0; i < 30; i++)
 	{
 		new_events = kevent(kq, &change_list[0], change_list.size(), event_list, 8, NULL);
-
+		
 		if (new_events == -1)
 			sendStatePage(curr_event->ident, "500", "Internal server error"); //kq관리 실패
 		change_list.clear();
@@ -312,12 +325,11 @@ void Manager::runServer()
  				else if ((it = findClient(client_control, curr_event->ident)) != client_control.end())
 				{
 					it->readRequest();
-					//check_msg(request_msgs[idx]);
 				}
 			}
 			else if (curr_event->filter == EVFILT_WRITE)
 			{
-				if ((it = findClient(client_control, curr_event->ident)) != client_control.end())
+				if ((it = findClient(client_control, curr_event->ident)) != client_control.end() && it->getRead() == 1)
 				{
 					if (!(it->getResponse().state_flag.empty()))  //it->readRequest();했을 때 에러가 있다면 먼저 띄워줌
 						sendStatePage(it->getClientFd(), it->getResponse().state_flag, it->getResponse().state_str);

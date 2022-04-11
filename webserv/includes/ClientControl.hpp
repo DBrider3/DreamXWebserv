@@ -49,12 +49,14 @@ class ClientControl //clientpro
 		vector<string>	server_index; //서버 블록 내 index 절대 경로 담아둠
 		ServerBlock		server_block;
 		string			port;
+		int				read_flag;
 
 
 	public:
 		/*
 		** canonicalForm part
 		*/
+
 		// ClientControl();
 		// ~ClientControl();
 		// ClientControl(ClientControl& copy);
@@ -85,6 +87,11 @@ class ClientControl //clientpro
 			return (client_fd);
 		}
 
+		int		getRead()
+		{
+			return (read_flag);
+		}
+
 
 		/*
 		** setter part
@@ -109,6 +116,62 @@ class ClientControl //clientpro
 		{
 			server_index.push_back(root_index);
 		}
+	
+		void		setMethod(string str)
+		{
+			request.method = str;
+		}
+
+		void		setUri(string str)
+		{
+			request.uri = str;
+		}
+
+		void		setQuery(string str)
+		{
+			request.query_str = str;
+		}
+		
+		void		setVersion(string str)
+		{
+			request.version = str;
+		}
+
+		void		setHeader(map<string, vector<string> > tmp)
+		{
+			request.header = tmp;
+		}
+
+		void		setBody(string str)
+		{
+			request.body.push_back(str);
+		}
+
+		void		setLocalUri(string str)
+		{
+			response.local_uri = str;
+		}
+
+		void		setStateFlag(string str)
+		{
+			response.state_flag = str;
+		}
+
+		void		setStateStr(string str)
+		{
+			response.state_str = str;
+		}
+
+		void		setRedirectUri(string str)
+		{
+			response.redirect_uri = str;
+		}
+
+		void		setRead(int n)
+		{
+			read_flag = n;
+		}
+
 		void		findMime(void);
 		void 		initRequestMsg(void);
 		void		processMethod(void);

@@ -1,10 +1,10 @@
 http {
 	index something;
-	limit_except DELETE;
+	limit_except GET POST DELETE;
 
 	server {
 		server_name localhost default_server;
-		listen 8080;
+		listen 8082;
 		client_body_size 42m;
 		root ~/default/;
 		error_page 404 /404.html;
@@ -25,7 +25,7 @@ http {
 
 	server {
 		server_name page2.com;
-		listen 8081;
+		listen 8083;
 		client_body_size 42m;
 		root /;
 		index index.html test.html error.html;
