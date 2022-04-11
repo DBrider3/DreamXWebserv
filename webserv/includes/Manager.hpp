@@ -1,9 +1,9 @@
 #ifndef MANAGER_HPP
 # define MANAGER_HPP
 
-#include "HttpBlock.hpp"
-#include "Utils.hpp"
-#include "ClientControl.hpp"
+# include "HttpBlock.hpp"
+# include "Utils.hpp"
+# include "ClientControl.hpp"
 
 typedef struct s_servinfo
 {

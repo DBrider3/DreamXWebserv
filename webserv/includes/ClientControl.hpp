@@ -19,6 +19,7 @@ using namespace std;
 typedef struct s_request {
 	string							method;
 	string							uri;
+	string							query_str;
 	string							version;
 	map<string, vector<string> >	header;
 	vector<string>					body;
@@ -43,7 +44,7 @@ class ClientControl //clientpro
 		t_request 		request;
 		//서버블록 
 		string			body;
-		string			response;
+		//string			response;
 		int				client_fd;
 		vector<string>	server_index; //서버 블록 내 index 절대 경로 담아둠
 		ServerBlock		server_block;
@@ -103,7 +104,7 @@ class ClientControl //clientpro
 			this->client_fd = client_socket;
 		}
 
-		void		setClientsocket(vector<struct kevent> &change_list, uintptr_t server_socket, ServerBlock server_block);
+		int			setClientsocket(vector<struct kevent> &change_list, uintptr_t server_socket, ServerBlock server_block);
 		void 		setServerIndex(string root_index)
 		{
 			server_index.push_back(root_index);
@@ -120,7 +121,7 @@ class ClientControl //clientpro
 		int			checkUri(void);
 		void		checkAutoIndex(void);
 		int			findIndex(string uri);
-		int			deleteFile(void);
+		void		deleteFile(void);
 		//int		getFile();
 		//int		postFile();
 };

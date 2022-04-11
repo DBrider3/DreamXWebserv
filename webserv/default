@@ -40,20 +40,20 @@ http {
 		}
 	}
 
-	server {
-		server_name page1.com;
-		listen 8081;
-		client_body_size 42m;
-		root /;
-		index index.html test.html error.html;
-		error_page 404 /404.html;
-		autoindex on;
+	// server {
+	// 	server_name page1.com;
+	// 	listen 8081;
+	// 	client_body_size 42m;
+	// 	root /;
+	// 	index index.html test.html error.html;
+	// 	error_page 404 /404.html;
+	// 	autoindex on;
 
-		location = /uri {
-			#location block 안에 무슨 디렉티브가 오는지 정하자!
-			root value;
-			index value;
-			return 301 http://uri;
-		}
-	}
+	// 	location = /uri {
+	// 		#location block 안에 무슨 디렉티브가 오는지 정하자!
+	// 		root value;
+	// 		index value;
+	// 		return 301 http://uri;
+	// 	}
+	// }
 }
