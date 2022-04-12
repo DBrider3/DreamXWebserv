@@ -20,7 +20,7 @@ int checkSocket(int curr_fd, vector<int> server_socket)
 {
 	for (size_t i = 0; i < server_socket.size(); i++)
 		if (server_socket[i] == curr_fd)
-			return (1);	
+			return (1);
 	return (0);
 }
 
@@ -112,6 +112,7 @@ int ClientControl::setClientsocket(vector<struct kevent> &change_list, uintptr_t
 
    	if ((client_socket = accept(server_socket, NULL, NULL)) == -1)
 	{
+		cout << "is client_socket made? : " << client_socket << endl;
 		sendStatePage(server_socket, "500", "Internal server error"); //클라이언트 생성실패
 		return (-1);
 	}
@@ -156,10 +157,12 @@ void ClientControl::parseRequest(string request)
 	vector<string>::iterator it;
 	map<string, vector<string> > header_tmp;
 	string	temp;
+
 /*
  * Startline 파싱
  */
 	result = split(request, '\n');
+	cout << "result : " << result[0] << endl;
 	setMethod(strtok(const_cast<char*>(result[0].c_str()), " "));
 	setUri(strtok(NULL, " "));
 	setVersion(strtok(NULL, "\n"));
@@ -179,13 +182,13 @@ void ClientControl::parseRequest(string request)
 		getline(ss, temp, '\0');
 		setQuery(temp);
 	}
-
 /*
  * Header 파싱
  */
 	for (it = result.begin() + 1; it->size() > 1; it++)
 	{
 		stringstream ss(*it);
+		stringstream ss_tmp;
 		string key;
 		vector<string> val;
 		string val_tmp;
@@ -194,10 +197,19 @@ void ClientControl::parseRequest(string request)
 		ss.get(); //인덱스 +1 -> 콜론 뒤 공백에서 다음 인덱스로 이동
 
 		for (int i = 0; getline(ss, val_tmp, ' '); i++)
+		{
+			if (key == "Content-Type" && i == 1)
+			{
+				ss_tmp << val_tmp;
+				getline(ss_tmp, val_tmp, '=');
+				getline(ss_tmp, val_tmp, '\0');
+			}
 			val.push_back(val_tmp);
+		}
 		header_tmp[key] = val;
 	}
 	setHeader(header_tmp);
+
 
 
 /*
@@ -212,6 +224,8 @@ void ClientControl::parseRequest(string request)
 			return ;
 		}
 	}
+
+
 	while (++it != result.end())
 		setBody(*it);
 }
@@ -239,7 +253,7 @@ void ClientControl::readRequest()
 	stringstream ss;
 	string msg;
 	int n;
-	
+
 	setRead(1);
 	n = 0;
 	while ((n = read(getClientFd(), buf, sizeof(buf) - 1)) > 0)
@@ -249,7 +263,7 @@ void ClientControl::readRequest()
 		// 	n = 0;
 		// 	break;
 		// }
-		buf[9] = '\0';
+		buf[n] = '\0';
 		ss << buf;
 	}
 	msg += ss.str();
@@ -312,18 +326,21 @@ void Manager::runServer()
 	while (1)
 	//for (int j = 0; j < 30; j++)
 	{
-		new_events = kevent(kq, &change_list[0], change_list.size(), event_list, 8, NULL);
-		for(int i = 0; i < 8 ; i++)
-			cout << "i :" << i << " " <<"evfd : " << event_list[i].ident << endl;
+		if (change_list.size() > 0)
+			new_events = kevent(kq, &change_list[0], change_list.size(), event_list, 8, NULL); // timeout 설정 확인
 		
+		// for(int i = 0; i < 8 ; i++)
+        //     cout << "i : " << i << " evfd : " << event_list[i].ident << endl;
+
 		if (new_events == -1)
 			sendStatePage(curr_event->ident, "500", "Internal server error"); //kq관리 실패
 		change_list.clear();
 		idx = 0;
 		for (int i = 0; i < new_events; ++i)
 		{
+			// cout << "new_events : " << new_events << endl;
+			// cout << "i          : " << i << endl;
 			curr_event = &event_list[i];
-			cout << "gross : " << new_events << " curr fd : " << curr_event << endl;
 			if (curr_event->flags & EV_ERROR)
 			{
 				if (checkSocket(curr_event->ident, web_serv.server_socket))
@@ -343,14 +360,13 @@ void Manager::runServer()
 				if (checkSocket(curr_event->ident, web_serv.server_socket) && checkBeforeServer(curr_event->ident, before_server))
 				{
 					before_server.push_back(curr_event->ident);
-					cout << "ser read" << endl;
 					client_control.push_back(ClientControl());
 					if (client_control.back().setClientsocket(change_list, curr_event->ident, http_block.getServerBlock()[client_control.size() - 1]))
 						client_control.pop_back();
+					cout << client_control.size() << endl;
 				}
  				else if ((it = findClient(client_control, curr_event->ident)) != client_control.end())
 				{
-					cout << "cli read" << endl;
 					it->readRequest();
 				}
 			}
@@ -358,7 +374,6 @@ void Manager::runServer()
 			{
 				if ((it = findClient(client_control, curr_event->ident)) != client_control.end() && it->getRead() == 1)
 				{
-					cout << "cli write" << endl;
 					if (!(it->getResponse().state_flag.empty()))  //it->readRequest();했을 때 에러가 있다면 먼저 띄워줌
 						sendStatePage(it->getClientFd(), it->getResponse().state_flag, it->getResponse().state_str);
 					if (it->checkMethod(http_block.getLimitExcept()))
@@ -380,4 +395,5 @@ void Manager::runServer()
 			}
 		}
 	}
+	sleep(1);
 }
