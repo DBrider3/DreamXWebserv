@@ -20,8 +20,16 @@ int checkSocket(int curr_fd, vector<int> server_socket)
 {
 	for (size_t i = 0; i < server_socket.size(); i++)
 		if (server_socket[i] == curr_fd)
-			return (1);
+			return (1);	
 	return (0);
+}
+
+int checkBeforeServer(int curr_fd, vector<int> before_server)
+{
+	for (size_t i = 0; i < before_server.size(); i++)
+		if (before_server[i] == curr_fd)
+			return (0);
+	return (1);
 }
 
 /*
@@ -118,6 +126,7 @@ int ClientControl::setClientsocket(vector<struct kevent> &change_list, uintptr_t
 	setServerBlock(server_block);
 	setPort(server_block.getListen()[0]);
 	setClientFd(client_socket);
+	setServerFd(static_cast<int>(server_socket));
 	initRequestMsg();
 	return (0);
 }
@@ -207,6 +216,16 @@ void ClientControl::parseRequest(string request)
 		setBody(*it);
 }
 
+void	resetBeforeServer(int server_fd, vector<int>& before_server)
+{
+	for (int i = 0; i < static_cast<int>(before_server.size()); i++)
+		if (server_fd == before_server[i])
+		{
+			before_server.erase(before_server.begin() + i);
+			break;
+		}
+}
+
 /*
  * curr_fd가 전달하는 내용을 버퍼에 담아주는 함수입니다.
  */
@@ -266,6 +285,7 @@ void Manager::runServer()
 	map<int, string>        clients; // map for client socket:data
 	vector<struct kevent>   change_list; // kevent vector for changelist
 	struct kevent           event_list[8]; // kevent array for eventlistcompRespo
+	vector<int>				before_server;
 
 	int                     new_events;
 	struct kevent*          curr_event;
@@ -293,6 +313,8 @@ void Manager::runServer()
 	//for (int j = 0; j < 30; j++)
 	{
 		new_events = kevent(kq, &change_list[0], change_list.size(), event_list, 8, NULL);
+		for(int i = 0; i < 8 ; i++)
+			cout << "i :" << i << " " <<"evfd : " << event_list[i].ident << endl;
 		
 		if (new_events == -1)
 			sendStatePage(curr_event->ident, "500", "Internal server error"); //kq관리 실패
@@ -301,6 +323,7 @@ void Manager::runServer()
 		for (int i = 0; i < new_events; ++i)
 		{
 			curr_event = &event_list[i];
+			cout << "gross : " << new_events << " curr fd : " << curr_event << endl;
 			if (curr_event->flags & EV_ERROR)
 			{
 				if (checkSocket(curr_event->ident, web_serv.server_socket))
@@ -311,19 +334,23 @@ void Manager::runServer()
 				{
 					sendStatePage(curr_event->ident, "400", "Bad Request");
 					it = findClient(client_control, curr_event->ident);
+					resetBeforeServer(it->getServerFd(), before_server);
 					client_control.erase(it);
 				}
 			}
 			else if (curr_event->filter == EVFILT_READ)
 			{
-				if (checkSocket(curr_event->ident, web_serv.server_socket))
+				if (checkSocket(curr_event->ident, web_serv.server_socket) && checkBeforeServer(curr_event->ident, before_server))
 				{
+					before_server.push_back(curr_event->ident);
+					cout << "ser read" << endl;
 					client_control.push_back(ClientControl());
 					if (client_control.back().setClientsocket(change_list, curr_event->ident, http_block.getServerBlock()[client_control.size() - 1]))
 						client_control.pop_back();
 				}
  				else if ((it = findClient(client_control, curr_event->ident)) != client_control.end())
 				{
+					cout << "cli read" << endl;
 					it->readRequest();
 				}
 			}
@@ -331,7 +358,7 @@ void Manager::runServer()
 			{
 				if ((it = findClient(client_control, curr_event->ident)) != client_control.end() && it->getRead() == 1)
 				{
-					cout << "here\n";
+					cout << "cli write" << endl;
 					if (!(it->getResponse().state_flag.empty()))  //it->readRequest();했을 때 에러가 있다면 먼저 띄워줌
 						sendStatePage(it->getClientFd(), it->getResponse().state_flag, it->getResponse().state_str);
 					if (it->checkMethod(http_block.getLimitExcept()))
@@ -347,7 +374,8 @@ void Manager::runServer()
 					}
 					else
 						sendStatePage(it->getClientFd(), "403", "Forbidden");
-					client_control.erase(it);//iterator로 삭제 가능 
+					resetBeforeServer(it->getServerFd(), before_server);
+					client_control.erase(it);//iterator로 삭제 가능
 				}
 			}
 		}

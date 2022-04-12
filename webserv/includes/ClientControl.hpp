@@ -46,6 +46,7 @@ class ClientControl //clientpro
 		string			body;
 		//string			response;
 		int				client_fd;
+		int				server_fd;
 		vector<string>	server_index; //서버 블록 내 index 절대 경로 담아둠
 		ServerBlock		server_block;
 		string			port;
@@ -111,6 +112,11 @@ class ClientControl //clientpro
 			this->client_fd = client_socket;
 		}
 
+		void		setServerFd(int server_socket)
+		{
+			this->server_fd = server_socket;
+		}
+
 		int			setClientsocket(vector<struct kevent> &change_list, uintptr_t server_socket, ServerBlock server_block);
 		void 		setServerIndex(string root_index)
 		{
@@ -170,6 +176,11 @@ class ClientControl //clientpro
 		void		setRead(int n)
 		{
 			read_flag = n;
+		}
+
+		int			getServerFd()
+		{
+			return(this->server_fd);
 		}
 
 		void		findMime(void);
