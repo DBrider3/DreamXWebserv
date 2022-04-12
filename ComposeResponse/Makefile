@@ -6,7 +6,7 @@ RM = rm -rf
 NAME = DPT
 
 SRC =	main.cpp\
-		ComposeResponse.cpp
+		ClientControl.cpp
 
 SRC_DIR = ./src/
 SRCS = $(addprefix $(SRC_DIR),$(SRC))

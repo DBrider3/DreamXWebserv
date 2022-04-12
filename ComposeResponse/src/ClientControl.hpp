@@ -1,5 +1,5 @@
-#ifndef COMPOSERESPONSE_HPP
-# define COMPOSERESPONSE_HPP
+#ifndef CLIENTCONTROL_HPP
+# define CLIENTCONTROL_HPP
 
 #include <iostream>
 #include <string>
@@ -26,23 +26,30 @@ using namespace std;
 typedef struct s_request {
 	string	method;
 	string	uri; // requset uri
-	string	local_uri; // root를 뺀 uri
+	//string	local_uri; // root를 뺀 uri
 	string	version;
+	string	query_str;
 
 	// server block 내부 변수
 	string	client_body_size;
-	string	port;
+	//string	port;
+	string	boundary_key;
 	string	root;
+	map<string, vector<string> >	header;
+	vector<string>					body;
 }				t_request;
 
-typedef struct	s_header
+typedef struct	s_response
 {
+	string	local_uri;
 	string	date;
-	int		ct_len;
+	int		ct_length;
 	string	ct_type;
 	int		cgi;
-	string 	query;
-}				t_header;
+	string	state_flag; //현재 작업이 에러 시, 이벤트에 있는 read/write를 소모시키기 위해 플래그를 사용함.  
+	string	state_str; //빼야함
+	string	redirect_uri;
+}				t_response;
 
 class PrintError : public std::exception
 {
@@ -50,25 +57,27 @@ class PrintError : public std::exception
 		virtual const char* what() const throw();
 };
 
-class ComposeResponse
+class ClientControl
 {
 	private:
-		t_header	header;
-		string		body;
-		string		response;
+		t_response	response;
 		t_request	request;
+		string		body;
+		//string		response;
+		string		port;
 		map<string, string> env_set;
+		ServerBlock		server_block;
 
 
 	public:
 		/*
 		** canonicalForm part
 		*/
-		ComposeResponse();
-		ComposeResponse(t_request req);
-		~ComposeResponse();
-		ComposeResponse(ComposeResponse& copy);
-		ComposeResponse& operator = (const ComposeResponse& cr);
+		ClientControl();
+		ClientControl(t_request req);
+		~ClientControl();
+		ClientControl(ClientControl& copy);
+		ClientControl& operator = (const ClientControl& cr);
 
 		/*
 		** getter part
@@ -83,6 +92,7 @@ class ComposeResponse
 		void	setEnv(void);
 		char**	convToChar(map<string, string> m, int flag);
 		//char**	setCommand(string command, string path);
+		void	processMultipart(void);
 		void	coreResponse(void);
 		void	fillResponse(void);
 };

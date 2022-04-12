@@ -1,24 +1,26 @@
-#include "ComposeResponse.hpp"
+#include "ClientControl.hpp"
 
 int	main(void)
 {
 	try
 	{
 		t_request r;
+		t_response res;
 		//char** env;
 
 		//r.root = "/Users/dcho/Born2Code/DreamXWebserv";
 		r.root = "/Users/songju/Desktop/DreamXWebserv";
-		r.local_uri = "/testcode/info.php";
+		res.local_uri = "/testcode/info.php";
 		//r.local_uri = "/testcode/test.html";
 		r.method = "POST";
 		r.uri = "/testcode/info.php";
 		//r.uri = "/testcode/test.html";
-		r.port = "80";
 		r.version = "HTTP/1.1";
-		ComposeResponse c(r);
+		ClientControl c(r);
+		c.port = "80";
+		//
 		c.parseQuery();
-		c.findMime();
+		c.findMime(); 
 		c.setEnv();
 		//env = c.convToChar();
 
