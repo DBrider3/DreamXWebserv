@@ -154,15 +154,48 @@ const char* PrintError::what() const throw()
 
 void		ComposeResponse::fillResponse(void)
 {
-	char	res[10000]; // 크기를 알 수 없으니 임시로 10000 설정 추후 이 부분에 대해 방안모색
-	if (header.ct_len < 100)
+	char	res[header.ct_len + 1024]; // 크기를 알 수 없으니 임시로 10000 설정 추후 이 부분에 대해 방안모색
+	if (header.ct_len < 42000) // chunk 기준 42mb
+	{
 		sprintf(res, RESPONSE_FMT, 200, "OK", header.ct_len, header.ct_type.c_str(), body.c_str());
+		//write(header->fd, res, strlen(res))); //fd 수정
+		cout << res << endl;
+	}
 	else //chunk
 	{
-		
+		sprintf(res, CHUNK_FMT, 200, "OK", header.ct_type.c_str());
+		//write(header->fd, res, strlen(res))); //fd 수정
+		cout << res;
+		int i = 0;
+
+		string tmp;
+		while (1)
+		{
+			stringstream ss;
+			string hexSize;
+			if (body.size() - 100 * i < 100)
+			{
+				tmp = body.substr(100 * i, body.size() - 100 * i);
+				ss<< hex << tmp.size();
+				hexSize = ss.str();
+			}
+			else
+			{
+				tmp = body.substr(100 * i, 100);
+				ss<< hex << 100;
+				hexSize = ss.str();
+			}
+			//write(header->fd, hexSize.c_str(), hexSize.size());
+			//write(header->fd, tmp.c_str(), tmp.size());
+			cout << hexSize << endl;
+			cout << tmp << endl;
+			if (body.size() - 100 * i < 100)
+				break ;
+			i++;
+		}
+		//write(header->fd, "0\r\n", 3);
+		cout << hex << "0\r\n\r\n";
 	}
-	cout << res << endl;
-	//write(header->fd, res, strlen(res))); //fd 수정
 }
 
 void		ComposeResponse::coreResponse(void)
@@ -237,7 +270,8 @@ void		ComposeResponse::coreResponse(void)
 				}
 				string search = "Content-type: ";
 				header.ct_type = body.substr(body.find(search) + 14, body.find("\r\n\r\n") - body.find(search) - 14);
-				body = body.substr(body.find("\r\n\r\n") + 4, body.size() - body.find("\r\n\r\n") - 5);
+				body = body.substr(body.find("\r\n\r\n") + 4, body.size() - body.find("\r\n\r\n") - 4);
+				header.ct_len = body.size();
 			}
 			else if (request.method == "POST")
 			{
@@ -271,7 +305,7 @@ void		ComposeResponse::coreResponse(void)
 				string search = "Content-type: ";
 				header.ct_type = body.substr(body.find(search) + 14, body.find("\r\n\r\n") - body.find(search) - 14);
 				body = body.substr(body.find("\r\n\r\n") + 4, body.size() - body.find("\r\n\r\n") - 4);
-				cout << "search : " << header.ct_type << endl;
+				header.ct_len = body.size();
 			}
 			fillResponse();
 		}

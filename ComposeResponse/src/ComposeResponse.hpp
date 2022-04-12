@@ -14,11 +14,13 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <errno.h>
+#include <sstream>
 
 using namespace std;
 # define PHPCGI "/Users/songju/Desktop/DreamXWebserv/ComposeResponse/php-cgi"
 //# define PHPCGI "/Users/dcho/Born2Code/DreamXWebserv/ComposeResponse/php-cgi"
 # define RESPONSE_FMT "HTTP/1.1 %d %s\nContent-Length: %d\nContent-Type: %s\n\n%s"
+# define CHUNK_FMT "HTTP/1.1 %d %s\nTransfer-Encoding: chunked\nContent-Type: %s\n\n"
 # define REDIRECT_FMT "HTTP/1.1 %s %s\nLocation: %s\n"
 
 typedef struct s_request {
