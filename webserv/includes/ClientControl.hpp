@@ -10,7 +10,7 @@
 # include "ServerBlock.hpp"
 
 # define STATE_FMT "HTTP/1.1 %s %s\nContent-Length: %ld\nContent-Type: %s\n\n%s\n"
-# define REDIRECT_FMT "HTTP/1.1 %s %s\nLocation: %s\n"
+# define REDIRECT_FMT "HTTP/1.1 %s %s\nLocation: %s\n" 
 
 using namespace std;
 

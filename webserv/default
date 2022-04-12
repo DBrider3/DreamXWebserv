@@ -5,7 +5,7 @@ http {
 	server {
 		server_name localhost default_server;
 		listen 8082;
-		client_body_size 42m;
+		client_body_size 44040192;
 		root ~/default/;
 		error_page 404 /404.html;
 		index index.html test.html error.html;
@@ -16,7 +16,7 @@ http {
 			index sonkang.html;
 			return 301 dcho;
 		}
-		
+
 		location = /form.php {\
 			root value;
 			index value;
@@ -26,7 +26,7 @@ http {
 	server {
 		server_name page2.com;
 		listen 8083;
-		client_body_size 42m;
+		client_body_size 44040192;
 		root /;
 		index index.html test.html error.html;
 		error_page 404 /404.html;
