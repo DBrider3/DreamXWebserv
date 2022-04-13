@@ -134,23 +134,6 @@ const char* PrintError::what() const throw()
 	return ("[Error] : ");
 }
 
-// char**	ComposeResponse::setCommand(std::string command, std::string path)
-// {
-//   char **return_value;
-//   return_value = (char **)malloc(sizeof(char *) * (3));
-
-//   char *temp;
-
-//   temp = (char *)malloc(sizeof(char) * (command.size() + 1));
-//   strcpy(temp, command.c_str());
-//   return_value[0] = temp;
-
-//   temp = (char *)malloc(sizeof(char) * (path.size() + 1));
-//   strcpy(temp, path.c_str());
-//   return_value[1] = temp;
-//   return_value[2] = NULL;
-//   return (return_value);
-// }
 
 void		ClientControl::fillResponse(void)
 {
@@ -200,28 +183,19 @@ void		ClientControl::fillResponse(void)
 
 void		ClientControl::processMultipart(void)
 {
-	string end_code = request.boundary_key + "--\r\n";
-	int res = 1;
+	// 개행은 ""으로 들어온다고 가정
+	multipart.boundary_key = "--" + request.header["Content-Type"][1];
+	string end_code = multipart.boundary_key + "--";
+	int res = 0;
+	multipart.file_name = request.body[res+1].substr(request.body[res+1].find("filename=") + 9);
+	multipart.type = request.body[res+2].substr(request.body[res+2].find("Content-Type: ") + 14);
 	while (request.body[res] != end_code)
 	{
-		vector<string> tmp;
-		
-		// boundary_key 를 찾았다는 가정
-		if (request.body[res] == request.boundary_key)
+		if (request.body[res] == multipart.boundary_key)
 		{
-			// file_name = [res+1]
-			// // 디테일하게 substr 저희도요!
-			// content_type = [res+2]
-			// // substr 간단하게 받았을때 처럼 하면 될듯
-			// data = [res+4]
-			// // 즉각적으로 넣어줘도 될듯!?
-			// res += 4
+			multipart.data += request.body[res+4];
+			res += 5;
 		}
-		// 무조건 filename이 있는 줄
-		// 무조건 content-type이 있는 줄 
-		// 무조건 "\r\n"가 있는 줄
-		// 무조건 "data"가 있는 줄
-		
 	}
 }
 
@@ -285,7 +259,7 @@ void		ClientControl::coreResponse(void)
 					lseek(fdOut, 0, SEEK_SET);
 					char foo[1024] = {0,};
 					int res = 0;
-					
+
 					while ((res = read(fdOut, foo, 1024)) > 0)
 					{
 						foo[res] = 0;
@@ -318,7 +292,7 @@ void		ClientControl::coreResponse(void)
 					lseek(fdOut, 0, SEEK_SET);
 					char foo[1024] = {0,};
 					int res = 0;
-					
+
 					while ((res = read(fdOut, foo, 1024)) > 0)
 					{
 						foo[res] = 0;
