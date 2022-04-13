@@ -59,19 +59,65 @@ void ClientControl::initRequestMsg()
 	return ;
 }
 
+void ClientControl::sendChunk(char** r_header)
+{
+	int i = 0;
+	string tmp;
+	string real_body;
+	while (1)
+	{
+		stringstream ss;
+		if (body.size() - 100 * i < 100)
+		{
+			tmp = body.substr(100 * i, body.size() - 100 * i);
+			ss<< hex << tmp.size();
+			real_body += ss.str() + "\r\n";
+		}
+		else
+		{
+			tmp = body.substr(100 * i, 100);
+			ss<< hex << 100;
+			real_body += ss.str() + "\r\n";
+		}
+		real_body += tmp + "\r\n";
+		if (body.size() - 100 * i < 100)
+			break ;
+		i++;
+	}
+	real_body += "0\r\n\r\n";
+	cout << "flag : " << response.state_flag << " \nstr : " << response.state_str.c_str() \
+	<< "\ntype : " << response.ct_type.c_str() << "\nbody : " << real_body.c_str() << endl;
+	sprintf(*r_header, CHUNK_FMT, response.state_flag.c_str(), response.state_str.c_str(), response.ct_type.c_str(), real_body.c_str());
+}
 
-void sendStatePage(int socket_fd, string state_flag, string state_str)
+void ClientControl::sendSuccessPage(void)
+{
+	
+	char*	r_header = new char[response.ct_length + 1024];
+
+	//chunk
+	if (response.ct_length == 0) //임시 있긴 있다고함 의문 ????
+		;//;
+	else if (response.ct_length > 10)
+		sendChunk(&r_header);	
+	else
+		sprintf(r_header, RESPONSE_FMT, response.state_flag.c_str(), response.state_str.c_str(), response.ct_length, response.ct_type.c_str(), body.c_str());
+	write(client_fd, r_header, strlen(r_header));
+	disconnectSocket(client_fd);
+}
+
+void 	sendErrorPage(int socket_fd, string state_flag, string state_str)
 {
 	struct stat		st;
 	string			local_uri;
 	string			body; //html읽은 내용 담을 변수
 	char			buf[10];
 	char			r_header[1024];
-	size_t			ct_len;
+	int				ct_len;
 	int				bodyfd;
 	int				n;
 	stringstream	ss;
-
+	
 	local_uri = "./state_pages/" + state_flag + ".html";
 	stat(local_uri.c_str(), &st);
 	ct_len = st.st_size;
@@ -87,7 +133,7 @@ void sendStatePage(int socket_fd, string state_flag, string state_str)
 		ss.str("");
 		memset(buf, 0, 10);
 	}
-	sprintf(r_header, STATE_FMT, state_flag.c_str(), state_str.c_str(), ct_len, "text/html", body.c_str());
+	sprintf(r_header, RESPONSE_FMT, state_flag.c_str(), state_str.c_str(), ct_len, "text/html", body.c_str());
 	write(socket_fd, r_header, strlen(r_header));
 	disconnectSocket(socket_fd);
 }
@@ -113,7 +159,7 @@ int ClientControl::setClientsocket(vector<struct kevent> &change_list, uintptr_t
    	if ((client_socket = accept(server_socket, NULL, NULL)) == -1)
 	{
 		cout << "is client_socket made? : " << client_socket << endl;
-		sendStatePage(server_socket, "500", "Internal server error"); //클라이언트 생성실패
+		sendErrorPage(server_socket, "500", "Internal server error"); //클라이언트 생성실패
 		return (-1);
 	}
 	cout << "accept new client: " << client_socket << endl;
@@ -162,7 +208,7 @@ void ClientControl::parseRequest(string request)
  * Startline 파싱
  */
 	result = split(request, '\n');
-	cout << "result : " << result[0] << endl;
+	// cout << "result : " << result[0] << endl;
 	setMethod(strtok(const_cast<char*>(result[0].c_str()), " "));
 	setUri(strtok(NULL, " "));
 	setVersion(strtok(NULL, "\n"));
@@ -270,7 +316,7 @@ void ClientControl::readRequest()
 
 	// if (n <= 0)
 	// {
-	//	sendStatePage(curr_event->ident, "400", "Bad request"); //의문.3 에러 처리 방법이 명확하게 떠오르지 않음.. ????
+	//	sendErrorPage(curr_event->ident, "400", "Bad request"); //의문.3 에러 처리 방법이 명확하게 떠오르지 않음.. ????
 	//     if (n < 0)
 	//         cerr << "client read error!" << endl;
 	// 	cout << "1\n";
@@ -328,12 +374,13 @@ void Manager::runServer()
 	//for (int j = 0; j < 30; j++)
 	{
 		new_events = kevent(kq, &change_list[0], change_list.size(), event_list, 8, NULL); // timeout 설정 확인
-		
+		// for(int i = 0; i < 8 ; i++)
+		// 	cout << "i :" << i << " " <<"evfd : " << event_list[i].ident << endl;		
 		// for(int i = 0; i < 8 ; i++)
         //     cout << "i : " << i << " evfd : " << event_list[i].ident << endl;
 
 		if (new_events == -1)
-			sendStatePage(curr_event->ident, "500", "Internal server error"); //kq관리 실패
+			sendErrorPage(curr_event->ident, "500", "Internal server error"); //kq관리 실패
 		change_list.clear();
 		idx = 0;
 		for (int i = 0; i < new_events; ++i)
@@ -341,15 +388,16 @@ void Manager::runServer()
 			// cout << "new_events : " << new_events << endl;
 			// cout << "i          : " << i << endl;
 			curr_event = &event_list[i];
+			//cout << "gross : " << new_events << " curr fd : " << curr_event << endl;
 			if (curr_event->flags & EV_ERROR)
 			{
 				if (checkSocket(curr_event->ident, web_serv.server_socket))
 				{
-					sendStatePage(curr_event->ident, "500", "Internal server error"); //의문.1 서버 에러시, 어디로 명확하게 전달되는 것이 확인되지 않음. ????
+					sendErrorPage(curr_event->ident, "500", "Internal server error"); //의문.1 서버 에러시, 어디로 명확하게 전달되는 것이 확인되지 않음. ????
 				}	//의문 .2 서버 에러시, 서버를 종료시켜야하나 ????
 				else
 				{
-					sendStatePage(curr_event->ident, "400", "Bad Request");
+					sendErrorPage(curr_event->ident, "400", "Bad Request");
 					it = findClient(client_control, curr_event->ident);
 					resetBeforeServer(it->getServerFd(), before_server);
 					client_control.erase(it);
@@ -360,13 +408,15 @@ void Manager::runServer()
 				if (checkSocket(curr_event->ident, web_serv.server_socket) && checkBeforeServer(curr_event->ident, before_server))
 				{
 					before_server.push_back(curr_event->ident);
+					cout << "ser read" << endl;
 					client_control.push_back(ClientControl());
 					if (client_control.back().setClientsocket(change_list, curr_event->ident, http_block.getServerBlock()[client_control.size() - 1]))
 						client_control.pop_back();
-					cout << client_control.size() << endl;
+					// cout << client_control.size() << endl;
 				}
  				else if ((it = findClient(client_control, curr_event->ident)) != client_control.end())
 				{
+					cout << "cli read" << endl;
 					it->readRequest();
 				}
 			}
@@ -374,8 +424,9 @@ void Manager::runServer()
 			{
 				if ((it = findClient(client_control, curr_event->ident)) != client_control.end() && it->getRead() == 1)
 				{
+					cout << "cli write" << endl;
 					if (!(it->getResponse().state_flag.empty()))  //it->readRequest();했을 때 에러가 있다면 먼저 띄워줌
-						sendStatePage(it->getClientFd(), it->getResponse().state_flag, it->getResponse().state_str);
+						sendErrorPage(it->getClientFd(), it->getResponse().state_flag, it->getResponse().state_str);
 					if (it->checkMethod(http_block.getLimitExcept()))
 					{
 						it->processMethod();
@@ -383,12 +434,16 @@ void Manager::runServer()
 						{
 							if (it->getResponse().state_flag == "301")
 								it->sendRedirectPage();
+							else if (it->getResponse().state_flag[0] == '2')
+							{
+								it->sendSuccessPage();
+							}
 							else
-								sendStatePage(it->getClientFd(), it->getResponse().state_flag, it->getResponse().state_str);
+								sendErrorPage(it->getClientFd(), it->getResponse().state_flag, it->getResponse().state_str);
 						}
 					}
 					else
-						sendStatePage(it->getClientFd(), "403", "Forbidden");
+						sendErrorPage(it->getClientFd(), "403", "Forbidden");
 					resetBeforeServer(it->getServerFd(), before_server);
 					client_control.erase(it);//iterator로 삭제 가능
 				}

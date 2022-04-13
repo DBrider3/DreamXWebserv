@@ -3,13 +3,15 @@
 
 # include <string>
 # include <iostream>
-# include <vector>
 # include <sstream>
+# include <cstring>
 # include <fstream>
 # include <map>
+# include <vector>
 # include <exception>
 
 # include <sys/socket.h>
+# include <sys/stat.h>
 # include <arpa/inet.h>
 
 # include <fcntl.h> //close()
