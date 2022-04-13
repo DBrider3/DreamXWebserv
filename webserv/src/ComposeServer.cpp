@@ -71,6 +71,7 @@ void Manager::composeSocket()
 			cerr << e.what() << "socket() error" << endl;
 		}
 	}
+	delete[] server_addr;
 }
 
 /*

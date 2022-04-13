@@ -2,7 +2,6 @@
 
 void ClientControl::checkAutoIndex()
 {
-	// vector<string>::iterator it;
 	vector<string> temp;
 	
 	temp = getServerBlock().getIndex();
@@ -40,7 +39,6 @@ int ClientControl::checkUri()
 	if (request_uri == "/" && getServerBlock().getAutoindex() != "on")
 	{
 		setLocalUri(*(getServerBlock().getIndex().begin())); // 1번
-		// getResponse().local_uri = *(getServerBlock().getIndex().begin()); // 1번
 	}
 	else if (request_uri == "/" && getServerBlock().getAutoindex() == "on") // autoindex
 	{
@@ -50,7 +48,6 @@ int ClientControl::checkUri()
 	{
 		if ((idx = findIndex(request_uri)) > -1) //완전 일치
 			setLocalUri(getServerBlock().getIndex()[idx]);
-			// getResponse().local_uri = getServerBlock().getIndex()[idx];
 		else
 		{
 			location_uri = request_uri.erase(0, 1); //두번째 인자를 넘기지 않으면 자동으로 str 맨 끝까지 복사한다.
@@ -60,15 +57,11 @@ int ClientControl::checkUri()
 				if (location_uri.compare(it->getMatch().back()) == 0)
 				{
 					setLocalUri(it->getIndex()[0]);
-					// getResponse().local_uri = it->getIndex()[0];
 					if (*(it->getRedirect().begin()) != "")
 					{
 						setStateFlag("301");
 						setStateStr("Moved permanently");
 						setRedirectUri(it->getRedirect().back());
-						// getResponse().state_flag = "301";
-						// getResponse().state_str = "Moved permanently";
-						// getResponse().redirect_uri = it->getRedirect().back();
 						return (-1);
 					}
 					break ;
@@ -78,8 +71,6 @@ int ClientControl::checkUri()
 			{
 				setStateFlag("404");
 				setStateStr("Not found");
-				// getResponse().state_flag = "404";
-				// getResponse().state_str = "Not found";
 				return (-1);
 			}
 		}
@@ -95,23 +86,17 @@ void ClientControl::deleteFile()
 		{
 			setStateFlag("200");
 			setStateStr("OK");
-			// getResponse().state_flag = "200";
-			// getResponse().state_str = "OK";
 		}
 		else	
 		{
 			setStateFlag("403");
 			setStateStr("Forbidden");
-			// getResponse().state_flag = "403";
-			// getResponse().state_str = "Forbidden";
 		}
 	}
 	else
 	{
 		setStateFlag("404");
 		setStateStr("Not found");
-		// getResponse().state_flag = "404";
-		// getResponse().state_str = "Not found";
 	}
 }
 

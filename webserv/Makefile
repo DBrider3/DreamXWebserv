@@ -1,5 +1,5 @@
 CC = clang++
-CPPFLAGS = -Wall -Wextra -Werror -std=c++98 -fsanitize=address -g3
+CPPFLAGS = -Wall -Wextra -Werror -std=c++98 #-fsanitize=address -g3
 
 RM = rm -rf
 
@@ -13,7 +13,7 @@ SRC =	main.cpp\
 		ComposeServer.cpp\
 		RunServer.cpp\
 		Utils.cpp\
-		ProcessMethod.cpp
+		ClientControl.cpp
 
 
 SRC_DIR = ./src/
