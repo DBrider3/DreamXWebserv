@@ -277,7 +277,8 @@ void ClientControl::readRequest()
 	//     disconnectSocket(curr_fd);
 	// }
 	// else
-	parseRequest(msg);
+	if (msg.size() > 0)
+		parseRequest(msg);
 }
 
 int ClientControl::checkMethod(vector<string> method_limit)
@@ -326,8 +327,7 @@ void Manager::runServer()
 	while (1)
 	//for (int j = 0; j < 30; j++)
 	{
-		if (change_list.size() > 0)
-			new_events = kevent(kq, &change_list[0], change_list.size(), event_list, 8, NULL); // timeout 설정 확인
+		new_events = kevent(kq, &change_list[0], change_list.size(), event_list, 8, NULL); // timeout 설정 확인
 		
 		// for(int i = 0; i < 8 ; i++)
         //     cout << "i : " << i << " evfd : " << event_list[i].ident << endl;
@@ -395,5 +395,4 @@ void Manager::runServer()
 			}
 		}
 	}
-	sleep(1);
 }
