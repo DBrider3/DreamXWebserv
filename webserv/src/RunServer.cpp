@@ -63,7 +63,10 @@ void ClientControl::sendChunk(char** r_header)
 {
 	int i = 0;
 	string tmp;
-	string real_body;
+	string chunk_body;
+
+	sprintf(*r_header, CHUNK_FMT, response.state_flag.c_str(), response.state_str.c_str(), response.ct_type.c_str());
+	write(client_fd, *r_header, strlen(*r_header));
 	while (1)
 	{
 		stringstream ss;
@@ -71,35 +74,36 @@ void ClientControl::sendChunk(char** r_header)
 		{
 			tmp = body.substr(100 * i, body.size() - 100 * i);
 			ss<< hex << tmp.size();
-			real_body += ss.str() + "\r\n";
 		}
 		else
 		{
 			tmp = body.substr(100 * i, 100);
 			ss<< hex << 100;
-			real_body += ss.str() + "\r\n";
 		}
-		real_body += tmp + "\r\n";
+		chunk_body = ss.str() + "\r\n" + tmp + "\r\n";
+		write (client_fd, chunk_body.c_str(), chunk_body.size());
 		if (body.size() - 100 * i < 100)
 			break ;
 		i++;
 	}
-	real_body += "0\r\n\r\n";
-	cout << "flag : " << response.state_flag << " \nstr : " << response.state_str.c_str() \
-	<< "\ntype : " << response.ct_type.c_str() << "\nbody : " << real_body.c_str() << endl;
-	sprintf(*r_header, CHUNK_FMT, response.state_flag.c_str(), response.state_str.c_str(), response.ct_type.c_str(), real_body.c_str());
+	write (client_fd, "0\r\n\r\n", strlen("0\r\n\r\n"));
+
 }
 
 void ClientControl::sendSuccessPage(void)
 {
-	
+
 	char*	r_header = new char[response.ct_length + 1024];
 
 	//chunk
 	if (response.ct_length == 0) //임시 있긴 있다고함 의문 ????
 		;//;
 	else if (response.ct_length > 10)
-		sendChunk(&r_header);	
+	{
+		sendChunk(&r_header);
+		disconnectSocket(client_fd);
+		return ;
+	}
 	else
 		sprintf(r_header, RESPONSE_FMT, response.state_flag.c_str(), response.state_str.c_str(), response.ct_length, response.ct_type.c_str(), body.c_str());
 	write(client_fd, r_header, strlen(r_header));
@@ -117,7 +121,7 @@ void 	sendErrorPage(int socket_fd, string state_flag, string state_str)
 	int				bodyfd;
 	int				n;
 	stringstream	ss;
-	
+
 	local_uri = "./state_pages/" + state_flag + ".html";
 	stat(local_uri.c_str(), &st);
 	ct_len = st.st_size;
@@ -155,6 +159,7 @@ int ClientControl::setClientsocket(vector<struct kevent> &change_list, uintptr_t
 {
 	/* accept new client */
 	int client_socket;
+	cout << "before accept" << endl;
 
    	if ((client_socket = accept(server_socket, NULL, NULL)) == -1)
 	{
@@ -295,7 +300,7 @@ void ClientControl::readRequest()
 	/*
 	** read data from client
 	*/
-	char buf[10];
+	char buf[42];
 	stringstream ss;
 	string msg;
 	int n;
@@ -311,6 +316,7 @@ void ClientControl::readRequest()
 		// }
 		buf[n] = '\0';
 		ss << buf;
+		cout << "n : " << n << "\nbuf : " << buf << endl;
 	}
 	msg += ss.str();
 
@@ -323,6 +329,7 @@ void ClientControl::readRequest()
 	//     disconnectSocket(curr_fd);
 	// }
 	// else
+	cout << "msg!!!!!!!!!!!!!!!!!!!!!!!!! : " << msg << endl;
 	if (msg.size() > 0)
 		parseRequest(msg);
 }
@@ -375,7 +382,7 @@ void Manager::runServer()
 	{
 		new_events = kevent(kq, &change_list[0], change_list.size(), event_list, 8, NULL); // timeout 설정 확인
 		// for(int i = 0; i < 8 ; i++)
-		// 	cout << "i :" << i << " " <<"evfd : " << event_list[i].ident << endl;		
+		// 	cout << "i :" << i << " " <<"evfd : " << event_list[i].ident << endl;
 		// for(int i = 0; i < 8 ; i++)
         //     cout << "i : " << i << " evfd : " << event_list[i].ident << endl;
 
@@ -410,9 +417,12 @@ void Manager::runServer()
 					before_server.push_back(curr_event->ident);
 					cout << "ser read" << endl;
 					client_control.push_back(ClientControl());
+					cout << "server accept client1" << endl;
+					cout << curr_event->ident << " / "<< http_block.getServerBlock()[client_control.size() - 1].getRoot() << endl;
 					if (client_control.back().setClientsocket(change_list, curr_event->ident, http_block.getServerBlock()[client_control.size() - 1]))
 						client_control.pop_back();
 					// cout << client_control.size() << endl;
+					cout << "server accept client2" << endl;
 				}
  				else if ((it = findClient(client_control, curr_event->ident)) != client_control.end())
 				{

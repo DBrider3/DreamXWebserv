@@ -4,14 +4,14 @@
 # include "Utils.hpp"
 # include "ServerBlock.hpp"
 
-# define PHPCGI "/Users/daekim/subject/cadet/DreamXWebserv/ComposeResponse/php-cgi"
+//# define PHPCGI "/Users/daekim/subject/cadet/DreamXWebserv/ComposeResponse/php-cgi"
 // # define PHPCGI "/Users/songju/Desktop/DreamXWebserv/ComposeResponse/php-cgi"
-//# define PHPCGI "/Users/dcho/Born2Code/DreamXWebserv/ComposeResponse/php-cgi"
+# define PHPCGI "/Users/dcho/Born2Code/DreamXWebserv/ComposeResponse/php-cgi"
 
 # define NOBODY_FMT "HTTP/1.1 %s %s\n"  //또 뭐넣어야함?
 # define RESPONSE_FMT "HTTP/1.1 %s %s\nContent-Length: %d\nContent-Type: %s\n\n%s\n"
-# define REDIRECT_FMT "HTTP/1.1 %s %s\nLocation: %s\n" 
-# define CHUNK_FMT "HTTP/1.1 %s %s\nTransfer-Encoding: chunked\nContent-Type: %s\n\n%s\n"
+# define REDIRECT_FMT "HTTP/1.1 %s %s\nLocation: %s\n"
+# define CHUNK_FMT "HTTP/1.1 %s %s\nTransfer-Encoding: chunked\nContent-Type: %s\n\n"
 
 // # define RESPONSE_FMT "HTTP/1.1 %d %s\nContent-Length: %d\nContent-Type: %s\n\n%s"
 
@@ -22,7 +22,7 @@ using namespace std;
 typedef struct s_request {
 	string							method;
 	string							uri;
-	string							query_str;    
+	string							query_str;
 	string							version;
 	map<string, vector<string> >	header;
 	vector<string>					body;
@@ -35,7 +35,7 @@ typedef struct	s_response
 	int		ct_length;
 	string	ct_type;
 	int		cgi;
-	string	state_flag; //현재 작업이 에러 시, 이벤트에 있는 read/write를 소모시키기 위해 플래그를 사용함.  
+	string	state_flag; //현재 작업이 에러 시, 이벤트에 있는 read/write를 소모시키기 위해 플래그를 사용함.
 	string	state_str; //빼야함
 	string	redirect_uri;
 }				t_response;
@@ -121,7 +121,7 @@ class ClientControl
 		void		checkAutoIndex(void);
 		int			findIndex(string uri);
 		void		deleteFile(void);
-		
+
 
 		// 추가
 		void		findMime(void);
