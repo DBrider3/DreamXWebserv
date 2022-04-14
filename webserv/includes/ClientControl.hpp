@@ -41,18 +41,18 @@ typedef struct	s_response
 }				t_response;
 
 typedef struct	s_multipart {
-	string	boundary_key;
-	string	file_name;
-	string	type;
-	string	data;
+	string				file_name;
+	string				type;
+	string				data;
 }				t_multipart;
 
 class ClientControl
 {
 	private:
-		t_response		response;
-		t_request 		request;
-		t_multipart		multipart;
+		t_response				response;
+		t_request 				request;
+		vector<t_multipart>		multipart;
+		// string					boundary_key;
 
 		map<string, string> env_set;
 		vector<string>	server_index; //서버 블록 내 index 절대 경로 담아둠
@@ -133,6 +133,8 @@ class ClientControl
 		void		sendSuccessPage(void);
 		void 		sendChunk(char** r_header);
 
+		void		processStatic(string path_info);
+		void		processCGI(string path_info);
 		//int		getFile();
 		//int		postFile();
 };

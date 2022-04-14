@@ -274,20 +274,50 @@ char**		ClientControl::convToChar(map<string, string> m, int flag) //소송
 
 void		ClientControl::processMultipart(void)
 {
+	string boundary_key;
+	string end_code;
+
 	// 개행은 ""으로 들어온다고 가정
-	multipart.boundary_key = "--" + request.header["Content-Type"][1];
-	string end_code = multipart.boundary_key + "--";
 	int res = 0;
-	multipart.file_name = request.body[res+1].substr(request.body[res+1].find("filename=") + 9);
-	multipart.type = request.body[res+2].substr(request.body[res+2].find("Content-Type: ") + 14);
+	int idx = 0;
+
+	boundary_key = "--" + request.header["Content-Type"][1];
+	end_code = boundary_key + "--";
+	t_multipart tmp;
+	cout << "나는야 엔트맨 ----> " << end_code << endl;
+	cout << "Before While🐶" << endl;
 	while (request.body[res] != end_code)
 	{
-		if (request.body[res] == multipart.boundary_key)
+		cout << "request.body[res] != end_code : " << (request.body[res] != end_code) << endl;
+		if (request.body[res++] == boundary_key)
 		{
-			multipart.data += request.body[res+4];
-			res += 5;
+			cout << "inner while find🐵🐵🐵🐵🐵🐵" << endl;
+			if (request.body[res].find("filename=\"") != string::npos)
+			{
+				multipart.push_back(t_multipart());
+				multipart[idx].file_name = request.body[res].substr(request.body[res].find("filename=\"") + 10);
+				multipart[idx].file_name.pop_back();
+				res++;
+				if (request.body[res].find("Content-Type: ") != string::npos)
+				{
+					multipart[idx].type = request.body[res].substr(request.body[res].find("Content-Type: ") + 14);
+					res++;
+				}
+				while (request.body[++res] != boundary_key && request.body[res] != end_code)
+					multipart[idx].data += request.body[res] + "\r\n";
+				multipart[idx].data.pop_back();
+				multipart[idx].data.pop_back();
+				idx++;
+			}
 		}
+		cout << "req : " << request.body[res] << endl;
 	}
+	cout << "!!!!!!!!!!!!!!!multipart[0].file_name : " << multipart[0].file_name << endl;
+	cout << "@@@@@@@@@@@@@@@multipart[0].type : " << multipart[0].type << endl;
+	cout << "###############multipart[0].data : \n" << multipart[0].data << endl;
+	cout << "!!!!!!!!!!!!!!!multipart[1].file_name : " << multipart[1].file_name << endl;
+	cout << "@@@@@@@@@@@@@@@multipart[1].type : " << multipart[1].type << endl;
+	cout << "###############multipart[1].data : \n" << multipart[1].data << endl;
 }
 
 
@@ -417,94 +447,103 @@ void ClientControl::deleteFile()
 // 		deleteFile();
 // 	}
 // }
+void		ClientControl::processStatic(string path_info)
+{
+	ifstream fin(path_info);
 
+	if (fin.is_open())
+	{
+		char c;
+		while (fin.get(c))
+			body += c;
+		fin.close();
+		setStateFlag("200");
+		setStateStr("OK");
+	}
+	else
+	{
+		setStateFlag("404");
+		setStateStr("Not found");
+		return ;
+	}
+}
+
+void		ClientControl::processCGI(string path_info)
+{
+	pid_t pid;
+	map<string, string> cmd;
+	FILE *fOut = tmpfile();
+	long fdOut = fileno(fOut);
+
+	cmd["php-cgi"] = path_info;
+	pid = fork();
+
+	if (!pid)
+	{
+		dup2(fdOut, STDOUT_FILENO);
+		execve(PHPCGI, convToChar(cmd, 0), convToChar(env_set, 1));
+	}
+	else
+	{
+		waitpid(pid, NULL, 0);
+		lseek(fdOut, 0, SEEK_SET); //lseek는 파일 디스크립터의 읽기/쓰기 포인터 위치를 변경하는 데 사용되는 시스템 호출입니다
+		char foo[1024];
+		int res = 0;
+
+		memset(foo, 0, sizeof(foo));
+		while ((res = read(fdOut, foo, 1023)) > 0)
+		{
+			foo[res] = 0;
+			body += static_cast<string> (foo);
+			memset(foo, 0, sizeof(foo));
+		}
+		if (res == -1)
+		{
+			setStateFlag("403");
+			setStateStr("Forbidden");
+			return ;
+		}
+	}
+	setStateFlag("200");
+	setStateStr("OK");
+	string search = "Content-type: ";
+	response.ct_type = body.substr(body.find(search) + 14, body.find("\r\n\r\n") - body.find(search) - 14);
+	body = body.substr(body.find("\r\n\r\n") + 4, body.size() - body.find("\r\n\r\n") - 4);
+	response.ct_length = body.size();
+}
 
 void ClientControl::processMethod()
 {
+
+	if (checkUri())
+		return ;
+
+	findMime();
+	setEnv();
+
+	string path_info = server_block.getRoot() + response.local_uri;
+
 	if (getRequest().method == "GET")
 	{
-		if (checkUri())
-			return ;
-
-		findMime();
-		setEnv();
-
 		struct stat st;
-		string path_info = server_block.getRoot() + response.local_uri;
-
 		//char bbody[100000];
 		stat((path_info).c_str(), &st);
 		response.ct_length = st.st_size;
 
 		if (!response.cgi)
 		{
-			ifstream fin(path_info);
-			if (fin.is_open())
-			{
-				char c;
-				while (fin.get(c))
-					body += c;
-				fin.close();
-				setStateFlag("200");
-				setStateStr("OK");
-			}
-			else
-			{
-				setStateFlag("404");
-				setStateStr("Not found");
-				return ;
-			}
+			processStatic(path_info);
 		}
 		else
 		{
-			pid_t pid;
-			map<string, string> cmd;
-			FILE *fOut = tmpfile();
-			long fdOut = fileno(fOut);
-
-			cmd["php-cgi"] = path_info;
-			pid = fork();
-
-			if (!pid)
-			{
-				dup2(fdOut, STDOUT_FILENO);
-				execve(PHPCGI, convToChar(cmd, 0), convToChar(env_set, 1));
-			}
-			else
-			{
-				waitpid(pid, NULL, 0);
-				lseek(fdOut, 0, SEEK_SET); //lseek는 파일 디스크립터의 읽기/쓰기 포인터 위치를 변경하는 데 사용되는 시스템 호출입니다
-				char foo[1024];
-				int res = 0;
-
-				memset(foo, 0, sizeof(foo));
-				while ((res = read(fdOut, foo, 1023)) > 0)
-				{
-					foo[res] = 0;
-					body += static_cast<string> (foo);
-					memset(foo, 0, sizeof(foo));
-				}
-				if (res == -1)
-				{
-					setStateFlag("403");
-					setStateStr("Forbidden");
-					return ;
-				}
-			}
-			setStateFlag("200");
-			setStateStr("OK");
-			string search = "Content-type: ";
-			response.ct_type = body.substr(body.find(search) + 14, body.find("\r\n\r\n") - body.find(search) - 14);
-			body = body.substr(body.find("\r\n\r\n") + 4, body.size() - body.find("\r\n\r\n") - 4);
-			response.ct_length = body.size();
+			processCGI(path_info);
 		}
-	}
+	} // get, post cgi function
 	else if (getRequest().method == "POST")
 	{
-		if (checkUri())
-			return ;
-		setStateFlag("200");
-		setStateStr("OK");
+		cout << "----I'm in POST----" << endl;
+		processMultipart();
+		processCGI(path_info);
 	}
 	else if (getRequest().method == "DELETE")
 	{

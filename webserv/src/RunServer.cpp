@@ -159,15 +159,12 @@ int ClientControl::setClientsocket(vector<struct kevent> &change_list, uintptr_t
 {
 	/* accept new client */
 	int client_socket;
-	cout << "before accept" << endl;
-
    	if ((client_socket = accept(server_socket, NULL, NULL)) == -1)
 	{
-		cout << "is client_socket made? : " << client_socket << endl;
+		// cout << "is client_socket made? : " << client_socket << endl;
 		sendErrorPage(server_socket, "500", "Internal server error"); //클라이언트 생성실패
 		return (-1);
 	}
-	cout << "accept new client: " << client_socket << endl;
 	setRead(0);
 	fcntl(client_socket, F_SETFL, O_NONBLOCK);
 
@@ -212,8 +209,22 @@ void ClientControl::parseRequest(string request)
 /*
  * Startline 파싱
  */
-	result = split(request, '\n');
-	// cout << "result : " << result[0] << endl;
+	size_t	previous;
+	size_t	current;
+
+	previous = 0;
+	current = request.find("\r\n"); // \r\n == crlf
+	//find 함수는 해당 위치부터 문자열을 찾지 못할 경우 npos를 반환한다.
+	while (current != string::npos)
+	{
+		// 첫 인자의 위치부터 두번째 인자 길이만큼 substring을 반환
+		string substring = request.substr(previous, current - previous);
+		result.push_back(substring);
+		previous = current + 2;
+		//previous 부터 "\r\n"이 나오는 위치를 찾는다.
+		current = request.find("\r\n", previous);
+	}
+
 	setMethod(strtok(const_cast<char*>(result[0].c_str()), " "));
 	setUri(strtok(NULL, " "));
 	setVersion(strtok(NULL, "\n"));
@@ -233,9 +244,9 @@ void ClientControl::parseRequest(string request)
 		getline(ss, temp, '\0');
 		setQuery(temp);
 	}
-/*
- * Header 파싱
- */
+	/*
+	* Header 파싱
+	*/
 	for (it = result.begin() + 1; it->size() > 1; it++)
 	{
 		stringstream ss(*it);
@@ -263,9 +274,9 @@ void ClientControl::parseRequest(string request)
 
 
 
-/*
- * Body 파싱
- */
+	/*
+	* Body 파싱
+	*/
 	if (getRequest().header["Content-Length"].size() > 0)
 	{
 		if(convStoi(*(getRequest().header["Content-Length"].begin())) > convStoi(getServerBlock().getClientBodySize()))
@@ -316,10 +327,8 @@ void ClientControl::readRequest()
 		// }
 		buf[n] = '\0';
 		ss << buf;
-		cout << "n : " << n << "\nbuf : " << buf << endl;
 	}
 	msg += ss.str();
-
 	// if (n <= 0)
 	// {
 	//	sendErrorPage(curr_event->ident, "400", "Bad request"); //의문.3 에러 처리 방법이 명확하게 떠오르지 않음.. ????
@@ -329,7 +338,6 @@ void ClientControl::readRequest()
 	//     disconnectSocket(curr_fd);
 	// }
 	// else
-	cout << "msg!!!!!!!!!!!!!!!!!!!!!!!!! : " << msg << endl;
 	if (msg.size() > 0)
 		parseRequest(msg);
 }
@@ -384,7 +392,7 @@ void Manager::runServer()
 		// for(int i = 0; i < 8 ; i++)
 		// 	cout << "i :" << i << " " <<"evfd : " << event_list[i].ident << endl;
 		// for(int i = 0; i < 8 ; i++)
-        //     cout << "i : " << i << " evfd : " << event_list[i].ident << endl;
+		//     cout << "i : " << i << " evfd : " << event_list[i].ident << endl;
 
 		if (new_events == -1)
 			sendErrorPage(curr_event->ident, "500", "Internal server error"); //kq관리 실패
@@ -417,12 +425,11 @@ void Manager::runServer()
 					before_server.push_back(curr_event->ident);
 					cout << "ser read" << endl;
 					client_control.push_back(ClientControl());
-					cout << "server accept client1" << endl;
-					cout << curr_event->ident << " / "<< http_block.getServerBlock()[client_control.size() - 1].getRoot() << endl;
+					// cout << curr_event->ident << " / "<< http_block.getServerBlock()[client_control.size() - 1].getRoot() << endl;
 					if (client_control.back().setClientsocket(change_list, curr_event->ident, http_block.getServerBlock()[client_control.size() - 1]))
 						client_control.pop_back();
 					// cout << client_control.size() << endl;
-					cout << "server accept client2" << endl;
+					//cout << "server accept client2" << endl;
 				}
  				else if ((it = findClient(client_control, curr_event->ident)) != client_control.end())
 				{
