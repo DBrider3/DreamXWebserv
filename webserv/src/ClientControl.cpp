@@ -184,7 +184,11 @@ void		ClientControl::setEnv(void)
 	env_set["SERVER_PORT"] = port; // request.port
 	env_set["SERVER_SOFTWARE"] = "DreamX"; // 간지템
 	env_set["SCRIPT_NAME"] = response.local_uri; // uri (상대 경로)
+	// env_set["_FILES"] = "Pretty junghan";
+	// env_set["fileToUpload"] = "doyun.txt";
 }
+
+
 
 
 /*
@@ -274,25 +278,27 @@ char**		ClientControl::convToChar(map<string, string> m, int flag) //소송
 
 void		ClientControl::saveFile(void)
 {
-	// std::fstream file;
-	// string extension;
+	std::fstream file;
+	string extension;
 
-	// for (int idx = 0; idx < multipart.size(); idx++)
-	// {
-	// 	if (multipart[idx].file_name == "")
-	// 		continue;
-	// 	extension = multipart[idx].file_name.substr(multipart[idx].file_name.find_last_of(".") + 1);
-	// 	if((extension != "jpg" && extension != "png" && extension != "jpeg"
-	// 		&& extension != "gif" && extension != "txt") 
-	// 		continue;
-	//     php수정해야함. 만약 올리는 5개중 1개가 해당하는 확장자가 아니면 php에서 어떤파일이 이상한지 띄워줄것
-	// 	// 확장자가 txt인지 png인지 검사해야함
-	// 	// 파일 체크 우선
-	// 	file.open(" /Users/daekim/subject/cadet/DreamXWebserv/webserv/save/" + multipart[idx].file_name, std::ios::out);
-	// //	if (file.fail())
-	// 		//실패 시, 에러페이지 서버에러인가?? 서버에러라면 cgi
-	// }
+	for (int idx = 0; idx < (int)multipart.size(); idx++)
+	{
+		if (multipart[idx].file_name == "")
+			continue;
+		extension = multipart[idx].file_name.substr(multipart[idx].file_name.find_last_of(".") + 1);
+		if(extension != "jpg" && extension != "png" && extension != "jpeg"
+			&& extension != "gif" && extension != "txt") 
+			continue ;
+	    //php수정해야함. 만약 올리는 5개중 1개가 해당하는 확장자가 아니면 php에서 어떤파일이 이상한지 띄워줄것
+		// 확장자가 txt인지 png인지 검사해야함
+		// 파일 체크 우선
 
+		file.open("/Users/daekim/subject/cadet/DreamXWebserv/webserv/save/" + multipart[idx].file_name, std::ios::out);
+		file << multipart[idx].data;
+		file.close();
+	//	if (file.fail())
+			//실패 시, 에러페이지 서버에러인가?? 서버에러라면 cgi
+	}
 }
 
 
@@ -329,6 +335,7 @@ void		ClientControl::processMultipart(void)
 				multipart[idx].data.pop_back();
 				idx++;
 			}
+			cout << "size : " << multipart.size() << endl;
 		}
 	}
 	saveFile();
@@ -407,6 +414,7 @@ int ClientControl::checkUri()
 			}
 			if (it == temp.end())
 			{
+				cout << "cc 417" << endl;
 				setStateFlag("404");
 				setStateStr("Not found");
 				return (-1);
@@ -418,12 +426,20 @@ int ClientControl::checkUri()
 
 void ClientControl::deleteFile()
 {
-	if (!access(getRequest().uri.c_str(), F_OK)) //directory도 삭제가 되는지 확인해야함
+	string root;
+	struct stat st;
+	string path_info = "/Users/daekim/subject/cadet/DreamXWebserv/webserv/state_pages/delete.html";
+
+	root = "/Users/daekim/subject/cadet/DreamXWebserv/webserv/save/" + getRequest().uri;
+	if (!access(root.c_str(), F_OK)) //directory도 삭제가 되는지 확인해야함
 	{
-		if (!unlink(getRequest().uri.c_str()))
+		if (!unlink(root.c_str()))
 		{
-			setStateFlag("200");
-			setStateStr("OK");
+			//findMime();
+			stat((path_info).c_str(), &st);
+			response.ct_length = st.st_size;
+			response.ct_type = "text/html";
+			processStatic(path_info);
 		}
 		else
 		{
@@ -433,34 +449,12 @@ void ClientControl::deleteFile()
 	}
 	else
 	{
+				cout << "cc 446" << endl;
 		setStateFlag("404");
 		setStateStr("Not found");
 	}
 }
 
-// void ClientControl::processMethod()
-// {
-// 	if (getRequest().method == "GET")
-// 	{
-// 		if (checkUri())
-// 			return ;
-// 		// setStateFlag("200");
-// 		// setStateStr("OK");
-// 		getFile();
-// 	}
-// 	else if (getRequest().method == "POST")
-// 	{
-// 		if (checkUri())
-// 			return ;
-// 		// setStateFlag("200");
-// 		// setStateStr("OK");
-// 		postFile();
-// 	}
-// 	else if (getRequest().method == "DELETE")
-// 	{
-// 		deleteFile();
-// 	}
-// }
 void		ClientControl::processStatic(string path_info)
 {
 	ifstream fin(path_info);
@@ -476,6 +470,7 @@ void		ClientControl::processStatic(string path_info)
 	}
 	else
 	{
+		cout << "cc 465" << endl;
 		setStateFlag("404");
 		setStateStr("Not found");
 		return ;
@@ -495,7 +490,7 @@ void		ClientControl::processCGI(string path_info)
 	if (!pid)
 	{
 		dup2(fdOut, STDOUT_FILENO);
-		execve(PHPCGI, convToChar(cmd, 0), convToChar(env_set, 1)); // 여기서 처리가 되지 않을까 생각합니다. 에러코드 받아서!!
+		execve(PHPCGI, convToChar(cmd, 0), convToChar(env_set, 1));
 	}
 	else
 	{
@@ -529,6 +524,12 @@ void		ClientControl::processCGI(string path_info)
 
 void ClientControl::processMethod()
 {
+	if (getRequest().method == "DELETE")
+	{
+		deleteFile();
+		return ;
+	}
+	
 	if (checkUri())
 		return ;
 
@@ -559,8 +560,8 @@ void ClientControl::processMethod()
 			processMultipart();
 		processCGI(path_info);
 	}
-	else if (getRequest().method == "DELETE")
-	{
-		deleteFile();
-	}
+	// else if (getRequest().method == "DELETE")
+	// {
+	// 	deleteFile();
+	// }
 }

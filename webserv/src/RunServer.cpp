@@ -165,6 +165,7 @@ int ClientControl::setClientsocket(vector<struct kevent> &change_list, uintptr_t
 		sendErrorPage(server_socket, "500", "Internal server error"); //클라이언트 생성실패
 		return (-1);
 	}
+    cout << "accept new client: " << client_socket << endl;
 	setRead(0);
 	fcntl(client_socket, F_SETFL, O_NONBLOCK);
 
@@ -172,11 +173,17 @@ int ClientControl::setClientsocket(vector<struct kevent> &change_list, uintptr_t
 	changeEvents(change_list, client_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	changeEvents(change_list, client_socket, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
 
+	cout << "rs 176" << endl;
 	setServerBlock(server_block);
+	cout << "rs 178" << endl;
 	setPort(server_block.getListen()[0]);
+	cout << "rs 180" << endl;
 	setClientFd(client_socket);
+	cout << "rs 182" << endl;
 	setServerFd(static_cast<int>(server_socket));
+	cout << "rs 184" << endl;
 	initRequestMsg();
+	cout << "rs 186" << endl;
 	return (0);
 }
 
@@ -188,9 +195,18 @@ vector<ClientControl>::iterator findClient(vector<ClientControl> &client_control
 {
 	vector<ClientControl>::iterator it;
 
+	// cout << "rs 192" << endl;
 	for (it = client_control.begin(); it != client_control.end(); it++)
+	{
+		// cout << "list : " << it->getClientFd() << "find : " << curr_fd << endl;
 		if (it->getClientFd() == curr_fd)
+		{
+			//cout << "Before end process" << endl;
+			if (it == client_control.end())
+				cout << "here" << endl;
 			return (it);
+		}
+	}
 	return (it);
 }
 
@@ -245,9 +261,11 @@ void ClientControl::parseRequest(string request)
 		getline(ss, temp, '\0');
 		setQuery(temp);
 	}
+
 	/*
 	* Header 파싱
 	*/
+
 	for (it = result.begin() + 1; it->size() > 0; it++)
 	{
 		stringstream ss(*it);
@@ -339,7 +357,7 @@ void ClientControl::readRequest()
 		// }
 		buf[n] = '\0';
 		ss << buf;
-		cout << "buf : " << buf << endl;
+		// cout << "buf : " << buf << endl;
 	}
 	msg += ss.str();
 	// if (n <= 0)
@@ -412,10 +430,9 @@ void Manager::runServer()
 		change_list.clear();
 		idx = 0;
 		for (int i = 0; i < new_events; ++i)
-		{
-			// cout << "new_events : " << new_events << endl;
-			// cout << "i          : " << i << endl;
+		{			
 			curr_event = &event_list[i];
+			// cout << "[" << i << "]번째" << "new_events" << endl;			
 			//cout << "gross : " << new_events << " curr fd : " << curr_event << endl;
 			if (curr_event->flags & EV_ERROR)
 			{
@@ -425,6 +442,7 @@ void Manager::runServer()
 				}	//의문 .2 서버 에러시, 서버를 종료시켜야하나 ????
 				else
 				{
+					cout << "err client" << endl;
 					sendErrorPage(curr_event->ident, "400", "Bad Request");
 					it = findClient(client_control, curr_event->ident);
 					resetBeforeServer(it->getServerFd(), before_server);
@@ -441,13 +459,25 @@ void Manager::runServer()
 					// cout << curr_event->ident << " / "<< http_block.getServerBlock()[client_control.size() - 1].getRoot() << endl;
 					if (client_control.back().setClientsocket(change_list, curr_event->ident, http_block.getServerBlock()[client_control.size() - 1]))
 						client_control.pop_back();
-					// cout << client_control.size() << endl;
+					cout << "rs 448 , size : " << client_control.size() << endl;
 					//cout << "server accept client2" << endl;
 				}
- 				else if ((it = findClient(client_control, curr_event->ident)) != client_control.end())
+ 				else 
 				{
-					cout << "cli read" << endl;
-					it->readRequest();
+					for (it = client_control.begin(); it != client_control.end(); it++)
+					{
+						if (it->getClientFd() == (int)curr_event->ident)
+						{
+							if (it == client_control.end())
+								cout << "here" << endl;
+							break ;
+						}
+					}
+					if (!(it == client_control.end()))
+					{
+						cout << "cli read" << endl;
+						it->readRequest();
+					}		
 				}
 			}
 			else if (curr_event->filter == EVFILT_WRITE)
@@ -476,8 +506,10 @@ void Manager::runServer()
 						sendErrorPage(it->getClientFd(), "403", "Forbidden");
 					resetBeforeServer(it->getServerFd(), before_server);
 					client_control.erase(it);//iterator로 삭제 가능
-				}
+				}				
+				//cout << "write test : " << it->getClientFd() << endl;
 			}
+			
 		}
 	}
 }

@@ -6,30 +6,40 @@ http {
 		server_name localhost default_server;
 		listen 8082;
 		client_body_size 44040192;
-		root /Users/daekim/subject/cadet/DreamXWebserv/webserv/state_pages;
+		root /Users/daekim/subject/cadet/DreamXWebserv/webserv/state_pages/;
 		error_page 404 /404.html;
 		index index.html test.html error.html;
 		autoindex on;
 
 		location = /info.php {
-			root /Users/daekim/subject/cadet/DreamXWebserv/webserv/state_pages;
+			root /Users/daekim/subject/cadet/DreamXWebserv/webserv/state_pages/;
 			index /info.php;
 			# return 301 dcho;
 		}
 
 		location = /form-upload.php {
-			root /Users/daekim/subject/cadet/DreamXWebserv/webserv/state_pages;
+			root /Users/daekim/subject/cadet/DreamXWebserv/webserv/state_pages/;
 			index /form-upload.php;
 		}
 
 		location = /upload.php {
-			root /Users/daekim/subject/cadet/DreamXWebserv/webserv/state_pages;
+			root /Users/daekim/subject/cadet/DreamXWebserv/webserv/state_pages/;
 			index /upload.php;
 		}
 
 		location = /form-action.php {
-			root /Users/daekim/subject/cadet/DreamXWebserv/webserv/state_pages;
+			root /Users/daekim/subject/cadet/DreamXWebserv/webserv/state_pages/;
 			index form-action.php;
+		}
+
+		location = /error.php {
+			root /Users/daekim/subject/cadet/DreamXWebserv/webserv/state_pages/;
+			index error.php;
+		}
+
+		location = /up.php {
+			root /Users/daekim/subject/cadet/DreamXWebserv/webserv/state_pages/;
+			index up.php;
 		}
 	}
 
@@ -37,14 +47,14 @@ http {
 		server_name page2.com;
 		listen 8083;
 		client_body_size 44040192;
-		root /Users/daekim/subject/cadet/DreamXWebserv/webserv/state_pages;
+		root /Users/daekim/subject/cadet/DreamXWebserv/webserv/state_pages/;
 		index index.html test.html error.html;
 		error_page 404 /404.html;
 		autoindex on;
 
 		location = /example {
 			#location block 안에 무슨 디렉티브가 오는지 정하자!
-			root /Users/daekim/subject/cadet/DreamXWebserv/webserv/state_pages;
+			root /Users/daekim/subject/cadet/DreamXWebserv/webserv/state_pages/;
 			index value1.html;
 			return 301 http://page1.com;
 		}
