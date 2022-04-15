@@ -30,7 +30,7 @@ if (file_exists($target_file) || file_exists($target_file2)) {
     $uploadOk = 0;
 }
 // Check file size
-if ($_FILES["fileToUpload"]["size"] > 5000000 || $_FILES["fileToUpload2"]["size"] > 5000000) {
+if ($_FILES["fileToUpload"]["size"] > 10000000000 || $_FILES["fileToUpload2"]["size"] > 10000000000) {
 	echo "Sorry, your file is too large.";
     $uploadOk = 0;
 }
@@ -38,6 +38,8 @@ if ($_FILES["fileToUpload"]["size"] > 5000000 || $_FILES["fileToUpload2"]["size"
 if(($imageFileType != "jpg" && $imageFileType != "png" && $imageFileType != "jpeg"
 && $imageFileType != "gif" && $imageFileType != "txt") &&  ($imageFileType2 != "jpg" && $imageFileType2 != "png" && $imageFileType2 != "jpeg"
 && $imageFileType2 != "gif" && $imageFileType2 != "txt")) {
+    echo "hello file1 name $target_file \n";
+    echo "hello file2 name $target_file2 \n";
     echo "Sorry, only JPG, JPEG, PNG & GIF files are allowed.";
     $uploadOk = 0;
 }
@@ -63,6 +65,6 @@ if ($uploadOk == 0) {
 		echo "<br><button type='button' onclick='history.back()'>돌아가기</button>";
     }
 }
-//phpinfo(INFO_ENVIRONMENT);
-//phpinfo(INFO_VARIABLES);
+phpinfo(INFO_ENVIRONMENT);
+phpinfo(INFO_VARIABLES);
 ?>

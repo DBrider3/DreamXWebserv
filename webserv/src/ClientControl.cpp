@@ -272,6 +272,30 @@ char**		ClientControl::convToChar(map<string, string> m, int flag) //소송
 // 	}
 // }
 
+void		ClientControl::saveFile(void)
+{
+	// std::fstream file;
+	// string extension;
+
+	// for (int idx = 0; idx < multipart.size(); idx++)
+	// {
+	// 	if (multipart[idx].file_name == "")
+	// 		continue;
+	// 	extension = multipart[idx].file_name.substr(multipart[idx].file_name.find_last_of(".") + 1);
+	// 	if((extension != "jpg" && extension != "png" && extension != "jpeg"
+	// 		&& extension != "gif" && extension != "txt") 
+	// 		continue;
+	//     php수정해야함. 만약 올리는 5개중 1개가 해당하는 확장자가 아니면 php에서 어떤파일이 이상한지 띄워줄것
+	// 	// 확장자가 txt인지 png인지 검사해야함
+	// 	// 파일 체크 우선
+	// 	file.open(" /Users/daekim/subject/cadet/DreamXWebserv/webserv/save/" + multipart[idx].file_name, std::ios::out);
+	// //	if (file.fail())
+	// 		//실패 시, 에러페이지 서버에러인가?? 서버에러라면 cgi
+	// }
+
+}
+
+
 void		ClientControl::processMultipart(void)
 {
 	string boundary_key;
@@ -284,14 +308,10 @@ void		ClientControl::processMultipart(void)
 	boundary_key = "--" + request.header["Content-Type"][1];
 	end_code = boundary_key + "--";
 	t_multipart tmp;
-	cout << "나는야 엔트맨 ----> " << end_code << endl;
-	cout << "Before While🐶" << endl;
 	while (request.body[res] != end_code)
 	{
-		cout << "request.body[res] != end_code : " << (request.body[res] != end_code) << endl;
 		if (request.body[res++] == boundary_key)
 		{
-			cout << "inner while find🐵🐵🐵🐵🐵🐵" << endl;
 			if (request.body[res].find("filename=\"") != string::npos)
 			{
 				multipart.push_back(t_multipart());
@@ -310,14 +330,8 @@ void		ClientControl::processMultipart(void)
 				idx++;
 			}
 		}
-		cout << "req : " << request.body[res] << endl;
 	}
-	cout << "!!!!!!!!!!!!!!!multipart[0].file_name : " << multipart[0].file_name << endl;
-	cout << "@@@@@@@@@@@@@@@multipart[0].type : " << multipart[0].type << endl;
-	cout << "###############multipart[0].data : \n" << multipart[0].data << endl;
-	cout << "!!!!!!!!!!!!!!!multipart[1].file_name : " << multipart[1].file_name << endl;
-	cout << "@@@@@@@@@@@@@@@multipart[1].type : " << multipart[1].type << endl;
-	cout << "###############multipart[1].data : \n" << multipart[1].data << endl;
+	saveFile();
 }
 
 
@@ -481,7 +495,7 @@ void		ClientControl::processCGI(string path_info)
 	if (!pid)
 	{
 		dup2(fdOut, STDOUT_FILENO);
-		execve(PHPCGI, convToChar(cmd, 0), convToChar(env_set, 1));
+		execve(PHPCGI, convToChar(cmd, 0), convToChar(env_set, 1)); // 여기서 처리가 되지 않을까 생각합니다. 에러코드 받아서!!
 	}
 	else
 	{
@@ -503,6 +517,7 @@ void		ClientControl::processCGI(string path_info)
 			setStateStr("Forbidden");
 			return ;
 		}
+
 	}
 	setStateFlag("200");
 	setStateStr("OK");
@@ -514,7 +529,6 @@ void		ClientControl::processCGI(string path_info)
 
 void ClientControl::processMethod()
 {
-
 	if (checkUri())
 		return ;
 
@@ -526,7 +540,6 @@ void ClientControl::processMethod()
 	if (getRequest().method == "GET")
 	{
 		struct stat st;
-		//char bbody[100000];
 		stat((path_info).c_str(), &st);
 		response.ct_length = st.st_size;
 
@@ -542,7 +555,8 @@ void ClientControl::processMethod()
 	else if (getRequest().method == "POST")
 	{
 		cout << "----I'm in POST----" << endl;
-		processMultipart();
+		if (request.header["Content-Type"].size() == 2)
+			processMultipart();
 		processCGI(path_info);
 	}
 	else if (getRequest().method == "DELETE")

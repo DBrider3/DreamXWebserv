@@ -4,9 +4,9 @@
 # include "Utils.hpp"
 # include "ServerBlock.hpp"
 
-//# define PHPCGI "/Users/daekim/subject/cadet/DreamXWebserv/ComposeResponse/php-cgi"
+# define PHPCGI "/Users/daekim/subject/cadet/DreamXWebserv/ComposeResponse/php-cgi"
 // # define PHPCGI "/Users/songju/Desktop/DreamXWebserv/ComposeResponse/php-cgi"
-# define PHPCGI "/Users/dcho/Born2Code/DreamXWebserv/ComposeResponse/php-cgi"
+// # define PHPCGI "/Users/dcho/Born2Code/DreamXWebserv/ComposeResponse/php-cgi"
 
 # define NOBODY_FMT "HTTP/1.1 %s %s\n"  //또 뭐넣어야함?
 # define RESPONSE_FMT "HTTP/1.1 %s %s\nContent-Length: %d\nContent-Type: %s\n\n%s\n"
@@ -135,6 +135,7 @@ class ClientControl
 
 		void		processStatic(string path_info);
 		void		processCGI(string path_info);
+		void		saveFile(void);
 		//int		getFile();
 		//int		postFile();
 };

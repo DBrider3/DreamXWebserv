@@ -223,6 +223,7 @@ void ClientControl::parseRequest(string request)
 		previous = current + 2;
 		//previous 부터 "\r\n"이 나오는 위치를 찾는다.
 		current = request.find("\r\n", previous);
+		// cout << "request :: " << substring << endl;
 	}
 
 	setMethod(strtok(const_cast<char*>(result[0].c_str()), " "));
@@ -247,7 +248,7 @@ void ClientControl::parseRequest(string request)
 	/*
 	* Header 파싱
 	*/
-	for (it = result.begin() + 1; it->size() > 1; it++)
+	for (it = result.begin() + 1; it->size() > 0; it++)
 	{
 		stringstream ss(*it);
 		stringstream ss_tmp;
@@ -287,9 +288,20 @@ void ClientControl::parseRequest(string request)
 		}
 	}
 
-
 	while (++it != result.end())
+	{
 		setBody(*it);
+		// cout << "body start ------------------------------\n" << *it << endl;
+		// cout << "끝 =======================================\n" << endl;
+	}
+
+	if (getRequest().header["Content-Type"].size() == 2 && getRequest().body.size() == 0)
+	{
+		// cout << "is here -----------------------------------\n" << endl;
+		setStateFlag("403");
+		setStateStr("Forbidden");
+		return ;
+	}
 }
 
 void	resetBeforeServer(int server_fd, vector<int>& before_server)
@@ -311,7 +323,7 @@ void ClientControl::readRequest()
 	/*
 	** read data from client
 	*/
-	char buf[42];
+	char buf[142];
 	stringstream ss;
 	string msg;
 	int n;
@@ -327,6 +339,7 @@ void ClientControl::readRequest()
 		// }
 		buf[n] = '\0';
 		ss << buf;
+		cout << "buf : " << buf << endl;
 	}
 	msg += ss.str();
 	// if (n <= 0)
@@ -444,7 +457,7 @@ void Manager::runServer()
 					cout << "cli write" << endl;
 					if (!(it->getResponse().state_flag.empty()))  //it->readRequest();했을 때 에러가 있다면 먼저 띄워줌
 						sendErrorPage(it->getClientFd(), it->getResponse().state_flag, it->getResponse().state_str);
-					if (it->checkMethod(http_block.getLimitExcept()))
+					else if (it->checkMethod(http_block.getLimitExcept()))
 					{
 						it->processMethod();
 						if (!(it->getResponse().state_flag.empty()))
