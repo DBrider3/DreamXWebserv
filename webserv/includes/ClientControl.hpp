@@ -4,9 +4,10 @@
 # include "Utils.hpp"
 # include "ServerBlock.hpp"
 
-# define PHPCGI "/Users/daekim/subject/cadet/DreamXWebserv/ComposeResponse/php-cgi"
-// # define PHPCGI "/Users/songju/Desktop/DreamXWebserv/ComposeResponse/php-cgi"
-// # define PHPCGI "/Users/dcho/Born2Code/DreamXWebserv/ComposeResponse/php-cgi"
+//# define PHPCGI "/Users/daekim/subject/cadet/DreamXWebserv/webserv/tester/php-cgi"
+// # define PHPCGI "/Users/songju/Desktop/DreamXWebserv/webserv/tester/php-cgi"
+ # define PHPCGI "/Users/dcho/Born2Code/DreamXWebserv/webserv/tester/php-cgi"
+ # define CGITESTER "/Users/dcho/Born2Code/DreamXWebserv/webserv/tester/cgi_tester"
 
 # define NOBODY_FMT "HTTP/1.1 %s %s\n"  //또 뭐넣어야함?
 # define RESPONSE_FMT "HTTP/1.1 %s %s\nContent-Length: %d\nContent-Type: %s\n\n%s\n"

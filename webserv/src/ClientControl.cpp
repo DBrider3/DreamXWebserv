@@ -287,13 +287,14 @@ void		ClientControl::saveFile(void)
 			continue;
 		extension = multipart[idx].file_name.substr(multipart[idx].file_name.find_last_of(".") + 1);
 		if(extension != "jpg" && extension != "png" && extension != "jpeg"
-			&& extension != "gif" && extension != "txt") 
+			&& extension != "gif" && extension != "txt")
 			continue ;
 	    //php수정해야함. 만약 올리는 5개중 1개가 해당하는 확장자가 아니면 php에서 어떤파일이 이상한지 띄워줄것
 		// 확장자가 txt인지 png인지 검사해야함
 		// 파일 체크 우선
 
-		file.open("/Users/daekim/subject/cadet/DreamXWebserv/webserv/save/" + multipart[idx].file_name, std::ios::out);
+
+		file.open("/Users/dcho/Born2Code/DreamXWebserv/webserv/save/" + multipart[idx].file_name, std::ios::out);
 		file << multipart[idx].data;
 		file.close();
 	//	if (file.fail())
@@ -428,9 +429,9 @@ void ClientControl::deleteFile()
 {
 	string root;
 	struct stat st;
-	string path_info = "/Users/daekim/subject/cadet/DreamXWebserv/webserv/state_pages/delete.html";
+	string path_info = "/Users/dcho/Born2Code/DreamXWebserv/webserv/state_pages/delete.html";
 
-	root = "/Users/daekim/subject/cadet/DreamXWebserv/webserv/save/" + getRequest().uri;
+	root = "/Users/dcho/Born2Code/DreamXWebserv/webserv/save/" + getRequest().uri;
 	if (!access(root.c_str(), F_OK)) //directory도 삭제가 되는지 확인해야함
 	{
 		if (!unlink(root.c_str()))
@@ -529,7 +530,7 @@ void ClientControl::processMethod()
 		deleteFile();
 		return ;
 	}
-	
+
 	if (checkUri())
 		return ;
 

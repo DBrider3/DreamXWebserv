@@ -195,17 +195,10 @@ vector<ClientControl>::iterator findClient(vector<ClientControl> &client_control
 {
 	vector<ClientControl>::iterator it;
 
-	// cout << "rs 192" << endl;
 	for (it = client_control.begin(); it != client_control.end(); it++)
 	{
-		// cout << "list : " << it->getClientFd() << "find : " << curr_fd << endl;
 		if (it->getClientFd() == curr_fd)
-		{
-			//cout << "Before end process" << endl;
-			if (it == client_control.end())
-				cout << "here" << endl;
 			return (it);
-		}
 	}
 	return (it);
 }
@@ -430,9 +423,9 @@ void Manager::runServer()
 		change_list.clear();
 		idx = 0;
 		for (int i = 0; i < new_events; ++i)
-		{			
+		{
 			curr_event = &event_list[i];
-			// cout << "[" << i << "]번째" << "new_events" << endl;			
+			// cout << "[" << i << "]번째" << "new_events" << endl;
 			//cout << "gross : " << new_events << " curr fd : " << curr_event << endl;
 			if (curr_event->flags & EV_ERROR)
 			{
@@ -462,22 +455,10 @@ void Manager::runServer()
 					cout << "rs 448 , size : " << client_control.size() << endl;
 					//cout << "server accept client2" << endl;
 				}
- 				else 
+ 				else if ((it = findClient(client_control, curr_event->ident)) != client_control.end())
 				{
-					for (it = client_control.begin(); it != client_control.end(); it++)
-					{
-						if (it->getClientFd() == (int)curr_event->ident)
-						{
-							if (it == client_control.end())
-								cout << "here" << endl;
-							break ;
-						}
-					}
-					if (!(it == client_control.end()))
-					{
-						cout << "cli read" << endl;
-						it->readRequest();
-					}		
+					cout << "cli read" << endl;
+					it->readRequest();
 				}
 			}
 			else if (curr_event->filter == EVFILT_WRITE)
@@ -506,10 +487,10 @@ void Manager::runServer()
 						sendErrorPage(it->getClientFd(), "403", "Forbidden");
 					resetBeforeServer(it->getServerFd(), before_server);
 					client_control.erase(it);//iterator로 삭제 가능
-				}				
+				}
 				//cout << "write test : " << it->getClientFd() << endl;
 			}
-			
+
 		}
 	}
 }
