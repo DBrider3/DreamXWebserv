@@ -6,10 +6,12 @@
 class LocationBlock
 {
 	private:
-		vector<string>		location_match;
+		string				location_match;
 		string				root;
+		string				client_body_size;
 		vector<string>		index;
 		vector<string>		redirect;
+		vector<string>		limit_except;
 		//vector<string>		error_page;
 
 	public:
@@ -24,12 +26,14 @@ class LocationBlock
 		/*
 		** getter part
 		*/
-		vector<string>			getMatch(void);
+		string					getMatch(void);
 		string					getRoot(void);
 		vector<string>			getIndex(void);
 		vector<string>			getRedirect(void);
+		vector<string>			getLimitExcept(void);
+		string					getClientBodySize(void);
 		//vector<string>		getErrorPage();
-		
+
 		/*
 		** setter part
 		*/
@@ -37,6 +41,8 @@ class LocationBlock
 		void					setRoot(string str);
 		void					setIndex(string str);
 		void					setRedirect(string str);
+		void					setLimitExcept(string str);
+		void					setClientBodySize(string str);
 		//void					setErrorPage(string str);
 };
 
