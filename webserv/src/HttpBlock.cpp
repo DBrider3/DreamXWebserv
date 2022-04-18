@@ -110,11 +110,8 @@ int			HttpBlock::setServerBlock(vector<string> buf, int idx)
 			{
 				LocationBlock tmp_location;
 				//location_match
-				for (size_t i = 1; i < tmp.size() - 1; i++)
-				{
-					tmp_location.setMatch(tmp[i]);
-//					cout << tmp[i] << endl;
-				}
+				tmp_location.setMatch(tmp[1]);
+
 				idx = tmp_server.setLocationBlock(tmp_location, buf, ++idx);
 			}
 		}

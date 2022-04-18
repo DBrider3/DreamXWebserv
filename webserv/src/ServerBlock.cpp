@@ -113,14 +113,12 @@ int					ServerBlock::setLocationBlock(LocationBlock tmp_location, vector<string>
 		if (tmp[0] == "\t\t\troot")
 		{
 			tmp_location.setRoot(tmp[1]);
-//			cout << tmp[1] << endl;
 		}
 		else if (tmp[0] == "\t\t\tindex")
 		{
 			for (size_t i = 1; i < tmp.size(); i++)
 			{
 				tmp_location.setIndex(tmp[i]);
-//				cout << tmp[i] << endl;
 			}
 		}
 		else if (tmp[0] == "\t\t\treturn")
@@ -128,7 +126,22 @@ int					ServerBlock::setLocationBlock(LocationBlock tmp_location, vector<string>
 			for (size_t i = 1; i < tmp.size(); i++)
 			{
 				tmp_location.setRedirect(tmp[i]);
-//				cout << tmp[i] << endl;
+			}
+		}
+		else if (tmp[0] == "\t\t\tlimit_except")
+		{
+			for (size_t i = 1; i < tmp.size(); i++)
+			{
+				tmp_location.setLimitExcept(tmp[i]);
+				cout << tmp[i] << endl;
+			}
+		}
+		else if (tmp[0] == "\t\t\tclient_body_size")
+		{
+			for (size_t i = 1; i < tmp.size(); i++)
+			{
+				tmp_location.setClientBodySize(tmp[i]);
+				cout << tmp[i] << endl;
 			}
 		}
 //		else if (tmp[0] == "\t\t\terror_page")

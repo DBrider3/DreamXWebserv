@@ -1,10 +1,10 @@
 #include "../includes/LocationBlock.hpp"
 
-LocationBlock::LocationBlock()
+LocationBlock::LocationBlock(void)
 {
 
 }
-LocationBlock::~LocationBlock()
+LocationBlock::~LocationBlock(void)
 {
 
 }
@@ -25,51 +25,75 @@ LocationBlock& LocationBlock::operator = (const LocationBlock& lb)
 	return (*this);
 }
 
-vector<string>		LocationBlock::getMatch()
+string				LocationBlock::getMatch(void)
 {
 	return (location_match);
 }
 
 
-//string				LocationBlock::getName()
+//string				LocationBlock::getName(void)
 //{
 
 //}
-string				LocationBlock::getRoot()
+string				LocationBlock::getRoot(void)
 {
 	return (root);
 }
 
-vector<string>		LocationBlock::getIndex()
+vector<string>		LocationBlock::getIndex(void)
 {
 	return (index);
 }
 
-vector<string>		LocationBlock::getRedirect()
+vector<string>		LocationBlock::getRedirect(void)
 {
 	return (redirect);
 }
-//vector<string>		LocationBlock::getErrorPage()
+
+vector<string>		LocationBlock::getLimitExcept(void)
+{
+	return (limit_except);
+}
+
+string				LocationBlock::getClientBodySize(void)
+{
+	return (client_body_size);
+}
+//vector<string>		LocationBlock::getErrorPage(void)
 //{
 
 //}
 
 void				LocationBlock::setMatch(string str)
 {
-	location_match.push_back(str);
+	location_match = str;
 }
+
 void				LocationBlock::setRoot(string str)
 {
 	root = str;
 }
+
 void				LocationBlock::setIndex(string str)
 {
 	index.push_back(str);
 }
+
 void				LocationBlock::setRedirect(string str)
 {
 	redirect.push_back(str);
 }
+
+void				LocationBlock::setLimitExcept(string str)
+{
+	limit_except.push_back(str);
+}
+
+void				LocationBlock::setClientBodySize(string str)
+{
+	client_body_size = str;
+}
+
 // void				LocationBlock::setErrorPage(string str)
 // {
 // 	error_page.push_back(str);
