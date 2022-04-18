@@ -62,56 +62,33 @@ int			HttpBlock::setServerBlock(vector<string> buf, int idx)
 			if (tmp[0] == "\t\tserver_name")
 			{
 				for (size_t i = 1; i < tmp.size(); i++)
-				{
 					tmp_server.setServerName(tmp[i]);
-//					cout << tmp[i] << endl;
-				}
 			}
 			else if (tmp[0] == "\t\tlisten")
 			{
 				for (size_t i = 1; i < tmp.size(); i++)
-				{
 					tmp_server.setListen(tmp[i]);
-//					cout << tmp[i] << endl;
-				}
 			}
 			else if (tmp[0] == "\t\tclient_body_size")
-			{
 				tmp_server.setClientBodySize(tmp[1]);
-//				cout << tmp[1] << endl;
-			}
 			else if (tmp[0] == "\t\troot")
-			{
 				tmp_server.setRoot(tmp[1]);
-//				cout << tmp[1] << endl;
-			}
 			else if (tmp[0] == "\t\tindex")
 			{
 				for (size_t i = 1; i < tmp.size(); i++)
-				{
 					tmp_server.setIndex(tmp[i]);
-//					cout << tmp[i] << endl;
-				}
 			}
 			else if (tmp[0] == "\t\tautoindex")
-			{
 				tmp_server.setAutoindex(tmp[1]);
-//				cout << tmp[1] << endl;
-			}
 			else if (tmp[0] == "\t\terror_page")
 			{
 				for (size_t i = 1; i < tmp.size(); i++)
-				{
 					tmp_server.setErrorPage(tmp[i]);
-//					cout << tmp[i] << endl;
-				}
 			}
 			else if (tmp[0] == "\t\tlocation")
 			{
 				LocationBlock tmp_location;
-				//location_match
 				tmp_location.setMatch(tmp[1]);
-
 				idx = tmp_server.setLocationBlock(tmp_location, buf, ++idx);
 			}
 		}

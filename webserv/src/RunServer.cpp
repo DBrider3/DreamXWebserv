@@ -261,6 +261,7 @@ void ClientControl::parseRequest(string request)
 
 	for (it = result.begin() + 1; it->size() > 0; it++)
 	{
+		cout << "it :"  << *it << endl;
 		stringstream ss(*it);
 		stringstream ss_tmp;
 		string key;
@@ -334,7 +335,7 @@ void ClientControl::readRequest()
 	/*
 	** read data from client
 	*/
-	char buf[142];
+	char buf[10];
 	stringstream ss;
 	string msg;
 	int n;
@@ -349,9 +350,13 @@ void ClientControl::readRequest()
 		// 	break;
 		// }
 		buf[n] = '\0';
+		cout << "buf : " << buf << endl;
+		cout << "n : "<< n << endl;
 		ss << buf;
 		// cout << "buf : " << buf << endl;
 	}
+	//cout << "buf : " << buf << endl;
+	//cout << n << endl;
 	msg += ss.str();
 	// if (n <= 0)
 	// {
@@ -362,6 +367,7 @@ void ClientControl::readRequest()
 	//     disconnectSocket(curr_fd);
 	// }
 	// else
+
 	if (msg.size() > 0)
 		parseRequest(msg);
 }
