@@ -2,7 +2,7 @@
 ClientControl::ClientControl() //의문.1 생성자 호출할때 어떻게할겨? ????
 {
 	// request.query_str = "";
-	// response.cgi = 0;
+	 response.cgi = 0;
 }
 
 // ClientControl::ClientControl(const t_request req) // 생성자에서 request 객체 받기
@@ -159,15 +159,18 @@ void		ClientControl::findMime(void)
 			response.ct_type = "text/css";
 		else if (ext == ".js")
 			response.ct_type = "text/javascript";
-		else if (ext == ".php" || ext == ".py")
+		else if (ext == ".php")
 			response.cgi = 1;
+		else if (ext == ".bla")
+			response.cgi = 2;
 		else
-			response.ct_type = "text/plain";
+			response.ct_type = "text/plain"; //bla 해야함
 	}
 }
 
 void		ClientControl::setEnv(void)
 {
+	env_set["PATH_INFO"] = response.local_uri;
 	env_set["QUERY_STRING"] = request.query_str;
 	env_set["REQUEST_METHOD"] = request.method; // request.method
 	env_set["REDIRECT_STATUS"] = "200"; // 상태코드인데 아직 미정?!
@@ -184,8 +187,6 @@ void		ClientControl::setEnv(void)
 	env_set["SERVER_PORT"] = port; // request.port
 	env_set["SERVER_SOFTWARE"] = "DreamX"; // 간지템
 	env_set["SCRIPT_NAME"] = response.local_uri; // uri (상대 경로)
-	// env_set["_FILES"] = "Pretty junghan";
-	// env_set["fileToUpload"] = "doyun.txt";
 }
 
 
@@ -351,7 +352,7 @@ void ClientControl::checkAutoIndex()
 	temp = getServerBlock().getIndex();
 	for (vector<string>::iterator it = temp.begin(); it != temp.end(); it++)
 		setServerIndex(*it);
-	setLocalUri("autoindex.html");
+	setLocalUri("/autoindex.html");
 }
 
 int ClientControl::findIndex(string uri)
@@ -371,15 +372,116 @@ int ClientControl::findIndex(string uri)
 	return (-1);
 }
 
+// string checkIndex(Iterator it, ServerBlock sb)
+// {
+
+// }
+
 int ClientControl::checkUri()
 {
-	string location_uri;
+	string directory;
+	string file;
+	//string location_uri;
+	string tmp;
 	string request_uri;
 	vector<LocationBlock>::iterator it;
 	vector<LocationBlock> temp = getServerBlock().getLocationBlock();
-	int		idx;
 
 	request_uri = getRequest().uri;
+
+	cout << "uri" << request_uri << endl;
+
+	if (request_uri == "/" && getServerBlock().getAutoindex() == "on") // autoindex
+	{
+		checkAutoIndex();
+		return (0);
+	}
+
+	file = request_uri.substr(request_uri.find_last_of('/') + 1);
+	if (file.size() != 0 && file.find('.') == string::npos)
+	{
+		directory = "/" + file;
+		file = "";
+	}
+	else
+	{
+		if (file.size() == 0)
+		{
+			if (request_uri.size() == 1)
+				directory = request_uri;
+			else
+				directory = request_uri.substr(0, request_uri.size() - 1);
+		}
+		else
+			directory = request_uri.substr(0, request_uri.find_last_of('/'));
+	}
+
+	cout << "direct :  " << directory << endl;
+	cout << "file: " << file << endl;
+	if (file == "") //디렉토리로 들어온 경우
+	{
+		for (it = temp.begin(); it != temp.end(); it++)
+		{
+			if (directory.compare(it->getMatch()) == 0)
+			{
+				if (directory == "/") //인덱스 검사 부분 추가
+				{
+					if (it->getIndex().size() != 0)
+						setLocalUri("/" + it->getIndex()[0]);// it = location block;
+					else
+						setLocalUri("/" + getServerBlock().getIndex()[0]);
+				}
+				else
+					setLocalUri(directory + "/" + it->getIndex()[0]); //디렉 붙여줌?
+				if (it->getRedirect().size() != 0)
+				{
+					if (*(it->getRedirect().begin()) != "")
+					{
+						setStateFlag("301");
+						setStateStr("Moved permanently");
+						setRedirectUri(it->getRedirect().back());
+						return (-1);
+					}
+				}
+				break ;
+			}
+		}
+		if (it == temp.end())
+		{
+			if (directory == "/") //location으로 찾지못하더랃server의 root내에 있는 경로도 찾아야될거같아요
+			{
+				setLocalUri("/" + getServerBlock().getIndex()[0]);
+				return (0);
+			}
+			setStateFlag("404");
+			setStateStr("Not Found");
+			return (-1);
+		}
+	}
+	else //파일로 들어온 경우
+	{
+		for (it = temp.begin(); it != temp.end(); it++)
+		{
+			if (directory.compare(it->getMatch()) == 0)
+			{
+				if (it->getRedirect().size() != 0)
+				{
+					if (*(it->getRedirect().begin()) != "")
+					{
+						setStateFlag("301");
+						setStateStr("Moved permanently");
+						setRedirectUri(it->getRedirect().back());
+						return (-1);
+					}
+				}
+				break ;
+			}
+		}
+		setLocalUri(request_uri);
+	}
+
+
+/*
 	if (request_uri == "/" && getServerBlock().getAutoindex() != "on")
 	{
 		setLocalUri(*(getServerBlock().getIndex().begin())); // 1번
@@ -397,7 +499,7 @@ int ClientControl::checkUri()
 			location_uri = request_uri;//.erase(0, 1); //두번째 인자를 넘기지 않으면 자동으로 str 맨 끝까지 복사한다.
 			for (it = temp.begin(); it != temp.end(); it++)
 			{
-				if (location_uri.compare(it->getMatch().back()) == 0)
+				if (location_uri.compare(it->getMatch()) == 0)
 				{
 					setLocalUri(it->getIndex()[0]);
 					if (it->getRedirect().size() != 0)
@@ -421,7 +523,8 @@ int ClientControl::checkUri()
 				return (-1);
 			}
 		}
-	}
+	}*/
+
 	return (0);
 }
 
@@ -485,7 +588,13 @@ void		ClientControl::processCGI(string path_info)
 	FILE *fOut = tmpfile();
 	long fdOut = fileno(fOut);
 
-	cmd["php-cgi"] = path_info;
+	cout << "cgi number : "<< response.cgi << endl;
+	if (response.cgi == 1)
+		cmd["php-cgi"] = path_info;
+	else if (response.cgi == 2)
+		cmd["cgi_tester"] = path_info;
+	cout << "cmd path info : " << cmd["cgi_tester"] << endl;
+	//cmd["php-cgi"] = path_info;
 	pid = fork();
 
 	if (!pid)
@@ -534,10 +643,15 @@ void ClientControl::processMethod()
 	if (checkUri())
 		return ;
 
+	response.cgi = 0;
 	findMime();
 	setEnv();
 
-	string path_info = server_block.getRoot() + response.local_uri;
+	string path_info = server_block.getRoot() + response.local_uri; // root
+
+	cout << "This is Root : " << server_block.getRoot() << endl;
+	cout << "This is Local URI : " << response.local_uri << endl;
+	cout << "This is Path Info : " << path_info << endl;
 
 	if (getRequest().method == "GET")
 	{

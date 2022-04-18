@@ -69,6 +69,7 @@
 		"utility": "cpp",
 		"__bits": "cpp",
 		"clocale": "cpp",
-		"xstring": "cpp"
+		"xstring": "cpp",
+		"*.tcc": "cpp"
 	}
 }
