@@ -2,12 +2,14 @@
 # define CLIENTCONTROL_HPP
 
 # include "Utils.hpp"
+# include "HttpBlock.hpp"
 # include "ServerBlock.hpp"
 
-//# define PHPCGI "/Users/daekim/subject/cadet/DreamXWebserv/webserv/tester/php-cgi"
+# define PHPCGI "/Users/daekim/subject/cadet/DreamXWebserv/webserv/tester/php-cgi"//바꿔
+# define CGITESTER "/Users/daekim/subject/cadet/DreamXWebserv/webserv/tester/cgi_tester"
 // # define PHPCGI "/Users/songju/Desktop/DreamXWebserv/webserv/tester/php-cgi"
- # define PHPCGI "/Users/dcho/Born2Code/DreamXWebserv/webserv/tester/php-cgi"
- # define CGITESTER "/Users/dcho/Born2Code/DreamXWebserv/webserv/tester/cgi_tester"
+//  # define PHPCGI "/Users/dcho/Born2Code/DreamXWebserv/webserv/tester/php-cgi"
+//  # define CGITESTER "/Users/dcho/Born2Code/DreamXWebserv/webserv/tester/cgi_tester"
 
 # define NOBODY_FMT "HTTP/1.1 %s %s\n"  //또 뭐넣어야함?
 # define RESPONSE_FMT "HTTP/1.1 %s %s\nContent-Length: %d\nContent-Type: %s\n\n%s\n"
@@ -58,8 +60,10 @@ class ClientControl
 		map<string, string> env_set;
 		vector<string>	server_index; //서버 블록 내 index 절대 경로 담아둠
 		ServerBlock		server_block;
+		HttpBlock		http_block;
 		string			body;
 		string			port;
+		string			root; //방금 추가 put & post
 		int				client_fd;
 		int				server_fd;
 		int				read_flag;
@@ -82,15 +86,19 @@ class ClientControl
 		*/
 		string				getServerIndex(void);
 		ServerBlock 		getServerBlock(void);
+		HttpBlock 			getHttpBlock(void);
 		t_request	getRequest(void);
 		t_response	getResponse(void);
 		int		getClientFd(void);
+		int		getServerFd();
 		int		getRead();
+		string	getRoot();
 
 
 		/*
 		** setter part
 		*/
+		void		setHttpBlock(HttpBlock http_block);
 		void 		setServerBlock(ServerBlock server_block);
 		void		setPort(string port);
 		void		setClientFd(int client_socket);
@@ -109,17 +117,15 @@ class ClientControl
 		void		setRedirectUri(string str);
 		void		setRead(int n);
 
-		int			getServerFd();
 
 		void 		initRequestMsg(void);
 		void		processMethod(void);
-		void		checkAutoIndex(ServerBlock server_block);
+		int			checkAutoIndex(void);
 		void		readRequest(void);
 		void		parseRequest(string msg);
 		void		sendRedirectPage(void);
 		int			checkMethod(vector<string> method);
-		int			checkUri(void);
-		void		checkAutoIndex(void);
+		int			checkUri(string result);
 		int			findIndex(string uri);
 		void		deleteFile(void);
 
@@ -137,6 +143,8 @@ class ClientControl
 		void		processStatic(string path_info);
 		void		processCGI(string path_info);
 		void		saveFile(void);
+		void		processPP(string file_name);
+		string		check_is_file();
 		//int		getFile();
 		//int		postFile();
 };

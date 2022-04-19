@@ -7,6 +7,7 @@ http {
 		listen 8082;
 		client_body_size 44040192;
 		root /Users/dcho/Born2Code/DreamXWebserv/webserv/state_pages;
+		#바꿔
 		error_page 404 /404.html;
 		index index.html test.html error.html;
 		autoindex on;

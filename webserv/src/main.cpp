@@ -22,6 +22,6 @@ int main(int argc, char **argv)
 	}
 	manager.composeServer();
 	manager.runServer();
-
+//서버소켓 닫아주기
  	return 0;
 }

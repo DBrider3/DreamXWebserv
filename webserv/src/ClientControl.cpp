@@ -1,4 +1,5 @@
 #include "../includes/ClientControl.hpp"
+
 ClientControl::ClientControl() //의문.1 생성자 호출할때 어떻게할겨? ????
 {
 	// request.query_str = "";
@@ -34,6 +35,11 @@ ServerBlock 		ClientControl::getServerBlock(void)
 	return (server_block);
 }
 
+HttpBlock 		ClientControl::getHttpBlock(void)
+{
+	return (http_block);
+}
+
 t_request	ClientControl::getRequest(void)
 {
 	return (request);
@@ -52,6 +58,16 @@ int		ClientControl::getClientFd(void)
 int		ClientControl::getRead()
 {
 	return (read_flag);
+}
+
+string	ClientControl::getRoot()
+{
+	return (root);
+}
+
+void 		ClientControl::setHttpBlock(HttpBlock http_block)
+{
+	this->http_block = http_block;
 }
 
 void 		ClientControl::setServerBlock(ServerBlock server_block)
@@ -290,12 +306,12 @@ void		ClientControl::saveFile(void)
 		if(extension != "jpg" && extension != "png" && extension != "jpeg"
 			&& extension != "gif" && extension != "txt")
 			continue ;
-	    //php수정해야함. 만약 올리는 5개중 1개가 해당하는 확장자가 아니면 php에서 어떤파일이 이상한지 띄워줄것
+		//php수정해야함. 만약 올리는 5개중 1개가 해당하는 확장자가 아니면 php에서 어떤파일이 이상한지 띄워줄것
 		// 확장자가 txt인지 png인지 검사해야함
 		// 파일 체크 우선
 
 
-		file.open("/Users/dcho/Born2Code/DreamXWebserv/webserv/save/" + multipart[idx].file_name, std::ios::out);
+		file.open("/Users/daekim/subject/cadet/DreamXWebserv/webserv/save/" + multipart[idx].file_name, std::ios::out);//바꿔
 		file << multipart[idx].data;
 		file.close();
 	//	if (file.fail())
@@ -343,16 +359,22 @@ void		ClientControl::processMultipart(void)
 	saveFile();
 }
 
-
-
-void ClientControl::checkAutoIndex()
+int	ClientControl::checkAutoIndex()
 {
-	vector<string> temp;
+	string request_uri;
+	
+	request_uri = getRequest().uri;
+	if (request_uri == "/" && getServerBlock().getAutoindex() == "on") // autoindex
+	{
+		vector<string> temp;
 
-	temp = getServerBlock().getIndex();
-	for (vector<string>::iterator it = temp.begin(); it != temp.end(); it++)
-		setServerIndex(*it);
-	setLocalUri("/autoindex.html");
+		temp = getServerBlock().getIndex();
+		for (vector<string>::iterator it = temp.begin(); it != temp.end(); it++)
+			setServerIndex(*it);
+		setLocalUri("/autoindex.html");
+		return (1);
+	}
+	return (0);
 }
 
 int ClientControl::findIndex(string uri)
@@ -377,7 +399,7 @@ int ClientControl::findIndex(string uri)
 
 // }
 
-int ClientControl::checkUri()
+int ClientControl::checkUri(string result)
 {
 	string directory;
 	string file;
@@ -386,16 +408,11 @@ int ClientControl::checkUri()
 	string request_uri;
 	vector<LocationBlock>::iterator it;
 	vector<LocationBlock> temp = getServerBlock().getLocationBlock();
-
+	int	i;
+	result = "";
 	request_uri = getRequest().uri;
 
-	cout << "uri" << request_uri << endl;
-
-	if (request_uri == "/" && getServerBlock().getAutoindex() == "on") // autoindex
-	{
-		checkAutoIndex();
-		return (0);
-	}
+	// cout << "uri" << request_uri << endl;
 
 	file = request_uri.substr(request_uri.find_last_of('/') + 1);
 	if (file.size() != 0 && file.find('.') == string::npos)
@@ -417,15 +434,41 @@ int ClientControl::checkUri()
 	}
 
 	cout << "direct :  " << directory << endl;
-	cout << "file: " << file << endl;
+	cout << "file : " << file << endl;
 	if (file == "") //디렉토리로 들어온 경우
 	{
 		for (it = temp.begin(); it != temp.end(); it++)
 		{
 			if (directory.compare(it->getMatch()) == 0)
 			{
-				if (directory == "/") //인덱스 검사 부분 추가
+				if (it->getLimitExcept().size() > 0)
 				{
+					for (i = 0; i != static_cast<int>(it->getLimitExcept().size()) ; i++)
+						if (getRequest().method == it->getLimitExcept()[i])
+							break;
+					if (i == static_cast<int>(it->getLimitExcept().size()))
+					{
+						cout << "here1 -------------------\n";
+						setStateFlag("405");
+						setStateStr("Method Not Allowed");
+						return (-1);
+					}
+				}
+				else
+				{
+					for (i = 0; i != static_cast<int>(getHttpBlock().getLimitExcept().size()) ; i++)
+						if (getRequest().method == getHttpBlock().getLimitExcept()[i])
+							break;
+					if (i == static_cast<int>(getHttpBlock().getLimitExcept().size()))
+					{
+						cout << "here2 -------------------\n";
+						setStateFlag("405");
+						setStateStr("Method Not Allowed");
+						return (-1);
+					}
+				}
+				if (directory == "/") //인덱스 검사 부분 추가
+				{					
 					if (it->getIndex().size() != 0)
 						setLocalUri("/" + it->getIndex()[0]);// it = location block;
 					else
@@ -433,6 +476,12 @@ int ClientControl::checkUri()
 				}
 				else
 					setLocalUri(directory + "/" + it->getIndex()[0]); //디렉 붙여줌?
+				// if (result.find("\r\n\r\n") == string::npos)
+				// {
+				// 	setStateFlag("400");
+				// 	setStateStr("bad request");
+				// 	return (-1);
+				// }
 				if (it->getRedirect().size() != 0)
 				{
 					if (*(it->getRedirect().begin()) != "")
@@ -466,6 +515,12 @@ int ClientControl::checkUri()
 			{
 				if (it->getRedirect().size() != 0)
 				{
+					// if (result.find("\r\n\r\n") == string::npos)
+					// {
+					// 	setStateFlag("400");
+					// 	setStateStr("bad request");
+					// 	return (-1);
+					// }
 					if (*(it->getRedirect().begin()) != "")
 					{
 						setStateFlag("301");
@@ -474,56 +529,18 @@ int ClientControl::checkUri()
 						return (-1);
 					}
 				}
+				/* put & post
+				if (it->getRoot().size() > 0)
+					setRoot(it->getRoot());
+				else
+					setRoot(serverBlock.getRoot());
+				*/
 				break ;
 			}
 		}
 		setLocalUri(request_uri);
 	}
 
-
-/*
-	if (request_uri == "/" && getServerBlock().getAutoindex() != "on")
-	{
-		setLocalUri(*(getServerBlock().getIndex().begin())); // 1번
-	}
-	else if (request_uri == "/" && getServerBlock().getAutoindex() == "on") // autoindex
-	{
-		checkAutoIndex();
-	}
-	else
-	{
-		if ((idx = findIndex(request_uri)) > -1) //완전 일치
-			setLocalUri(getServerBlock().getIndex()[idx]);
-		else
-		{
-			location_uri = request_uri;//.erase(0, 1); //두번째 인자를 넘기지 않으면 자동으로 str 맨 끝까지 복사한다.
-			for (it = temp.begin(); it != temp.end(); it++)
-			{
-				if (location_uri.compare(it->getMatch()) == 0)
-				{
-					setLocalUri(it->getIndex()[0]);
-					if (it->getRedirect().size() != 0)
-					{
-						if (*(it->getRedirect().begin()) != "")
-						{
-							setStateFlag("301");
-							setStateStr("Moved permanently");
-							setRedirectUri(it->getRedirect().back());
-							return (-1);
-						}
-					}
-					break ;
-				}
-			}
-			if (it == temp.end())
-			{
-				cout << "cc 417" << endl;
-				setStateFlag("404");
-				setStateStr("Not found");
-				return (-1);
-			}
-		}
-	}*/
 
 	return (0);
 }
@@ -532,9 +549,9 @@ void ClientControl::deleteFile()
 {
 	string root;
 	struct stat st;
-	string path_info = "/Users/dcho/Born2Code/DreamXWebserv/webserv/state_pages/delete.html";
+	string path_info = "/Users/daekim/subject/cadet/DreamXWebserv/webserv/state_pages/delete.html"; //바꿔
 
-	root = "/Users/dcho/Born2Code/DreamXWebserv/webserv/save/" + getRequest().uri;
+	root = "/Users/daekim/subject/cadet/DreamXWebserv/webserv/save" + getRequest().uri;//바꿔
 	if (!access(root.c_str(), F_OK)) //directory도 삭제가 되는지 확인해야함
 	{
 		if (!unlink(root.c_str()))
@@ -622,7 +639,6 @@ void		ClientControl::processCGI(string path_info)
 			setStateStr("Forbidden");
 			return ;
 		}
-
 	}
 	setStateFlag("200");
 	setStateStr("OK");
@@ -632,7 +648,58 @@ void		ClientControl::processCGI(string path_info)
 	response.ct_length = body.size();
 }
 
-void ClientControl::processMethod()
+/*void	ClientControl::processChunk()
+{
+	int i = 1;
+	string body;
+
+	request.body에 \r\n으로 잘린다고 가정하면 홀수번째들만 따로 파싱하면 되지 않을까?
+	빈칸이 나오면 끝
+	while (request.body[i] != "")
+	{
+		body += request.body[i];
+		i += 2;
+	}
+	
+}*/
+
+string ClientControl::check_is_file()
+{
+	ifstream	fin;
+	string		tmp;
+
+	tmp = getRoot() + response.local_uri;
+	fin >> tmp; //이거 tmp를 fin에 넣어야 하는거 아니야?
+	if (fin.is_open()) // 수정 어케함?? 내용을 싹 밀어버려?
+	{
+		setStateFlag("204");
+		setStateStr("No content"); //200OK도 고려
+	}
+	else if (getRequest().method == "POST")
+	{
+		setStateFlag("201");
+		setStateStr("Created");
+	}
+	else
+	{
+		setStateFlag("201");
+		setStateStr("Created");
+	}
+	return (tmp);
+}
+
+void ClientControl::processPP(string file_name)
+{
+	fstream file;
+	vector<string>::iterator it;
+
+	file.open(file_name, std::ios::out);
+	for (it = getRequest().body.begin(); it != getRequest().body.end(); it++)
+		file << *it;
+	file.close();
+}
+
+void	ClientControl::processMethod()
 {
 	if (getRequest().method == "DELETE")
 	{
@@ -640,10 +707,10 @@ void ClientControl::processMethod()
 		return ;
 	}
 
-	if (checkUri())
+	if (checkAutoIndex())
 		return ;
 
-	response.cgi = 0;
+	response.cgi = 0; // ??
 	findMime();
 	setEnv();
 
@@ -673,10 +740,22 @@ void ClientControl::processMethod()
 		cout << "----I'm in POST----" << endl;
 		if (request.header["Content-Type"].size() == 2)
 			processMultipart();
-		processCGI(path_info);
+		// if (chunk_flag)
+		// 	processChunk();
+		if (!response.cgi)
+			processPP(check_is_file());
+		else
+			processCGI(path_info);
 	}
-	// else if (getRequest().method == "DELETE")
-	// {
-	// 	deleteFile();
-	// }
+	else if (getRequest().method == "PUT")
+	{
+			cout << "----I'm in PUT----" << endl;
+			//if (request.header["Content-Type"].size() == 2)
+			//	processMultipart();
+		if (!response.cgi)
+			processPP(check_is_file());
+
+		else
+			processCGI(path_info);
+	}
 }

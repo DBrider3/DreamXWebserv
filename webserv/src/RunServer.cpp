@@ -8,6 +8,7 @@
 
 void disconnectSocket(int socket_fd) //고쳐야함 소멸자불러야함
 {
+	// usleep(50);
 	cout << "Disconnect Socket!!  socket_fd : " << socket_fd << endl;
 	close(socket_fd);
 }
@@ -126,6 +127,8 @@ void 	sendErrorPage(int socket_fd, string state_flag, string state_str)
 	stat(local_uri.c_str(), &st);
 	ct_len = st.st_size;
 
+	cout << "ct_len :" << ct_len << "\nlocal_uri : " << local_uri << endl; 
+
 	bodyfd = open(local_uri.c_str(), O_RDONLY);
 
 	n = 0;
@@ -139,6 +142,7 @@ void 	sendErrorPage(int socket_fd, string state_flag, string state_str)
 	}
 	sprintf(r_header, RESPONSE_FMT, state_flag.c_str(), state_str.c_str(), ct_len, "text/html", body.c_str());
 	write(socket_fd, r_header, strlen(r_header));
+	cout << "in : " << state_flag << "\n r_header ---------------------\n" << r_header << endl;
 	disconnectSocket(socket_fd);
 }
 
@@ -173,17 +177,11 @@ int ClientControl::setClientsocket(vector<struct kevent> &change_list, uintptr_t
 	changeEvents(change_list, client_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	changeEvents(change_list, client_socket, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
 
-	cout << "rs 176" << endl;
 	setServerBlock(server_block);
-	cout << "rs 178" << endl;
 	setPort(server_block.getListen()[0]);
-	cout << "rs 180" << endl;
 	setClientFd(client_socket);
-	cout << "rs 182" << endl;
 	setServerFd(static_cast<int>(server_socket));
-	cout << "rs 184" << endl;
 	initRequestMsg();
-	cout << "rs 186" << endl;
 	return (0);
 }
 
@@ -215,6 +213,7 @@ void ClientControl::parseRequest(string request)
 	map<string, vector<string> > header_tmp;
 	string	temp;
 
+	cout << "request ----------------------\n" << request << "\n----------" << endl << endl;
 /*
  * Startline 파싱
  */
@@ -222,15 +221,25 @@ void ClientControl::parseRequest(string request)
 	size_t	current;
 
 	previous = 0;
-	current = request.find("\r\n"); // \r\n == crlf
+	current = request.find("\r\n"); // \r\n == crlf 
+
+	//요청 메시치 에러처러 : /r/n이 없이 들어오는 경우 에러처리 필요!! 요청 메시지가 중간에 누락되는 경우!
+	if (current == string::npos)
+	{
+		setStateFlag("400");
+		setStateStr("bad request");
+		return ;
+	}
+
+	//current = request.find("\r\n"); // \r\n == crlf 
+
 	//find 함수는 해당 위치부터 문자열을 찾지 못할 경우 npos를 반환한다.
 	while (current != string::npos)
 	{
 		// 첫 인자의 위치부터 두번째 인자 길이만큼 substring을 반환
 		string substring = request.substr(previous, current - previous);
 		result.push_back(substring);
-		previous = current + 2;
-		//previous 부터 "\r\n"이 나오는 위치를 찾는다.
+		previous = current + 2; //previous 부터 "\r\n"이 나오는 위치를 찾는다.
 		current = request.find("\r\n", previous);
 		// cout << "request :: " << substring << endl;
 	}
@@ -238,6 +247,9 @@ void ClientControl::parseRequest(string request)
 	setMethod(strtok(const_cast<char*>(result[0].c_str()), " "));
 	setUri(strtok(NULL, " "));
 	setVersion(strtok(NULL, "\n"));
+
+	if (checkUri(request))
+		return ;
 
 	if (getRequest().uri.size() > 8190)
 	{
@@ -259,15 +271,15 @@ void ClientControl::parseRequest(string request)
 	* Header 파싱
 	*/
 
-	for (it = result.begin() + 1; it->size() > 0; it++)
+	for (it = result.begin() + 1; it != result.end() && it->size() > 0; it++) //수정함
 	{
-		cout << "it :"  << *it << endl;
+		// cout << "it :"  << *it << endl;
 		stringstream ss(*it);
 		stringstream ss_tmp;
 		string key;
 		vector<string> val;
 		string val_tmp;
-
+		//*it.find(':') == npos ;
 		getline(ss, key, ':');
 		ss.get(); //인덱스 +1 -> 콜론 뒤 공백에서 다음 인덱스로 이동
 
@@ -299,14 +311,15 @@ void ClientControl::parseRequest(string request)
 			return ;
 		}
 	}
-
+	if (it == result.end())
+		return ; 
 	while (++it != result.end())
-	{
+	{		
+		//it++;
 		setBody(*it);
 		// cout << "body start ------------------------------\n" << *it << endl;
 		// cout << "끝 =======================================\n" << endl;
 	}
-
 	if (getRequest().header["Content-Type"].size() == 2 && getRequest().body.size() == 0)
 	{
 		// cout << "is here -----------------------------------\n" << endl;
@@ -329,35 +342,26 @@ void	resetBeforeServer(int server_fd, vector<int>& before_server)
 /*
  * curr_fd가 전달하는 내용을 버퍼에 담아주는 함수입니다.
  */
-
 void ClientControl::readRequest()
 {
 	/*
 	** read data from client
 	*/
-	char buf[10];
-	stringstream ss;
+	char buf[1024];
 	string msg;
 	int n;
 
 	setRead(1);
 	n = 0;
-	while ((n = read(getClientFd(), buf, sizeof(buf) - 1)) > 0)
+
+	memset(buf, 0, sizeof(buf));
+	while ((n = read(getClientFd(), buf, 1023)) > 0)
 	{
-		// if (!buf[0])
-		// {
-		// 	n = 0;
-		// 	break;
-		// }
-		buf[n] = '\0';
-		cout << "buf : " << buf << endl;
-		cout << "n : "<< n << endl;
-		ss << buf;
-		// cout << "buf : " << buf << endl;
+		buf[n] = 0;
+		msg += static_cast<string> (buf);
+		memset(buf, 0, sizeof(buf));
 	}
-	//cout << "buf : " << buf << endl;
-	//cout << n << endl;
-	msg += ss.str();
+
 	// if (n <= 0)
 	// {
 	//	sendErrorPage(curr_event->ident, "400", "Bad request"); //의문.3 에러 처리 방법이 명확하게 떠오르지 않음.. ????
@@ -372,13 +376,13 @@ void ClientControl::readRequest()
 		parseRequest(msg);
 }
 
-int ClientControl::checkMethod(vector<string> method_limit)
-{
-	for (vector<string>::iterator it = method_limit.begin(); it != method_limit.end(); it++)
-		if (getRequest().method == *it)
-			return (1);
-	return (0);
-}
+// int ClientControl::checkMethod(vector<string> method_limit)
+// {
+// 	for (vector<string>::iterator it = method_limit.begin(); it != method_limit.end(); it++)
+// 		if (getRequest().method == *it)
+// 			return (1);
+// 	return (0);
+// }
 
 /*
  * 서버 실행하는 함수입니다.
@@ -418,6 +422,7 @@ void Manager::runServer()
 	while (1)
 	//for (int j = 0; j < 30; j++)
 	{
+		cout << "stop???????????????\n";
 		new_events = kevent(kq, &change_list[0], change_list.size(), event_list, 8, NULL); // timeout 설정 확인
 		// for(int i = 0; i < 8 ; i++)
 		// 	cout << "i :" << i << " " <<"evfd : " << event_list[i].ident << endl;
@@ -430,6 +435,7 @@ void Manager::runServer()
 		idx = 0;
 		for (int i = 0; i < new_events; ++i)
 		{
+			usleep(20);
 			curr_event = &event_list[i];
 			// cout << "[" << i << "]번째" << "new_events" << endl;
 			//cout << "gross : " << new_events << " curr fd : " << curr_event << endl;
@@ -455,15 +461,13 @@ void Manager::runServer()
 					before_server.push_back(curr_event->ident);
 					cout << "ser read" << endl;
 					client_control.push_back(ClientControl());
-					// cout << curr_event->ident << " / "<< http_block.getServerBlock()[client_control.size() - 1].getRoot() << endl;
 					if (client_control.back().setClientsocket(change_list, curr_event->ident, http_block.getServerBlock()[client_control.size() - 1]))
 						client_control.pop_back();
-					cout << "rs 448 , size : " << client_control.size() << endl;
-					//cout << "server accept client2" << endl;
 				}
  				else if ((it = findClient(client_control, curr_event->ident)) != client_control.end())
 				{
 					cout << "cli read" << endl;
+					it->setHttpBlock(this->http_block);
 					it->readRequest();
 				}
 			}
@@ -474,11 +478,12 @@ void Manager::runServer()
 					cout << "cli write" << endl;
 					if (!(it->getResponse().state_flag.empty()))  //it->readRequest();했을 때 에러가 있다면 먼저 띄워줌
 						sendErrorPage(it->getClientFd(), it->getResponse().state_flag, it->getResponse().state_str);
-					else if (it->checkMethod(http_block.getLimitExcept()))
+					else// if (it->checkMethod(http_block.getLimitExcept()))
 					{
 						it->processMethod();
 						if (!(it->getResponse().state_flag.empty()))
 						{
+							cout << "out : " << it->getResponse().state_flag << endl;
 							if (it->getResponse().state_flag == "301")
 								it->sendRedirectPage();
 							else if (it->getResponse().state_flag[0] == '2')
@@ -489,14 +494,14 @@ void Manager::runServer()
 								sendErrorPage(it->getClientFd(), it->getResponse().state_flag, it->getResponse().state_str);
 						}
 					}
-					else
-						sendErrorPage(it->getClientFd(), "403", "Forbidden");
+					// else
+					// 	sendErrorPage(it->getClientFd(), "403", "Forbidden");
 					resetBeforeServer(it->getServerFd(), before_server);
 					client_control.erase(it);//iterator로 삭제 가능
 				}
-				//cout << "write test : " << it->getClientFd() << endl;
 			}
 
 		}
 	}
+	//close(socket_fd);
 }
