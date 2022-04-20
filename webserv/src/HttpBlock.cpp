@@ -88,6 +88,7 @@ int			HttpBlock::setServerBlock(vector<string> buf, int idx)
 			else if (tmp[0] == "\t\tlocation")
 			{
 				LocationBlock tmp_location;
+
 				tmp_location.setMatch(tmp[1]);
 				idx = tmp_server.setLocationBlock(tmp_location, buf, ++idx);
 			}

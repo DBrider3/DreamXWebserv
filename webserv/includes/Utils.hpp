@@ -6,6 +6,7 @@
 # include <sstream>
 # include <cstring>
 # include <fstream>
+# include <cstdlib>
 # include <map>
 # include <vector>
 # include <exception>
@@ -23,7 +24,7 @@
 
 # define TRUE 1
 # define FALSE 0
-# define LISTEN_NUM 10
+# define LISTEN_NUM 1024
 
 using namespace std;
 

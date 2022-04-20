@@ -3,7 +3,19 @@
 ClientControl::ClientControl() //의문.1 생성자 호출할때 어떻게할겨? ????
 {
 	// request.query_str = "";
-	 response.cgi = 0;
+	//response.cgi = 0;
+
+
+	
+	response.local_uri = "";
+	response.date = "";
+	response.ct_length = 0;
+	response.ct_type = "";
+	response.cgi = 0;
+	response.state_flag = ""; //현재 작업이 에러 시, 이벤트에 있는 read/write를 소모시키기 위해 플래그를 사용함.
+	response.state_str = ""; //빼야함
+	response.redirect_uri = "";
+	
 }
 
 // ClientControl::ClientControl(const t_request req) // 생성자에서 request 객체 받기
@@ -150,6 +162,11 @@ void		ClientControl::setRead(int n)
 	read_flag = n;
 }
 
+void		ClientControl::setRoot(string root)
+{
+	this->root = root;
+}
+
 int			ClientControl::getServerFd()
 {
 	return(this->server_fd);
@@ -161,7 +178,11 @@ void		ClientControl::findMime(void)
 	string ext = "";
 	idx = response.local_uri.find_last_of(".");
 	if (idx == string::npos)
-		throw (PrintError());
+	{
+		response.cgi = 0;
+		return ;
+	}
+		//throw (PrintError());
 	ext = response.local_uri.substr(idx);
 	if (!(ext.empty())) // file
 	{
@@ -413,25 +434,64 @@ int ClientControl::checkUri(string result)
 	request_uri = getRequest().uri;
 
 	// cout << "uri" << request_uri << endl;
+//1. 점이 있는지 확인
+//2. 있으면 첫 / 부터 다음 / 까지
+//3. 없으면 첫 /부터 다음 / 까지 혹은 NULL까지
+//doyun - directory vector로 해서 /기준으로 끊어 담자 그렇게 해서 0번쨰 인덱스로 location block 찾고 혹시 하위에 추가적 경로가 붙더라도 인덱스로 찾아갈 수 있도록!
+	//그래서 빨리 알려주세요 코드
+	//어떻게 해야 directory에 첫번째 디렉토리를 담죠??????
+	//네????????????
 
-	file = request_uri.substr(request_uri.find_last_of('/') + 1);
-	if (file.size() != 0 && file.find('.') == string::npos)
+	// a.html
+	// aaa
+	// aaa/bbb
+	// aaa/bbb/a.html
+
+	tmp = request_uri;
+	tmp.erase(0, 1);
+	if (tmp.find('/') == string::npos)
 	{
-		directory = "/" + file;
-		file = "";
+		if (tmp.find('.') != string::npos)
+		{
+			file = tmp;
+			directory = "/";
+		}
+		else
+		{
+			directory = "/" + tmp;
+			file = "";
+		}
 	}
 	else
 	{
-		if (file.size() == 0)
-		{
-			if (request_uri.size() == 1)
-				directory = request_uri;
-			else
-				directory = request_uri.substr(0, request_uri.size() - 1);
-		}
+		directory = "/" + tmp.substr(0, tmp.find('/')); 
+		if (tmp.find('.') != string::npos)
+			file = tmp.substr(tmp.find_last_of('/') + 1);
 		else
-			directory = request_uri.substr(0, request_uri.find_last_of('/'));
+			file = "";
 	}
+//너무 좋아요 찬성!!
+	// 아래 코드의 대한 질문 : file이 없을때는? 그냥 디렉토리만 있을때는? 아무것도 담기지 않겠지?
+	//네 그래서 "" 담고 밑에 if문에서 판별합니다. 감사합니다람쥐구멍
+	// file = request_uri.substr(request_uri.find_last_of('/') + 1); 
+
+	// if (file.size() != 0 && file.find('.') == string::npos)
+	// {
+	// 	directory = "/" + file;
+	// 	file = "";
+	// }
+	// else
+	// {
+	// 	if (file.size() == 0)
+	// 	{
+	// 		if (request_uri.size() == 1)
+	// 			directory = request_uri;
+	// 		else
+	// 			directory = request_uri.substr(0, request_uri.size() - 1);
+	// 	}
+	// 	else
+	// 		directory = request_uri.substr(0, request_uri.find_last_of('/'));
+	// }
 
 	cout << "direct :  " << directory << endl;
 	cout << "file : " << file << endl;
@@ -439,6 +499,7 @@ int ClientControl::checkUri(string result)
 	{
 		for (it = temp.begin(); it != temp.end(); it++)
 		{
+			//directory == it->getMatch()
 			if (directory.compare(it->getMatch()) == 0)
 			{
 				if (it->getLimitExcept().size() > 0)
@@ -475,13 +536,37 @@ int ClientControl::checkUri(string result)
 						setLocalUri("/" + getServerBlock().getIndex()[0]);
 				}
 				else
-					setLocalUri(directory + "/" + it->getIndex()[0]); //디렉 붙여줌?
+				{
+					if (it->getIndex().size() > 0)
+						setLocalUri(request_uri + "/" + it->getIndex()[0]); //디렉 붙여줌? 
+					else
+						setLocalUri(request_uri);
+				}
 				// if (result.find("\r\n\r\n") == string::npos)
 				// {
 				// 	setStateFlag("400");
 				// 	setStateStr("bad request");
 				// 	return (-1);
 				// }
+
+				// POST -> content-type -> multipart
+
+				// POST -> content-type -> text/html //일 때 데이터 생성 uri가 File로 왓을때와 directo
+				// 	 -> content-type -> no_value
+				// 	 	cgi -> ok -> cgi process	
+				// 리소스를 읽고 get처럼 쓰인다.
+
+				// data -> submit 할때 그런 데이터들? get에 queryString 처럼 행동
+
+
+
+				// PUT -> URI -> /aaa/Makefile Makefile 만들어야 돼
+
+				// Transfer-Encoding: chunked
+				
+				// location -> /aaa PUT -> Makefile 
+				// data -> data -> 0 //이게 일부를 이어붙이는건지 아니면 내용을 싹 다 받은 바디로 바꿔야하는지 궁금함.
+
 				if (it->getRedirect().size() != 0)
 				{
 					if (*(it->getRedirect().begin()) != "")
@@ -513,6 +598,32 @@ int ClientControl::checkUri(string result)
 		{
 			if (directory.compare(it->getMatch()) == 0)
 			{
+				if (it->getLimitExcept().size() > 0)
+				{
+					for (i = 0; i != static_cast<int>(it->getLimitExcept().size()) ; i++)
+						if (getRequest().method == it->getLimitExcept()[i])
+							break;
+					if (i == static_cast<int>(it->getLimitExcept().size()))
+					{
+						cout << "here1 -------------------\n";
+						setStateFlag("405");
+						setStateStr("Method Not Allowed");
+						return (-1);
+					}
+				}
+				else
+				{
+					for (i = 0; i != static_cast<int>(getHttpBlock().getLimitExcept().size()) ; i++)
+						if (getRequest().method == getHttpBlock().getLimitExcept()[i])
+							break;
+					if (i == static_cast<int>(getHttpBlock().getLimitExcept().size()))
+					{
+						cout << "here2 -------------------\n";
+						setStateFlag("405");
+						setStateStr("Method Not Allowed");
+						return (-1);
+					}
+				}
 				if (it->getRedirect().size() != 0)
 				{
 					// if (result.find("\r\n\r\n") == string::npos)
@@ -529,19 +640,21 @@ int ClientControl::checkUri(string result)
 						return (-1);
 					}
 				}
-				/* put & post
-				if (it->getRoot().size() > 0)
-					setRoot(it->getRoot());
-				else
-					setRoot(serverBlock.getRoot());
-				*/
 				break ;
 			}
 		}
 		setLocalUri(request_uri);
 	}
-
-
+	if (it->getRoot().size() > 0)
+	{
+		setRoot(it->getRoot());
+		cout << "size Root : " << it->getRoot() << endl;
+	}
+	else
+	{
+		setRoot(getServerBlock().getRoot());
+		cout << "Serv Root : " << getServerBlock().getRoot() << endl;
+	}
 	return (0);
 }
 
@@ -600,6 +713,7 @@ void		ClientControl::processStatic(string path_info)
 
 void		ClientControl::processCGI(string path_info)
 {
+	cout << "in processCGI function 🥵" << endl;
 	pid_t pid;
 	map<string, string> cmd;
 	FILE *fOut = tmpfile();
@@ -617,7 +731,10 @@ void		ClientControl::processCGI(string path_info)
 	if (!pid)
 	{
 		dup2(fdOut, STDOUT_FILENO);
-		execve(PHPCGI, convToChar(cmd, 0), convToChar(env_set, 1));
+		if (response.cgi == 1)
+			execve(PHPCGI, convToChar(cmd, 0), convToChar(env_set, 1));
+		else if (response.cgi == 2)
+			execve(CGITESTER, NULL, convToChar(env_set, 1));
 	}
 	else
 	{
@@ -648,28 +765,67 @@ void		ClientControl::processCGI(string path_info)
 	response.ct_length = body.size();
 }
 
-/*void	ClientControl::processChunk()
-{
-	int i = 1;
-	string body;
+//새로운 시작 made me interesting. like win everything
+//오늘따라 하루가 길다
 
-	request.body에 \r\n으로 잘린다고 가정하면 홀수번째들만 따로 파싱하면 되지 않을까?
-	빈칸이 나오면 끝
-	while (request.body[i] != "")
+void	ClientControl::processChunk()
+{
+	int idx;
+	int sum;
+	int len;
+	vector<string> tmp;
+
+	idx = -1;
+	sum = 0;
+	len = 0;
+	cout << "😥😥😥😥😥😥😥😥😥😥😥😥😥in processChunk function😓😓😓😓😓😓😓😓😓😓😓😓😓😓😓" << endl;
+	while (request.body[++idx] != "0")
 	{
-		body += request.body[i];
-		i += 2;
+		if (idx % 2 == 0)
+		{
+			len = static_cast<int>(strtol(request.body[idx].c_str(), NULL, 16));
+			sum += len;
+		}
+		else
+		{
+//			if (request.body[idx].size() != len)
+//				return ;	//받은 hex랑 받은 body랑 길이가 다르다면 에러 표시를 해야됨
+			tmp.push_back(request.body[idx]);
+		}
+//		if (sum > 10000)
+//			return ; //누락되서 0이 없거나, 너무 크기가 크면 에러? 해야할까요
 	}
-	
-}*/
+	response.ct_length = sum;
+	request.body = tmp;
+	cout << "나는 야 컨텐츠 len : " << sum << endl;
+	cout << "나는 야 body : " << request.body[0] << endl;
+}
+
+//새로운 끝
+/*
+**int i = 0;
+**string buf;
+
+**while (body[i] != "0")
+**{
+**	int h;
+	h << hex << body[i];-----------------------------------------------
+**	if (body[++i].size() != h)
+		error;
+	buf << body[i];
+	i++
+**}
+*/
 
 string ClientControl::check_is_file()
 {
 	ifstream	fin;
 	string		tmp;
 
+	cout << "root : " << getRoot() << " / local : " << response.local_uri << endl;
 	tmp = getRoot() + response.local_uri;
 	fin >> tmp; //이거 tmp를 fin에 넣어야 하는거 아니야?
+	cout << "this is local : " << tmp << endl;
 	if (fin.is_open()) // 수정 어케함?? 내용을 싹 밀어버려?
 	{
 		setStateFlag("204");
@@ -693,8 +849,9 @@ void ClientControl::processPP(string file_name)
 	fstream file;
 	vector<string>::iterator it;
 
+	cout << "file name : " << file_name << endl; 
 	file.open(file_name, std::ios::out);
-	for (it = getRequest().body.begin(); it != getRequest().body.end(); it++)
+	for (it = request.body.begin(); it != request.body.end(); it++)
 		file << *it;
 	file.close();
 }
@@ -709,7 +866,7 @@ void	ClientControl::processMethod()
 
 	if (checkAutoIndex())
 		return ;
-
+		
 	response.cgi = 0; // ??
 	findMime();
 	setEnv();
@@ -726,12 +883,12 @@ void	ClientControl::processMethod()
 		stat((path_info).c_str(), &st);
 		response.ct_length = st.st_size;
 
-		if (!response.cgi)
+		if (response.cgi != 1) //static이거나 , 확장자가 ".bla"여서 cgi의 값이 2일때
 		{
 			processStatic(path_info);
 		}
 		else
-		{
+		{			
 			processCGI(path_info);
 		}
 	} // get, post cgi function
@@ -740,21 +897,27 @@ void	ClientControl::processMethod()
 		cout << "----I'm in POST----" << endl;
 		if (request.header["Content-Type"].size() == 2)
 			processMultipart();
-		// if (chunk_flag)
-		// 	processChunk();
-		if (!response.cgi)
+		if (request.header["Transfer-Encoding"][0] == "chunked")
+		 	processChunk();
+		if (!response.cgi) //파일이나 디렉토리체크 해야하나 ?? 근데 일단 청크처리 먼저 curl기준으로 구현해주고 테스터 돌리면 답이 나오지 않을까여 22
 			processPP(check_is_file());
 		else
 			processCGI(path_info);
+		//헷갈리는 점 
+		//1. fd로 읽을 수 있는 mesage가 순차적으로 들어와서 한번 읽는다고 모든 chunked를 읽을 수 없다. -> chunked가 안끝났으면 디스커넥트 안되게???
+		//2. chunked된 mesage가 들어와서 한번 읽는거로 파싱이 가능하다.
+	
+		
 	}
 	else if (getRequest().method == "PUT")
 	{
 			cout << "----I'm in PUT----" << endl;
 			//if (request.header["Content-Type"].size() == 2)
 			//	processMultipart();
+		if (request.header["Transfer-Encoding"][0] == "chunked")
+		 	processChunk();
 		if (!response.cgi)
 			processPP(check_is_file());
-
 		else
 			processCGI(path_info);
 	}

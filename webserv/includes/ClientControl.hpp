@@ -116,6 +116,7 @@ class ClientControl
 		void		setStateStr(string str);
 		void		setRedirectUri(string str);
 		void		setRead(int n);
+		void		setRoot(string root);
 
 
 		void 		initRequestMsg(void);
@@ -144,7 +145,8 @@ class ClientControl
 		void		processCGI(string path_info);
 		void		saveFile(void);
 		void		processPP(string file_name);
-		string		check_is_file();
+		string		check_is_file(void);
+		void		processChunk(void);
 		//int		getFile();
 		//int		postFile();
 };

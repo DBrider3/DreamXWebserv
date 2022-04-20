@@ -99,7 +99,7 @@ void	ServerBlock::setErrorPage(string str)
 	error_page.push_back(str);
 }
 
-int					ServerBlock::setLocationBlock(LocationBlock tmp_location, vector<string> buf, int idx)
+int					ServerBlock::setLocationBlock(LocationBlock &tmp_location, vector<string> buf, int idx)
 {
 	/*
 	** buf를 split으로 쪼개어 key값을 비교 후, value들을 tmp_location에 넣어줌
@@ -125,7 +125,7 @@ int					ServerBlock::setLocationBlock(LocationBlock tmp_location, vector<string>
 		else if (tmp[0] == "\t\t\tlimit_except")
 		{
 			for (size_t i = 1; i < tmp.size(); i++)
-				tmp_location.setLimitExcept(tmp[i]);
+				tmp_location.setLimitExcept(tmp[i]);				
 		}
 		else if (tmp[0] == "\t\t\tclient_body_size")
 		{

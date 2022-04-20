@@ -76,7 +76,7 @@ void ClientControl::sendChunk(char** r_header)
 			tmp = body.substr(100 * i, body.size() - 100 * i);
 			ss<< hex << tmp.size();
 		}
-		else
+		else //
 		{
 			tmp = body.substr(100 * i, 100);
 			ss<< hex << 100;
@@ -93,7 +93,6 @@ void ClientControl::sendChunk(char** r_header)
 
 void ClientControl::sendSuccessPage(void)
 {
-
 	char*	r_header = new char[response.ct_length + 1024];
 
 	//chunk
@@ -243,7 +242,6 @@ void ClientControl::parseRequest(string request)
 		current = request.find("\r\n", previous);
 		// cout << "request :: " << substring << endl;
 	}
-
 	setMethod(strtok(const_cast<char*>(result[0].c_str()), " "));
 	setUri(strtok(NULL, " "));
 	setVersion(strtok(NULL, "\n"));
@@ -342,12 +340,13 @@ void	resetBeforeServer(int server_fd, vector<int>& before_server)
 /*
  * curr_fd가 전달하는 내용을 버퍼에 담아주는 함수입니다.
  */
+ # define SIZE 1000
 void ClientControl::readRequest()
 {
 	/*
 	** read data from client
 	*/
-	char buf[1024];
+	char buf[SIZE];
 	string msg;
 	int n;
 
@@ -355,13 +354,27 @@ void ClientControl::readRequest()
 	n = 0;
 
 	memset(buf, 0, sizeof(buf));
-	while ((n = read(getClientFd(), buf, 1023)) > 0)
+	//while ((n = read(getClientFd(), buf, 999999)) > 0)
+	// recv(int sockfd, void *buf, size_t len, int flags)
+	while ((n = read(getClientFd(), buf, SIZE - 1)) > 0)
+	// while ((n = recv(getClientFd(), buf, SIZE - 1, 0)) > 0)
 	{
+		usleep(50);
 		buf[n] = 0;
 		msg += static_cast<string> (buf);
 		memset(buf, 0, sizeof(buf));
 	}
+	
 
+/*
+	while ((n = recv(getClientFd(), buf, SIZE - 1, MSG_WAITALL)) > 0)
+	{
+		buf[n] = 0;
+		msg += static_cast<string> (buf);
+		memset(buf, 0, sizeof(buf));
+		if 
+	}
+*/
 	// if (n <= 0)
 	// {
 	//	sendErrorPage(curr_event->ident, "400", "Bad request"); //의문.3 에러 처리 방법이 명확하게 떠오르지 않음.. ????
@@ -394,7 +407,7 @@ void Manager::runServer()
 	int						idx;
 	map<int, string>        clients; // map for client socket:data
 	vector<struct kevent>   change_list; // kevent vector for changelist
-	struct kevent           event_list[8]; // kevent array for eventlistcompRespo
+	struct kevent           event_list[1024]; // kevent array for eventlistcompRespo
 	vector<int>				before_server;
 
 	int                     new_events;
@@ -422,8 +435,8 @@ void Manager::runServer()
 	while (1)
 	//for (int j = 0; j < 30; j++)
 	{
-		cout << "stop???????????????\n";
-		new_events = kevent(kq, &change_list[0], change_list.size(), event_list, 8, NULL); // timeout 설정 확인
+		// cout << "stop???????????????\n";
+		new_events = kevent(kq, &change_list[0], change_list.size(), event_list, 1024, NULL); // timeout 설정 확인
 		// for(int i = 0; i < 8 ; i++)
 		// 	cout << "i :" << i << " " <<"evfd : " << event_list[i].ident << endl;
 		// for(int i = 0; i < 8 ; i++)
@@ -435,7 +448,7 @@ void Manager::runServer()
 		idx = 0;
 		for (int i = 0; i < new_events; ++i)
 		{
-			usleep(20);
+			// usleep(150);
 			curr_event = &event_list[i];
 			// cout << "[" << i << "]번째" << "new_events" << endl;
 			//cout << "gross : " << new_events << " curr fd : " << curr_event << endl;
@@ -464,7 +477,7 @@ void Manager::runServer()
 					if (client_control.back().setClientsocket(change_list, curr_event->ident, http_block.getServerBlock()[client_control.size() - 1]))
 						client_control.pop_back();
 				}
- 				else if ((it = findClient(client_control, curr_event->ident)) != client_control.end())
+				else if ((it = findClient(client_control, curr_event->ident)) != client_control.end())
 				{
 					cout << "cli read" << endl;
 					it->setHttpBlock(this->http_block);

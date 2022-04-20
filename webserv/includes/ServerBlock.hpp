@@ -46,7 +46,7 @@ class ServerBlock
 		void						setIndex(string str);
 		void						setAutoindex(string str);
 		void						setErrorPage(string str);
-		int							setLocationBlock(LocationBlock tmp_location, vector<string> buf, int idx);
+		int							setLocationBlock(LocationBlock &tmp_location, vector<string> buf, int idx);
 
 };
 

@@ -21,6 +21,7 @@ LocationBlock& LocationBlock::operator = (const LocationBlock& lb)
 	root = lb.root;
 	index = lb.index;
 	redirect = lb.redirect;
+	limit_except = lb.limit_except;
 	// error_page = lb.error_page;
 	return (*this);
 }
