@@ -22,6 +22,7 @@ LocationBlock& LocationBlock::operator = (const LocationBlock& lb)
 	index = lb.index;
 	redirect = lb.redirect;
 	limit_except = lb.limit_except;
+	client_body_size = lb.client_body_size;
 	// error_page = lb.error_page;
 	return (*this);
 }

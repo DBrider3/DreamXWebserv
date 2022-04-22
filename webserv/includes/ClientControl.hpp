@@ -64,9 +64,12 @@ class ClientControl
 		string			body;
 		string			port;
 		string			root; //방금 추가 put & post
+		string			directory;
+		string			file;
 		int				client_fd;
 		int				server_fd;
 		int				read_flag;
+		int				client_body_size; //추가
 
 
 
@@ -93,6 +96,9 @@ class ClientControl
 		int		getServerFd();
 		int		getRead();
 		string	getRoot();
+		int		getClientBodySize();
+		// string	getDirectory();
+		// string	getFile();
 
 
 		/*
@@ -117,7 +123,7 @@ class ClientControl
 		void		setRedirectUri(string str);
 		void		setRead(int n);
 		void		setRoot(string root);
-
+		void		setClientBodySize(string body_size);
 
 		void 		initRequestMsg(void);
 		void		processMethod(void);

@@ -95,10 +95,11 @@ void ClientControl::sendSuccessPage(void)
 {
 	char*	r_header = new char[response.ct_length + 1024];
 
+	//memset(r_header, 0x00 , sizeof(r_header));
 	//chunk
-	if (response.ct_length == 0) //임시 있긴 있다고함 의문 ????
-		;//;
-	else if (response.ct_length > 10)
+	// if (response.ct_length == 0) //임시 있긴 있다고함 의문 ????
+	// 	;//;
+	if (response.ct_length > 10)
 	{
 		sendChunk(&r_header);
 		disconnectSocket(client_fd);
@@ -303,15 +304,15 @@ void ClientControl::parseRequest(string request)
 	/*
 	* Body 파싱
 	*/
-	if (getRequest().header["Content-Length"].size() > 0)
-	{
-		if(convStoi(*(getRequest().header["Content-Length"].begin())) > convStoi(getServerBlock().getClientBodySize()))
-		{
-			setStateFlag("413");
-			setStateStr("Payload Too Large");
-			return ;
-		}
-	}
+	// if (getRequest().header["Content-Length"].size() > 0)
+	// {
+	// 	if(convStoi(*(getRequest().header["Content-Length"].begin())) > convStoi(getServerBlock().getClientBodySize()))
+	// 	{
+	// 		setStateFlag("413");
+	// 		setStateStr("Payload Too Large");
+	// 		return ;
+	// 	}
+	// }
 	if (it == result.end())
 		return ; 
 	while (++it != result.end())
@@ -477,6 +478,7 @@ void Manager::runServer()
 					before_server.push_back(curr_event->ident);
 					cout << "ser read" << endl;
 					client_control.push_back(ClientControl());
+					//cout << << "call Before processMethod function :: clientBodySize : " << client_control.back(). << endl;
 					if (client_control.back().setClientsocket(change_list, curr_event->ident, http_block.getServerBlock()[client_control.size() - 1]))
 						client_control.pop_back();
 				}

@@ -6,7 +6,7 @@ ClientControl::ClientControl() //의문.1 생성자 호출할때 어떻게할겨
 	//response.cgi = 0;
 
 
-	
+	client_body_size = -1;
 	response.local_uri = "";
 	response.date = "";
 	response.ct_length = 0;
@@ -39,6 +39,15 @@ ClientControl& ClientControl::operator = (const ClientControl& m)
 {
 	if (this == &m)
 		return (*this);
+	client_body_size = m.client_body_size;
+	response.local_uri = m.response.local_uri;
+	response.date = m.response.date;
+	response.ct_length = m.response.ct_length;
+	response.ct_type = m.response.ct_type;
+	response.cgi = m.response.cgi;
+	response.state_flag = m.response.state_flag; //현재 작업이 에러 시, 이벤트에 있는 read/write를 소모시키기 위해 플래그를 사용함.
+	response.state_str = m.response.state_str; //빼야함
+	response.redirect_uri = m.response.redirect_uri;
 	return (*this);
 }
 
@@ -75,6 +84,11 @@ int		ClientControl::getRead()
 string	ClientControl::getRoot()
 {
 	return (root);
+}
+
+int		ClientControl::getClientBodySize()
+{
+	return (client_body_size);
 }
 
 void 		ClientControl::setHttpBlock(HttpBlock http_block)
@@ -167,6 +181,11 @@ void		ClientControl::setRoot(string root)
 	this->root = root;
 }
 
+void		ClientControl::setClientBodySize(string body_size)
+{
+	this->client_body_size = convStoi(body_size);
+}
+
 int			ClientControl::getServerFd()
 {
 	return(this->server_fd);
@@ -207,23 +226,26 @@ void		ClientControl::findMime(void)
 
 void		ClientControl::setEnv(void)
 {
-	env_set["PATH_INFO"] = response.local_uri;
+	// cout << ">>>>>>>>>>>>>>>>>>>> " << server_block.getRoot() + response.local_uri << endl;
+	env_set["PATH_INFO"] = server_block.getRoot() + response.local_uri;//response.local_uri;//
 	env_set["QUERY_STRING"] = request.query_str;
 	env_set["REQUEST_METHOD"] = request.method; // request.method
 	env_set["REDIRECT_STATUS"] = "200"; // 상태코드인데 아직 미정?!
 	env_set["SCRIPT_FILENAME"] = server_block.getRoot() + response.local_uri; // 절대 경로, 상대 경로 (우선 순위)
 	env_set["SERVER_PROTOCOL"] = request.version; // request.version
-	//env_set["PATH_INFO"] = setPathInfo(argv[3]); // 절대 경로, 상대 경로 (우선 순위)
-	 env_set["CONTENT_TYPE"] = response.ct_type;
+	// env_set["PATH_INFO"] = "/Users/daekim/subject/cadet/DreamXWebserv/webserv/YoupiBanane";//setPathInfo(argv[3]); // 절대 경로, 상대 경로 (우선 순위)
+	env_set["CONTENT_TYPE"] = response.ct_type;
 	env_set["GATEWAY_INTERFACE"] = "CGI/1.1";
 	env_set["REMOTE_ADDR"] = "127.0.0.1"; // 그대로 넣어 주면 될듯(?)
 	if (!request.query_str.empty())
-		env_set["REQUEST_URI"] = request.uri + "?" + request.query_str; // uri (상대 경로)
+		env_set["REQUEST_URI"] = getRoot() + request.uri + "?" + request.query_str; // uri (상대 경로)
 	else
-		env_set["REQUEST_URI"] = request.uri;
+		env_set["REQUEST_URI"] = getRoot() + request.uri;
 	env_set["SERVER_PORT"] = port; // request.port
 	env_set["SERVER_SOFTWARE"] = "DreamX"; // 간지템
 	env_set["SCRIPT_NAME"] = response.local_uri; // uri (상대 경로)
+	if (getRequest().header["X-Secret-Header-For-Test"].size())
+		env_set["HTTP_X_SECRET_HEADER_FOR_TEST"] = getRequest().header["X-Secret-Header-For-Test"][0];
 }
 
 
@@ -446,7 +468,7 @@ int ClientControl::checkUri(string result)
 	// aaa
 	// aaa/bbb
 	// aaa/bbb/a.html
-
+	//setClientBodySize("-1"); //생성자에서는 초기화가 왜 안될까요????
 	tmp = request_uri;
 	tmp.erase(0, 1);
 	if (tmp.find('/') == string::npos)
@@ -542,30 +564,6 @@ int ClientControl::checkUri(string result)
 					else
 						setLocalUri(request_uri);
 				}
-				// if (result.find("\r\n\r\n") == string::npos)
-				// {
-				// 	setStateFlag("400");
-				// 	setStateStr("bad request");
-				// 	return (-1);
-				// }
-
-				// POST -> content-type -> multipart
-
-				// POST -> content-type -> text/html //일 때 데이터 생성 uri가 File로 왓을때와 directo
-				// 	 -> content-type -> no_value
-				// 	 	cgi -> ok -> cgi process	
-				// 리소스를 읽고 get처럼 쓰인다.
-
-				// data -> submit 할때 그런 데이터들? get에 queryString 처럼 행동
-
-
-
-				// PUT -> URI -> /aaa/Makefile Makefile 만들어야 돼
-
-				// Transfer-Encoding: chunked
-				
-				// location -> /aaa PUT -> Makefile 
-				// data -> data -> 0 //이게 일부를 이어붙이는건지 아니면 내용을 싹 다 받은 바디로 바꿔야하는지 궁금함.
 
 				if (it->getRedirect().size() != 0)
 				{
@@ -578,8 +576,13 @@ int ClientControl::checkUri(string result)
 					}
 				}
 				break ;
-			}
-		}
+			} // for end
+		}	
+		// ClientBodySize 
+		cout << "call Before set function :: clientBodySize : " << it->getClientBodySize() << endl;
+		if (it != temp.end() && !(it->getClientBodySize().empty()))
+			setClientBodySize(it->getClientBodySize());
+		cout << "call After set function :: clientBodySize : " << it->getClientBodySize() << endl;
 		if (it == temp.end())
 		{
 			if (directory == "/") //location으로 찾지못하더랃server의 root내에 있는 경로도 찾아야될거같아요
@@ -646,6 +649,11 @@ int ClientControl::checkUri(string result)
 				break ;
 			}
 		}
+		cout << "call Before set function :: clientBodySize : " << it->getClientBodySize() << endl;
+		// ClientBodySize 
+		if (it != temp.end() && !(it->getClientBodySize().empty()))
+			setClientBodySize(it->getClientBodySize());
+		cout << "call After set function :: clientBodySize : " << it->getClientBodySize() << endl;
 		setLocalUri(request_uri);
 	}
 	if (it->getRoot().size() > 0)
@@ -719,31 +727,44 @@ void		ClientControl::processCGI(string path_info)
 	cout << "in processCGI function 🥵" << endl;
 	pid_t pid;
 	map<string, string> cmd;
+	
+	FILE *fIn = tmpfile();
+	long fdIn = fileno(fIn);
 	FILE *fOut = tmpfile();
 	long fdOut = fileno(fOut);
+	vector<string>::iterator it;
 
-	cout << "cgi number : "<< response.cgi << endl;
+	// cout << "cgi number : "<< response.cgi << endl;
+
+	int request_size = 0;
 	if (response.cgi == 1)
 		cmd["php-cgi"] = path_info;
-	else if (response.cgi == 2)
-		cmd["cgi_tester"] = path_info;
-	cout << "cmd path info : " << cmd["cgi_tester"] << endl;
-	//cmd["php-cgi"] = path_info;
+	else if (response.cgi == 2) /////////////////여기????????????????
+	{
+		for (it = request.body.begin(); it != request.body.end(); it++)
+		{
+			write(fdIn, it->c_str(), it->size());
+			request_size += (int)it->size();
+		}
+		lseek(fdIn, 0, SEEK_SET);
+	}
+	// cout << "나는야 패스인포!!!!!!!! ->> " << env_set["PATH_INFO"] << endl;
+	// cout << "rrrrrrequest body : " << request_size << endl;
 	pid = fork();
-
 	if (!pid)
 	{
+		dup2(fdIn, STDIN_FILENO);
 		dup2(fdOut, STDOUT_FILENO);
 		if (response.cgi == 1)
 			execve(PHPCGI, convToChar(cmd, 0), convToChar(env_set, 1));
 		else if (response.cgi == 2)
-			execve(CGITESTER, convToChar(cmd, 0), convToChar(env_set, 1));
+			execve(CGITESTER, NULL, convToChar(env_set, 1));
 	}
 	else
 	{
 		waitpid(pid, NULL, 0);
 		lseek(fdOut, 0, SEEK_SET); //lseek는 파일 디스크립터의 읽기/쓰기 포인터 위치를 변경하는 데 사용되는 시스템 호출입니다
-		char foo[1024];
+		char foo[1024];//4242 넣어도 되나요??? ㅇㅋㅇㅋ ㄱㅅ
 		int res = 0;
 
 		memset(foo, 0, sizeof(foo));
@@ -760,8 +781,16 @@ void		ClientControl::processCGI(string path_info)
 			return ;
 		}
 	}
+	// cout << "body size --------------------------------\n" << body.size() << endl << "end-----------------------------------\n\n";
+	// if (body.size() > 50)
+	// 	cout << "버디는 잘 들어왔스무디 !!!" << endl;
+	// cout << "🔥🔥🔥🔥🔥🔥🔥🔥🔥Body Start🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥" << endl;
+	// for (int i = 0; body.size() > 1000 && i != 1000; i++)
+	// 	cout << body[i];
+	// cout << "\n🔥🔥🔥🔥🔥🔥🔥🔥🔥Body End🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥" << endl;
 	setStateFlag("200");
 	setStateStr("OK");
+	// php-cgi 에서 처리 되는 부분이라 , cgi_tester 이부분도 처리를 해줘야 한다.
 	string search = "Content-type: ";
 	response.ct_type = body.substr(body.find(search) + 14, body.find("\r\n\r\n") - body.find(search) - 14);
 	body = body.substr(body.find("\r\n\r\n") + 4, body.size() - body.find("\r\n\r\n") - 4);
@@ -869,10 +898,11 @@ void	ClientControl::processMethod()
 
 	if (checkAutoIndex())
 		return ;
-		
+	
 	response.cgi = 0; // ??
 	findMime();
 	setEnv();
+
 
 	string path_info = server_block.getRoot() + response.local_uri; // root
 
@@ -902,10 +932,22 @@ void	ClientControl::processMethod()
 			processMultipart();
 		if (request.header["Transfer-Encoding"][0] == "chunked")
 		 	processChunk();
+		
+		if (getClientBodySize() != -1 && response.ct_length > getClientBodySize())
+		{
+			cout << "in 413 function " << getClientBodySize() << endl;
+			setStateFlag("413");
+			setStateStr("Payload Too Large");
+			return ;
+		}
+		
 		if (!response.cgi) //파일이나 디렉토리체크 해야하나 ?? 근데 일단 청크처리 먼저 curl기준으로 구현해주고 테스터 돌리면 답이 나오지 않을까여 22
 			processPP(check_is_file());
 		else
+		{
+			//cout << "request body 0 : " << request.body[0] << "\n The... end... --------------------------------\n" << endl;
 			processCGI(path_info);
+		}
 		//헷갈리는 점 
 		//1. fd로 읽을 수 있는 mesage가 순차적으로 들어와서 한번 읽는다고 모든 chunked를 읽을 수 없다. -> chunked가 안끝났으면 디스커넥트 안되게???
 		//2. chunked된 mesage가 들어와서 한번 읽는거로 파싱이 가능하다.
