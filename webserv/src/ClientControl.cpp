@@ -596,7 +596,10 @@ int ClientControl::checkUri(string result)
 	{
 		for (it = temp.begin(); it != temp.end(); it++)
 		{
-			if (directory.compare(it->getMatch()) == 0)
+			if ((directory.compare(it->getMatch()) == 0) \
+				|| (it->getMatch().find_last_of(".") != string::npos \
+				&& file.substr(file.find_last_of(".")) \
+				== it->getMatch().substr(it->getMatch().find_last_of("."))))
 			{
 				if (it->getLimitExcept().size() > 0)
 				{
@@ -605,7 +608,7 @@ int ClientControl::checkUri(string result)
 							break;
 					if (i == static_cast<int>(it->getLimitExcept().size()))
 					{
-						cout << "here1 -------------------\n";
+						cout << "here3 -------------------\n";
 						setStateFlag("405");
 						setStateStr("Method Not Allowed");
 						return (-1);
@@ -618,7 +621,7 @@ int ClientControl::checkUri(string result)
 							break;
 					if (i == static_cast<int>(getHttpBlock().getLimitExcept().size()))
 					{
-						cout << "here2 -------------------\n";
+						cout << "here4 -------------------\n";
 						setStateFlag("405");
 						setStateStr("Method Not Allowed");
 						return (-1);
@@ -734,7 +737,7 @@ void		ClientControl::processCGI(string path_info)
 		if (response.cgi == 1)
 			execve(PHPCGI, convToChar(cmd, 0), convToChar(env_set, 1));
 		else if (response.cgi == 2)
-			execve(CGITESTER, NULL, convToChar(env_set, 1));
+			execve(CGITESTER, convToChar(cmd, 0), convToChar(env_set, 1));
 	}
 	else
 	{
@@ -798,7 +801,7 @@ void	ClientControl::processChunk()
 	response.ct_length = sum;
 	request.body = tmp;
 	cout << "나는 야 컨텐츠 len : " << sum << endl;
-	cout << "나는 야 body : " << request.body[0] << endl;
+	// cout << "나는 야 body : " << request.body[0] << endl;
 }
 
 //새로운 끝

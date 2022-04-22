@@ -212,7 +212,7 @@ void ClientControl::parseRequest(string request)
 	map<string, vector<string> > header_tmp;
 	string	temp;
 
-	cout << "request ----------------------\n" << request << "\n----------" << endl << endl;
+	// cout << "request ----------------------\n" << request << "\n----------" << endl << endl;
 /*
  * Startline 파싱
  */
@@ -268,7 +268,8 @@ void ClientControl::parseRequest(string request)
 	/*
 	* Header 파싱
 	*/
-
+	cout << "request msg ----------------------\n"
+	<< getRequest().method << " " << getRequest().uri << " " << getRequest().version << endl;
 	for (it = result.begin() + 1; it != result.end() && it->size() > 0; it++) //수정함
 	{
 		// cout << "it :"  << *it << endl;
@@ -280,7 +281,7 @@ void ClientControl::parseRequest(string request)
 		//*it.find(':') == npos ;
 		getline(ss, key, ':');
 		ss.get(); //인덱스 +1 -> 콜론 뒤 공백에서 다음 인덱스로 이동
-
+		cout << key << ": ";
 		for (int i = 0; getline(ss, val_tmp, ' '); i++)
 		{
 			if (key == "Content-Type" && i == 1)
@@ -290,11 +291,13 @@ void ClientControl::parseRequest(string request)
 				getline(ss_tmp, val_tmp, '\0');
 			}
 			val.push_back(val_tmp);
+			cout << val_tmp << " ";
 		}
+		cout << endl;
 		header_tmp[key] = val;
 	}
 	setHeader(header_tmp);
-
+	cout << "The end ==========================\n\n";
 
 
 	/*
@@ -364,7 +367,7 @@ void ClientControl::readRequest()
 		msg += static_cast<string> (buf);
 		memset(buf, 0, sizeof(buf));
 	}
-	
+	// cout << "while n : " << n << endl;  
 
 /*
 	while ((n = recv(getClientFd(), buf, SIZE - 1, MSG_WAITALL)) > 0)
