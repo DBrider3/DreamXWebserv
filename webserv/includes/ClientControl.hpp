@@ -71,6 +71,9 @@ class ClientControl
 		int				read_flag;
 		int				client_body_size; //추가
 
+		string			msg;
+		int				chunk_flag;
+
 
 
 	public:
@@ -100,10 +103,14 @@ class ClientControl
 		// string	getDirectory();
 		// string	getFile();
 
-
+		string		getMsg();
+		int			getChunk();
 		/*
 		** setter part
 		*/
+		void 		setMsg(string msg);
+		void		setChunk(int chunk_flag);
+
 		void		setHttpBlock(HttpBlock http_block);
 		void 		setServerBlock(ServerBlock server_block);
 		void		setPort(string port);
