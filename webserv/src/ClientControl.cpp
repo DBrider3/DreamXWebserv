@@ -7,6 +7,8 @@ ClientControl::ClientControl() //의문.1 생성자 호출할때 어떻게할겨
 
 
 	client_body_size = -1;
+	msg = "";
+	chunk_flag = 0;
 	response.local_uri = "";
 	response.date = "";
 	response.ct_length = 0;
@@ -89,6 +91,26 @@ string	ClientControl::getRoot()
 int		ClientControl::getClientBodySize()
 {
 	return (client_body_size);
+}
+
+string		ClientControl::getMsg()
+{
+	return (msg);
+}
+
+int			ClientControl::getChunk()
+{
+	return (chunk_flag);
+}
+
+void			ClientControl::setChunk(int chunk_flag)
+{
+	this->chunk_flag = chunk_flag;
+}
+
+void 		ClientControl::setMsg(string msg)
+{
+	this->msg = msg;
 }
 
 void 		ClientControl::setHttpBlock(HttpBlock http_block)
@@ -290,52 +312,6 @@ char**		ClientControl::convToChar(map<string, string> m, int flag) //소송
 	return (return_value);
 }
 
-// void		ClientControl::fillResponse(void)
-// {
-// 	char	res[response.ct_length + 1024]; // 크기를 알 수 없으니 임시로 10000 설정 추후 이 부분에 대해 방안모색
-// 	if (response.ct_length < 42000) // chunk 기준 42mb
-// 	{
-// 		sprintf(res, RESPONSE_FMT, 200, "OK", response.ct_length, response.ct_type.c_str(), body.c_str());
-// 		//write(header->fd, res, strlen(res))); //fd 수정
-// 		cout << res << endl;
-// 	}
-// 	else //chunk
-// 	{
-// 		sprintf(res, CHUNK_FMT, 200, "OK", response.ct_type.c_str());
-// 		//write(header->fd, res, strlen(res))); //fd 수정
-// 		cout << res;
-// 		int i = 0;
-
-// 		string tmp;
-// 		while (1)
-// 		{
-// 			stringstream ss;
-// 			string hexSize;
-// 			if (body.size() - 100 * i < 100)
-// 			{
-// 				tmp = body.substr(100 * i, body.size() - 100 * i);
-// 				ss<< hex << tmp.size();
-// 				hexSize = ss.str();
-// 			}
-// 			else
-// 			{
-// 				tmp = body.substr(100 * i, 100);
-// 				ss<< hex << 100;
-// 				hexSize = ss.str();
-// 			}
-// 			//write(header->fd, hexSize.c_str(), hexSize.size());
-// 			//write(header->fd, tmp.c_str(), tmp.size());
-// 			cout << hexSize << endl;
-// 			cout << tmp << endl;
-// 			if (body.size() - 100 * i < 100)
-// 				break ;
-// 			i++;
-// 		}
-// 		//write(header->fd, "0\r\n", 3);
-// 		cout << hex << "0\r\n\r\n";
-// 	}
-// }
-
 void		ClientControl::saveFile(void)
 {
 	std::fstream file;
@@ -396,7 +372,7 @@ void		ClientControl::processMultipart(void)
 				multipart[idx].data.pop_back();
 				idx++;
 			}
-			cout << "size : " << multipart.size() << endl;
+			// cout << "size : " << multipart.size() << endl;
 		}
 	}
 	saveFile();
@@ -579,10 +555,10 @@ int ClientControl::checkUri(string result)
 			} // for end
 		}	
 		// ClientBodySize 
-		cout << "call Before set function :: clientBodySize : " << it->getClientBodySize() << endl;
+		// cout << "call Before set function :: clientBodySize : " << it->getClientBodySize() << endl;
 		if (it != temp.end() && !(it->getClientBodySize().empty()))
 			setClientBodySize(it->getClientBodySize());
-		cout << "call After set function :: clientBodySize : " << it->getClientBodySize() << endl;
+		// cout << "call After set function :: clientBodySize : " << it->getClientBodySize() << endl;
 		if (it == temp.end())
 		{
 			if (directory == "/") //location으로 찾지못하더랃server의 root내에 있는 경로도 찾아야될거같아요
@@ -649,11 +625,11 @@ int ClientControl::checkUri(string result)
 				break ;
 			}
 		}
-		cout << "call Before set function :: clientBodySize : " << it->getClientBodySize() << endl;
+		// cout << "call Before set function :: clientBodySize : " << it->getClientBodySize() << endl;
 		// ClientBodySize 
 		if (it != temp.end() && !(it->getClientBodySize().empty()))
 			setClientBodySize(it->getClientBodySize());
-		cout << "call After set function :: clientBodySize : " << it->getClientBodySize() << endl;
+		// cout << "call After set function :: clientBodySize : " << it->getClientBodySize() << endl;
 		setLocalUri(request_uri);
 	}
 	if (it->getRoot().size() > 0)
@@ -694,7 +670,7 @@ void ClientControl::deleteFile()
 	}
 	else
 	{
-				cout << "cc 446" << endl;
+				// cout << "cc 446" << endl;
 		setStateFlag("404");
 		setStateStr("Not found");
 	}
@@ -715,7 +691,7 @@ void		ClientControl::processStatic(string path_info)
 	}
 	else
 	{
-		cout << "cc 465" << endl;
+		// cout << "cc 465" << endl;
 		setStateFlag("404");
 		setStateStr("Not found");
 		return ;
@@ -724,7 +700,7 @@ void		ClientControl::processStatic(string path_info)
 
 void		ClientControl::processCGI(string path_info)
 {
-	cout << "in processCGI function 🥵" << endl;
+	// cout << "in processCGI function 🥵" << endl;
 	pid_t pid;
 	map<string, string> cmd;
 	
@@ -810,7 +786,7 @@ void	ClientControl::processChunk()
 	idx = -1;
 	sum = 0;
 	len = 0;
-	cout << "😥😥😥😥😥😥😥😥😥😥😥😥😥in processChunk function😓😓😓😓😓😓😓😓😓😓😓😓😓😓😓" << endl;
+	// cout << "😥😥😥😥😥😥😥😥😥😥😥😥😥in processChunk function😓😓😓😓😓😓😓😓😓😓😓😓😓😓😓" << endl;
 	while (request.body[++idx] != "0")
 	{
 		if (idx % 2 == 0)
@@ -829,7 +805,7 @@ void	ClientControl::processChunk()
 	}
 	response.ct_length = sum;
 	request.body = tmp;
-	cout << "나는 야 컨텐츠 len : " << sum << endl;
+	// cout << "나는 야 컨텐츠 len : " << sum << endl;
 	// cout << "나는 야 body : " << request.body[0] << endl;
 }
 
@@ -854,10 +830,10 @@ string ClientControl::check_is_file()
 	ifstream	fin;
 	string		tmp;
 
-	cout << "root : " << getRoot() << " / local : " << response.local_uri << endl;
+	// cout << "root : " << getRoot() << " / local : " << response.local_uri << endl;
 	tmp = getRoot() + response.local_uri;
 	fin >> tmp; //이거 tmp를 fin에 넣어야 하는거 아니야?
-	cout << "this is local : " << tmp << endl;
+	// cout << "this is local : " << tmp << endl;
 	if (fin.is_open()) // 수정 어케함?? 내용을 싹 밀어버려?
 	{
 		setStateFlag("204");
@@ -881,7 +857,7 @@ void ClientControl::processPP(string file_name)
 	fstream file;
 	vector<string>::iterator it;
 
-	cout << "file name : " << file_name << endl; 
+	// cout << "file name : " << file_name << endl; 
 	file.open(file_name, std::ios::out);
 	for (it = request.body.begin(); it != request.body.end(); it++)
 		file << *it;
@@ -906,9 +882,9 @@ void	ClientControl::processMethod()
 
 	string path_info = server_block.getRoot() + response.local_uri; // root
 
-	cout << "This is Root : " << server_block.getRoot() << endl;
-	cout << "This is Local URI : " << response.local_uri << endl;
-	cout << "This is Path Info : " << path_info << endl;
+	// cout << "This is Root : " << server_block.getRoot() << endl;
+	// cout << "This is Local URI : " << response.local_uri << endl;
+	// cout << "This is Path Info : " << path_info << endl;
 
 	if (getRequest().method == "GET")
 	{
@@ -927,7 +903,7 @@ void	ClientControl::processMethod()
 	} // get, post cgi function
 	else if (getRequest().method == "POST")
 	{
-		cout << "----I'm in POST----" << endl;
+		// cout << "----I'm in POST----" << endl;
 		if (request.header["Content-Type"].size() == 2)
 			processMultipart();
 		if (request.header["Transfer-Encoding"][0] == "chunked")
@@ -935,7 +911,7 @@ void	ClientControl::processMethod()
 		
 		if (getClientBodySize() != -1 && response.ct_length > getClientBodySize())
 		{
-			cout << "in 413 function " << getClientBodySize() << endl;
+			// cout << "in 413 function " << getClientBodySize() << endl;
 			setStateFlag("413");
 			setStateStr("Payload Too Large");
 			return ;
@@ -956,7 +932,7 @@ void	ClientControl::processMethod()
 	}
 	else if (getRequest().method == "PUT")
 	{
-			cout << "----I'm in PUT----" << endl;
+			// cout << "----I'm in PUT----" << endl;
 			//if (request.header["Content-Type"].size() == 2)
 			//	processMultipart();
 		if (request.header["Transfer-Encoding"][0] == "chunked")
