@@ -21,6 +21,9 @@
 # include <sys/types.h>
 # include <sys/event.h> //kevent()
 # include <sys/time.h>
+# include <ctime>
+
+#define _CRT_SECURE_NO_WARNINGS
 
 # define TRUE 1
 # define FALSE 0

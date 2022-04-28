@@ -9,6 +9,7 @@ ClientControl::ClientControl() //의문.1 생성자 호출할때 어떻게할겨
 	client_body_size = -1;
 	msg = "";
 	chunk_flag = 0;
+	body = "";
 	response.local_uri = "";
 	response.date = "";
 	response.ct_length = 0;
@@ -17,7 +18,6 @@ ClientControl::ClientControl() //의문.1 생성자 호출할때 어떻게할겨
 	response.state_flag = ""; //현재 작업이 에러 시, 이벤트에 있는 read/write를 소모시키기 위해 플래그를 사용함.
 	response.state_str = ""; //빼야함
 	response.redirect_uri = "";
-	
 }
 
 // ClientControl::ClientControl(const t_request req) // 생성자에서 request 객체 받기
@@ -41,7 +41,10 @@ ClientControl& ClientControl::operator = (const ClientControl& m)
 {
 	if (this == &m)
 		return (*this);
-	client_body_size = m.client_body_size;
+         	client_body_size = m.client_body_size;
+	msg = m.msg;
+	chunk_flag = m.chunk_flag;
+	body = m.body;
 	response.local_uri = m.response.local_uri;
 	response.date = m.response.date;
 	response.ct_length = m.response.ct_length;
@@ -206,6 +209,11 @@ void		ClientControl::setRoot(string root)
 void		ClientControl::setClientBodySize(string body_size)
 {
 	this->client_body_size = convStoi(body_size);
+}
+
+void		ClientControl::setLength(int n)
+{
+	request.ct_length = n;
 }
 
 int			ClientControl::getServerFd()
@@ -436,15 +444,6 @@ int ClientControl::checkUri(string result)
 //2. 있으면 첫 / 부터 다음 / 까지
 //3. 없으면 첫 /부터 다음 / 까지 혹은 NULL까지
 //doyun - directory vector로 해서 /기준으로 끊어 담자 그렇게 해서 0번쨰 인덱스로 location block 찾고 혹시 하위에 추가적 경로가 붙더라도 인덱스로 찾아갈 수 있도록!
-	//그래서 빨리 알려주세요 코드
-	//어떻게 해야 directory에 첫번째 디렉토리를 담죠??????
-	//네????????????
-
-	// a.html
-	// aaa
-	// aaa/bbb
-	// aaa/bbb/a.html
-	//setClientBodySize("-1"); //생성자에서는 초기화가 왜 안될까요????
 	tmp = request_uri;
 	tmp.erase(0, 1);
 	if (tmp.find('/') == string::npos)
@@ -468,9 +467,7 @@ int ClientControl::checkUri(string result)
 		else
 			file = "";
 	}
-//너무 좋아요 찬성!!
-	// 아래 코드의 대한 질문 : file이 없을때는? 그냥 디렉토리만 있을때는? 아무것도 담기지 않겠지?
-	//네 그래서 "" 담고 밑에 if문에서 판별합니다. 감사합니다람쥐구멍
+
 	// file = request_uri.substr(request_uri.find_last_of('/') + 1); 
 
 	// if (file.size() != 0 && file.find('.') == string::npos)
@@ -491,8 +488,8 @@ int ClientControl::checkUri(string result)
 	// 		directory = request_uri.substr(0, request_uri.find_last_of('/'));
 	// }
 
-	cout << "direct :  " << directory << endl;
-	cout << "file : " << file << endl;
+	// cout << "direct :  " << directory << endl;
+	// cout << "file : " << file << endl;
 	if (file == "") //디렉토리로 들어온 경우
 	{
 		for (it = temp.begin(); it != temp.end(); it++)
@@ -635,12 +632,12 @@ int ClientControl::checkUri(string result)
 	if (it->getRoot().size() > 0)
 	{
 		setRoot(it->getRoot());
-		cout << "size Root : " << it->getRoot() << endl;
+		// cout << "size Root : " << it->getRoot() << endl;
 	}
 	else
 	{
 		setRoot(getServerBlock().getRoot());
-		cout << "Serv Root : " << getServerBlock().getRoot() << endl;
+		// cout << "Serv Root : " << getServerBlock().getRoot() << endl;
 	}
 	return (0);
 }
@@ -685,6 +682,7 @@ void		ClientControl::processStatic(string path_info)
 		char c;
 		while (fin.get(c))
 			body += c;
+		cout << "response ------------------------------\n" << body << "\n---------------------------------------\n" << endl;
 		fin.close();
 		setStateFlag("200");
 		setStateStr("OK");
@@ -740,7 +738,7 @@ void		ClientControl::processCGI(string path_info)
 	{
 		waitpid(pid, NULL, 0);
 		lseek(fdOut, 0, SEEK_SET); //lseek는 파일 디스크립터의 읽기/쓰기 포인터 위치를 변경하는 데 사용되는 시스템 호출입니다
-		char foo[1024];//4242 넣어도 되나요??? ㅇㅋㅇㅋ ㄱㅅ
+		char foo[1024];
 		int res = 0;
 
 		memset(foo, 0, sizeof(foo));
@@ -757,20 +755,16 @@ void		ClientControl::processCGI(string path_info)
 			return ;
 		}
 	}
-	// cout << "body size --------------------------------\n" << body.size() << endl << "end-----------------------------------\n\n";
-	// if (body.size() > 50)
-	// 	cout << "버디는 잘 들어왔스무디 !!!" << endl;
-	// cout << "🔥🔥🔥🔥🔥🔥🔥🔥🔥Body Start🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥" << endl;
-	// for (int i = 0; body.size() > 1000 && i != 1000; i++)
-	// 	cout << body[i];
-	// cout << "\n🔥🔥🔥🔥🔥🔥🔥🔥🔥Body End🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥" << endl;
 	setStateFlag("200");
 	setStateStr("OK");
-	// php-cgi 에서 처리 되는 부분이라 , cgi_tester 이부분도 처리를 해줘야 한다.
-	string search = "Content-type: ";
+	string search = "";
+	if (response.cgi == 1)
+		search = "Content-type: ";
+	else if (response.cgi == 2)
+		search = "Content-Type: ";
 	response.ct_type = body.substr(body.find(search) + 14, body.find("\r\n\r\n") - body.find(search) - 14);
 	body = body.substr(body.find("\r\n\r\n") + 4, body.size() - body.find("\r\n\r\n") - 4);
-	response.ct_length = body.size();
+	response.ct_length = body.size(); // 수정 필요??
 }
 
 //새로운 시작 made me interesting. like win everything
@@ -803,7 +797,7 @@ void	ClientControl::processChunk()
 //		if (sum > 10000)
 //			return ; //누락되서 0이 없거나, 너무 크기가 크면 에러? 해야할까요
 	}
-	response.ct_length = sum;
+	request.ct_length = sum;
 	request.body = tmp;
 	// cout << "나는 야 컨텐츠 len : " << sum << endl;
 	// cout << "나는 야 body : " << request.body[0] << endl;
@@ -834,15 +828,10 @@ string ClientControl::check_is_file()
 	tmp = getRoot() + response.local_uri;
 	fin >> tmp; //이거 tmp를 fin에 넣어야 하는거 아니야?
 	// cout << "this is local : " << tmp << endl;
-	if (fin.is_open()) // 수정 어케함?? 내용을 싹 밀어버려?
+	if (fin.is_open() && getRequest().method != "POST") // 수정 어케함?? 내용을 싹 밀어버려?
 	{
 		setStateFlag("204");
 		setStateStr("No content"); //200OK도 고려
-	}
-	else if (getRequest().method == "POST")
-	{
-		setStateFlag("201");
-		setStateStr("Created");
 	}
 	else
 	{
@@ -909,7 +898,7 @@ void	ClientControl::processMethod()
 		if (request.header["Transfer-Encoding"][0] == "chunked")
 		 	processChunk();
 		
-		if (getClientBodySize() != -1 && response.ct_length > getClientBodySize())
+		if (getClientBodySize() != -1 && request.ct_length > getClientBodySize())
 		{
 			// cout << "in 413 function " << getClientBodySize() << endl;
 			setStateFlag("413");
@@ -918,7 +907,12 @@ void	ClientControl::processMethod()
 		}
 		
 		if (!response.cgi) //파일이나 디렉토리체크 해야하나 ?? 근데 일단 청크처리 먼저 curl기준으로 구현해주고 테스터 돌리면 답이 나오지 않을까여 22
-			processPP(check_is_file());
+		{
+			string aa;
+
+			aa = check_is_file();
+			//processPP(aa);
+		}
 		else
 		{
 			//cout << "request body 0 : " << request.body[0] << "\n The... end... --------------------------------\n" << endl;
@@ -932,9 +926,7 @@ void	ClientControl::processMethod()
 	}
 	else if (getRequest().method == "PUT")
 	{
-			// cout << "----I'm in PUT----" << endl;
-			//if (request.header["Content-Type"].size() == 2)
-			//	processMultipart();
+		// cout << "----I'm in PUT----" << endl;
 		if (request.header["Transfer-Encoding"][0] == "chunked")
 		 	processChunk();
 		if (!response.cgi)

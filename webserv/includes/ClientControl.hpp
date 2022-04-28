@@ -11,10 +11,11 @@
 //  # define PHPCGI "/Users/dcho/Born2Code/DreamXWebserv/webserv/tester/php-cgi"
 //  # define CGITESTER "/Users/dcho/Born2Code/DreamXWebserv/webserv/tester/cgi_tester"
 
-# define NOBODY_FMT "HTTP/1.1 %s %s\n"  //또 뭐넣어야함?
-# define RESPONSE_FMT "HTTP/1.1 %s %s\nContent-Length: %d\nContent-Type: %s\n\n%s\n"
-# define REDIRECT_FMT "HTTP/1.1 %s %s\nLocation: %s\n"
-# define CHUNK_FMT "HTTP/1.1 %s %s\nTransfer-Encoding: chunked\nContent-Type: %s\n\n"
+# define NOBODY_FMT "HTTP/1.1 %s %s\r\nContent-Length: %d\r\nContent-Type: %s"  //또 뭐넣어야함?
+# define RESPONSE_FMT "HTTP/1.1 %s %s\r\nContent-Length: %d\r\nContent-Type: %s\r\n\r\n%s"//이거 넣으면 헤더로 올라감
+# define REDIRECT_FMT "HTTP/1.1 %s %s\r\nLocation: %s"
+# define CHUNK_FMT "HTTP/1.1 %s %s\r\nTransfer-Encoding: chunked\nContent-Type: %s\r\n\r\n"
+# define ERROR_FMT "HTTP/1.1 %s %s"
 
 // # define RESPONSE_FMT "HTTP/1.1 %d %s\nContent-Length: %d\nContent-Type: %s\n\n%s"
 
@@ -29,6 +30,7 @@ typedef struct s_request {
 	string							version;
 	map<string, vector<string> >	header;
 	vector<string>					body;
+	int								ct_length;
 }               t_request;
 
 typedef struct	s_response
@@ -131,6 +133,7 @@ class ClientControl
 		void		setRead(int n);
 		void		setRoot(string root);
 		void		setClientBodySize(string body_size);
+		void		setLength(int n);
 
 		void 		initRequestMsg(void);
 		void		processMethod(void);
@@ -152,7 +155,7 @@ class ClientControl
 		void		coreResponse(void);
 		void		fillResponse(void);
 		void		sendSuccessPage(void);
-		void 		sendChunk(char** r_header);
+		void 		sendChunk();
 
 		void		processStatic(string path_info);
 		void		processCGI(string path_info);
@@ -160,6 +163,7 @@ class ClientControl
 		void		processPP(string file_name);
 		string		check_is_file(void);
 		void		processChunk(void);
+		void		sendNobodyPage(void);
 		//int		getFile();
 		//int		postFile();
 };
