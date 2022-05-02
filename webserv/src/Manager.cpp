@@ -18,6 +18,8 @@ Manager& Manager::operator = (const Manager& m)
 		return (*this);
 	http_block = m.http_block;
 	buffer = m.buffer;
+	web_serv.ports = m.web_serv.ports;
+	web_serv.server_socket = m.web_serv.server_socket;
 	return (*this);
 }
 // string Manager::get_buffer(void)

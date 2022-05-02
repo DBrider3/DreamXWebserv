@@ -10,6 +10,8 @@ ClientControl::ClientControl() //의문.1 생성자 호출할때 어떻게할겨
 	msg = "";
 	chunk_flag = 0;
 	body = "";
+	client_fd = 0;
+	server_fd = 0;
 	response.local_uri = "";
 	response.date = "";
 	response.ct_length = 0;
@@ -22,7 +24,7 @@ ClientControl::ClientControl() //의문.1 생성자 호출할때 어떻게할겨
 
 // ClientControl::ClientControl(const t_request req) // 생성자에서 request 객체 받기
 // {
-// 	// request.query_str = "";
+// 	// request.query_str = "";`
 // 	// response.cgi = 0;
 // 	// request = req;
 // }
@@ -41,10 +43,25 @@ ClientControl& ClientControl::operator = (const ClientControl& m)
 {
 	if (this == &m)
 		return (*this);
-         	client_body_size = m.client_body_size;
+	env_set = m.env_set;
+	server_index = m.server_index; //서버 블록 내 index 절대 경로 담아둠
+	server_block = m.server_block;
+	http_block = m.http_block;
+	port = m.port;
+	root = m.root; //방금 추가 put & post
+	directory = m.directory;
+	file = m.file;
+	read_flag = m.read_flag;
+    client_body_size = m.client_body_size;
 	msg = m.msg;
 	chunk_flag = m.chunk_flag;
 	body = m.body;
+	client_fd = m.client_fd;
+	server_fd = m.server_fd;
+
+	/*
+	** response
+	*/
 	response.local_uri = m.response.local_uri;
 	response.date = m.response.date;
 	response.ct_length = m.response.ct_length;
@@ -53,6 +70,22 @@ ClientControl& ClientControl::operator = (const ClientControl& m)
 	response.state_flag = m.response.state_flag; //현재 작업이 에러 시, 이벤트에 있는 read/write를 소모시키기 위해 플래그를 사용함.
 	response.state_str = m.response.state_str; //빼야함
 	response.redirect_uri = m.response.redirect_uri;
+
+	/*
+	** request
+	*/
+	request.method = m.request.method;
+	request.uri = m.request.uri;
+	request.query_str = m.request.query_str;
+	request.version = m.request.version;
+	request.header = m.request.header;
+	request.body = m.request.body;
+	request.ct_length = m.request.ct_length;
+	
+	/*
+	** multipart
+	*/
+	multipart = m.multipart;
 	return (*this);
 }
 
@@ -338,7 +371,7 @@ void		ClientControl::saveFile(void)
 		// 파일 체크 우선
 
 
-		file.open("/Users/daekim/subject/cadet/DreamXWebserv/webserv/save/" + multipart[idx].file_name, std::ios::out);//바꿔
+		file.open("/Users/songju/Desktop/DreamXWebserv/webserv/save/" + multipart[idx].file_name, std::ios::out);//바꿔
 		file << multipart[idx].data;
 		file.close();
 	//	if (file.fail())
@@ -444,6 +477,7 @@ int ClientControl::checkUri(string result)
 //2. 있으면 첫 / 부터 다음 / 까지
 //3. 없으면 첫 /부터 다음 / 까지 혹은 NULL까지
 //doyun - directory vector로 해서 /기준으로 끊어 담자 그렇게 해서 0번쨰 인덱스로 location block 찾고 혹시 하위에 추가적 경로가 붙더라도 인덱스로 찾아갈 수 있도록!
+	//cout << "🐞🐞🐞🐞🐞🐞🐞🐞checkuri in 1" << endl;
 	tmp = request_uri;
 	tmp.erase(0, 1);
 	if (tmp.find('/') == string::npos)
@@ -490,8 +524,10 @@ int ClientControl::checkUri(string result)
 
 	// cout << "direct :  " << directory << endl;
 	// cout << "file : " << file << endl;
+	//cout << "🐻🐻🐻🐻🐻🐻🐻checkuri in 2" << endl;
 	if (file == "") //디렉토리로 들어온 경우
 	{
+		// cout << "🐲🐲🐲🐲🐲🐲🐲checkuri in 3" << endl;
 		for (it = temp.begin(); it != temp.end(); it++)
 		{
 			//directory == it->getMatch()
@@ -509,6 +545,7 @@ int ClientControl::checkUri(string result)
 						setStateStr("Method Not Allowed");
 						return (-1);
 					}
+					//cout << "🐞🐞🐞🐞🐞🐞🐞🐞checkuri in 4" << endl;
 				}
 				else
 				{
@@ -550,7 +587,7 @@ int ClientControl::checkUri(string result)
 				}
 				break ;
 			} // for end
-		}	
+		}
 		// ClientBodySize 
 		// cout << "call Before set function :: clientBodySize : " << it->getClientBodySize() << endl;
 		if (it != temp.end() && !(it->getClientBodySize().empty()))
@@ -560,7 +597,9 @@ int ClientControl::checkUri(string result)
 		{
 			if (directory == "/") //location으로 찾지못하더랃server의 root내에 있는 경로도 찾아야될거같아요
 			{
+				//cout << "🤡🤡🤡🤡 getIndex : " << getServerBlock().getIndex()[0] << endl;
 				setLocalUri("/" + getServerBlock().getIndex()[0]);
+				//cout << "🤡🤡🤡🤡 localuri : " << response.local_uri << endl;
 				return (0);
 			}
 			setStateFlag("404");
@@ -646,9 +685,9 @@ void ClientControl::deleteFile()
 {
 	string root;
 	struct stat st;
-	string path_info = "/Users/daekim/subject/cadet/DreamXWebserv/webserv/state_pages/delete.html"; //바꿔
+	string path_info = "/Users/songju/Desktop/DreamXWebserv/webserv/state_pages/delete.html"; //바꿔
 
-	root = "/Users/daekim/subject/cadet/DreamXWebserv/webserv/save" + getRequest().uri;//바꿔
+	root = "/Users/songju/Desktop/DreamXWebserv/webserv/save" + getRequest().uri;//바꿔
 	if (!access(root.c_str(), F_OK)) //directory도 삭제가 되는지 확인해야함
 	{
 		if (!unlink(root.c_str()))

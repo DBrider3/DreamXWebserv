@@ -327,9 +327,14 @@ vector<ClientControl>::iterator findClient(vector<ClientControl> &client_control
 
 	for (it = client_control.begin(); it != client_control.end(); it++)
 	{
+		//cout << "🍄🍄🍄🍄findClient " << it->getClientFd() << endl;
 		if (it->getClientFd() == curr_fd)
+		{
+			//cout << "🐷🐷🐷🐷🐷" << endl;
 			return (it);
+		}
 	}
+	//cout << "🧚🏿‍♀️🧚🏿‍♀️🧚🏿‍♀️🧚🏿‍♀️🧚🏿‍♀️🧚🏿‍♀️🧚🏿‍♀️🧚🏿‍♀️" << endl;
 	return (it);
 }
 
@@ -365,7 +370,6 @@ void ClientControl::parseRequest(string request)
 			setStateStr("bad request");
 			return ;
 		}
-
 		//current = request.find("\r\n"); // \r\n == crlf 
 
 		//find 함수는 해당 위치부터 문자열을 찾지 못할 경우 npos를 반환한다.
@@ -381,17 +385,14 @@ void ClientControl::parseRequest(string request)
 		setMethod(strtok(const_cast<char*>(result[0].c_str()), " "));
 		setUri(strtok(NULL, " "));
 		setVersion(strtok(NULL, "\n"));
-
 		if (checkUri(request))
 			return ;
-
 		if (getRequest().uri.size() > 8190)
 		{
 			setStateFlag("414");
 			setStateStr("Request-URI too long");
 			return ;
 		}
-
 		if (getRequest().uri.find('?') != string::npos)
 		{
 			ss << getRequest().uri;
@@ -400,7 +401,6 @@ void ClientControl::parseRequest(string request)
 			getline(ss, temp, '\0');
 			setQuery(temp);
 		}
-
 		/*
 		* Header 파싱
 		*/
@@ -476,7 +476,7 @@ void ClientControl::parseRequest(string request)
 	time(&temp1);
 	timeinfo = localtime(&temp1);
 		
-	cout << "😮‍💨😮‍💨😮‍💨😮‍💨 2. requset 입력 후 시간 : 😮‍💨😮‍💨😮‍💨😮‍💨" << asctime(timeinfo);
+	//cout << "😮‍💨😮‍💨😮‍💨😮‍💨 2. request 입력 후 시간 : 😮‍💨😮‍💨😮‍💨😮‍💨" << asctime(timeinfo);
 	
 	if (it == result.end())
 		return ; 
@@ -499,7 +499,7 @@ void ClientControl::parseRequest(string request)
 	time(&temp2);
 	timeinfo2 = localtime(&temp2);
 		
-	cout << "😮‍💨😮‍💨😮‍💨😮‍💨 3. 파싱 후 시간 😮‍💨😮‍💨😮‍💨😮‍💨 : " << asctime(timeinfo2);
+	//cout << "😮‍💨😮‍💨😮‍💨😮‍💨 3. 파싱 후 시간 😮‍💨😮‍💨😮‍💨😮‍💨 : " << asctime(timeinfo2);
 }
 
 void	resetBeforeServer(int server_fd, vector<int>& before_server)
@@ -525,25 +525,23 @@ void ClientControl::readRequest()
 	// string msg;
 	int n;
 
-	n = 0;
-	if (msg == "")
-	{
-		time_t temp3;
-		struct tm* timeinfo3;
-		time(&temp3);
-		timeinfo3 = localtime(&temp3);
+	
+	// if (msg == "")
+	// {
+	// 	time_t temp3;
+	// 	struct tm* timeinfo3;
+	// 	time(&temp3);
+	// 	timeinfo3 = localtime(&temp3);
 			
-		cout << "😮‍💨😮‍💨😮‍💨😮‍💨 1. requset 입력 전 시간 😮‍💨😮‍💨😮‍💨😮‍💨 : " << asctime(timeinfo3);
-	}
+	// 	//cout << "😮‍💨😮‍💨😮‍💨😮‍💨 1. requset 입력 전 시간 😮‍💨😮‍💨😮‍💨😮‍💨 : " << asctime(timeinfo3);
+	// }
+	n = 0;
 	// while ((n = read(getClientFd(), buf, SIZE - 1)) > 0)
 	if ((n = read(getClientFd(), buf, SIZE - 1)) >= 0)
 	{
-		// usleep(50);
 		buf[n] = 0;
-		// cout << "nnn : " << n << endl;
 		msg += static_cast<string> (buf);
 	}
-	
 	// dcho
 	// cout << "Start" << endl << msg << "____________________________________________" << endl << endl;
 	// if (msg.find_last_of("\r\n\r\n") == string::npos)
@@ -594,7 +592,6 @@ void Manager::runServer()
 
 	for (size_t i = 0; i < web_serv.ports.size(); i++)
 		changeEvents(change_list, web_serv.server_socket[i], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
-	int count = 0;
 	// int if_count = 0;
 	while (1)
 	{
@@ -630,19 +627,38 @@ void Manager::runServer()
 				{
 					//before_server.push_back(curr_event->ident);
 					// cout << "ser read" << endl;
+
+					cout << "push back before" << endl;
+					for (vector<ClientControl>::iterator it = client_control.begin(); it != client_control.end(); it++)
+					{
+						cout << "🐛🐛🐛 Client : " << it->getClientFd() << endl;
+					}
+					cout << "-----------------------------------" << endl;
+
+
 					client_control.push_back(ClientControl());
-					count++;
-					// cout << "in if : " << ++if_count << " / event : " << new_events << endl;
+					// cout << "in if : " << ++if_count << endl;
+					//cout << "🤮🤮🤮🤮🤮server idx : " << idx << endl;
 					// for (int i = 0; i != new_events; i++)
-					// 	cout << " ser_socket 💡💡💡💡/ i : "<< event_list[i].ident << " 💡💡💡💡/ f : "<< event_list[i].filter << endl;
+					// 	cout << " read_evnet_socket 🧸🧸🧸🧸🧸🧸/ i : "<< event_list[i].ident << " 🧸🧸🧸🧸🧸/ f : "<< event_list[i].filter << endl;
 					// cout << endl;
-					//cout << << "call Before processMethod function :: clientBodySize : " << client_control.back(). << endl;
+					//cout << " read_cur_socket 🧽🧽🧽🧽🧽/ i : "<< curr_event->ident << " 🧽🧽🧽🧽🧽/ f : "<< curr_event->filter << endl;
+					// cout << << "call Before processMethod function :: clientBodySize : " << client_control.back(). << endl;
+					// for (vector<ClientControl>::iterator it = client_control.begin(); it != client_control.end(); it++)
+					// {
+					// 	cout << "🐣🐣🐣🐣🐣 Client : " << it->getClientFd() << endl;
+					// }
 					if (client_control.back().setClientsocket(change_list, curr_event->ident, http_block.getServerBlock()[idx]))
+					{
 						client_control.pop_back();
+					}
+					// for (vector<ClientControl>::iterator it = client_control.begin(); it != client_control.end(); it++)
+					// {
+					// 	cout << "🐮🐮🐮🐮 Client : " << it->getClientFd() << endl;
+					// }
 				}
 				else if ((it = findClient(client_control, curr_event->ident)) != client_control.end())
 				{
-					// cout << "cli read" << endl;
 					it->setHttpBlock(this->http_block);
 					it->readRequest();
 				}
@@ -651,9 +667,13 @@ void Manager::runServer()
 			{
 				if ((it = findClient(client_control, curr_event->ident)) != client_control.end() && it->getRead() == 1)
 				{
+					// for (int i = 0; i < new_events; i++)
+					// 	cout << " write_event_socket 💡💡💡💡/ i : "<< event_list[i].ident << " 💡💡💡💡/ f : "<< event_list[i].filter << endl;
+					// cout << endl;
+					// cout << " write_cur_socket 💡💡💡💡/ i : "<< curr_event->ident << " 💡💡💡💡/ f : "<< curr_event->filter << endl;
 					// cout << "cli write" << endl;
 					if (!(it->getResponse().state_flag.empty()))  //it->readRequest();했을 때 에러가 있다면 먼저 띄워줌
-					{	
+					{
 						if (it->getRequest().method == "HEAD")
 							it->sendNobodyPage();
 						else
@@ -682,8 +702,10 @@ void Manager::runServer()
 					// else
 					// 	sendErrorPage(it->getClientFd(), "403", "Forbidden");
 					//resetBeforeServer(it->getServerFd(), before_server);
+					// for (int i = 0; i != new_events; i++)
+					// 	cout << " ser_socket 💡💡💡💡/ i : "<< event_list[i].ident << " 💡💡💡💡/ f : "<< event_list[i].filter << endl;
+					// cout << endl;
 					client_control.erase(it);//iterator로 삭제 가능
-					// cout << "count : " << --count << " / "<< client_control.size() << endl;
 					// for (int i = 0; i != new_events; i++)
 					// 	cout << " cli_write 🧰🧰🧰🧰/ i : "<< event_list[i].ident << " 🧰🧰🧰🧰/ f : "<< event_list[i].filter << endl;
 				}
@@ -692,4 +714,5 @@ void Manager::runServer()
 		// cout << "🔥🔥🔥🔥🔥🔥cli_cont" <<client_control.size() << endl;
 	}
 	//close(socket_fd);
+	//usleep(30);
 }
