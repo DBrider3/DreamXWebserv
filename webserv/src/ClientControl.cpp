@@ -10,6 +10,9 @@ ClientControl::ClientControl() //의문.1 생성자 호출할때 어떻게할겨
 	msg = "";
 	chunk_flag = 0;
 	body = "";
+	read_flag = 0;
+	write_flag = 0;
+	resource_fd = -1;
 	client_fd = 0;
 	server_fd = 0;
 	response.local_uri = "";
@@ -52,6 +55,8 @@ ClientControl& ClientControl::operator = (const ClientControl& m)
 	directory = m.directory;
 	file = m.file;
 	read_flag = m.read_flag;
+	write_flag = m.write_flag;
+	resource_fd = m.resource_fd;
     client_body_size = m.client_body_size;
 	msg = m.msg;
 	chunk_flag = m.chunk_flag;
@@ -137,6 +142,21 @@ string		ClientControl::getMsg()
 int			ClientControl::getChunk()
 {
 	return (chunk_flag);
+}
+
+int			ClientControl::getServerFd()
+{
+	return(this->server_fd);
+}
+
+int			ClientControl::getResourceFd()
+{
+	return (resource_fd);
+}
+
+int			ClientControl::getWrite()
+{
+	return (write_flag);
 }
 
 void			ClientControl::setChunk(int chunk_flag)
@@ -249,9 +269,14 @@ void		ClientControl::setLength(int n)
 	request.ct_length = n;
 }
 
-int			ClientControl::getServerFd()
+void		ClientControl::setResourceFd(int fd)
 {
-	return(this->server_fd);
+	resource_fd = fd;
+}
+
+void		ClientControl::setWrite(int n)
+{
+	write_flag = n;
 }
 
 void		ClientControl::findMime(void)
@@ -371,7 +396,7 @@ void		ClientControl::saveFile(void)
 		// 파일 체크 우선
 
 
-		file.open("/Users/songju/Desktop/DreamXWebserv/webserv/save/" + multipart[idx].file_name, std::ios::out);//바꿔
+		file.open("/Users/junghan/Desktop/DreamXWebserv/webserv/save/" + multipart[idx].file_name, std::ios::out);//바꿔
 		file << multipart[idx].data;
 		file.close();
 	//	if (file.fail())
@@ -419,7 +444,7 @@ void		ClientControl::processMultipart(void)
 	saveFile();
 }
 
-int	ClientControl::checkAutoIndex()
+int	ClientControl::checkAutoIndex() //status 넣어주기
 {
 	string request_uri;
 	
@@ -685,16 +710,17 @@ void ClientControl::deleteFile()
 {
 	string root;
 	struct stat st;
-	string path_info = "/Users/songju/Desktop/DreamXWebserv/webserv/state_pages/delete.html"; //바꿔
+	string path_info = "/Users/junghan/Desktop/DreamXWebserv/webserv/state_pages/delete.html"; //바꿔
 
-	root = "/Users/songju/Desktop/DreamXWebserv/webserv/save" + getRequest().uri;//바꿔
+	root = "/Users/junghan/Desktop/DreamXWebserv/webserv/save" + getRequest().uri;//바꿔
 	if (!access(root.c_str(), F_OK)) //directory도 삭제가 되는지 확인해야함
 	{
 		if (!unlink(root.c_str()))
 		{
 			//findMime();
 			stat((path_info).c_str(), &st);
-			response.ct_length = st.st_size;
+			//response.ct_length = st.st_size;
+			response.ct_length = 4;
 			response.ct_type = "text/html";
 			processStatic(path_info);
 		}
@@ -714,17 +740,20 @@ void ClientControl::deleteFile()
 
 void		ClientControl::processStatic(string path_info)
 {
-	ifstream fin(path_info);
+	ifstream	fin(path_info);
 
 	if (fin.is_open())
 	{
-		char c;
-		while (fin.get(c))
-			body += c;
-		cout << "response ------------------------------\n" << body << "\n---------------------------------------\n" << endl;
+		setResourceFd(open(path_info.c_str(), O_RDONLY));
+
+		// char c;
+		// while (fin.get(c))
+		// 	body += c;
+		// cout << "response ------------------------------\n" << body << "\n---------------------------------------\n" << endl;
+		//body = "abce";
 		fin.close();
-		setStateFlag("200");
-		setStateStr("OK");
+		// setStateFlag("200");
+		// setStateStr("OK");
 	}
 	else
 	{
@@ -748,7 +777,7 @@ void		ClientControl::processCGI(string path_info)
 	vector<string>::iterator it;
 
 	// cout << "cgi number : "<< response.cgi << endl;
-
+	sleep(1);
 	int request_size = 0;
 	if (response.cgi == 1)
 		cmd["php-cgi"] = path_info;
@@ -777,33 +806,42 @@ void		ClientControl::processCGI(string path_info)
 	{
 		waitpid(pid, NULL, 0);
 		lseek(fdOut, 0, SEEK_SET); //lseek는 파일 디스크립터의 읽기/쓰기 포인터 위치를 변경하는 데 사용되는 시스템 호출입니다
-		char foo[1024];
-		int res = 0;
+		// char foo[1024];
+		// int res = 0;
 
-		memset(foo, 0, sizeof(foo));
-		while ((res = read(fdOut, foo, 1023)) > 0)
-		{
-			foo[res] = 0;
-			body += static_cast<string> (foo);
-			memset(foo, 0, sizeof(foo));
-		}
-		if (res == -1)
-		{
-			setStateFlag("403");
-			setStateStr("Forbidden");
-			return ;
-		}
+		// memset(foo, 0, sizeof(foo));
+		setResourceFd(fdOut);
+		// while ((res = read(fdOut, foo, 1023)) > 0)
+		// {
+		// 	foo[res] = 0;
+		// 	body += static_cast<string> (foo);
+		// 	memset(foo, 0, sizeof(foo));
+		// }
+		// if (res == -1)
+		// {
+		// 	fclose(fIn);
+		// 	fclose(fOut);
+		// 	close(fdIn);
+		// 	//close(fdOut);
+		// 	setStateFlag("403");
+		// 	setStateStr("Forbidden");
+		// 	return ;
+		// }
 	}
-	setStateFlag("200");
-	setStateStr("OK");
-	string search = "";
-	if (response.cgi == 1)
-		search = "Content-type: ";
-	else if (response.cgi == 2)
-		search = "Content-Type: ";
-	response.ct_type = body.substr(body.find(search) + 14, body.find("\r\n\r\n") - body.find(search) - 14);
-	body = body.substr(body.find("\r\n\r\n") + 4, body.size() - body.find("\r\n\r\n") - 4);
-	response.ct_length = body.size(); // 수정 필요??
+	fclose(fIn);
+	fclose(fOut);
+	close(fdIn);
+	//close(fdOut);
+	// setStateFlag("200");
+	// setStateStr("OK");
+	// string search = "";
+	// if (response.cgi == 1)
+	// 	search = "Content-type: ";
+	// else if (response.cgi == 2)
+	// 	search = "Content-Type: ";
+	// response.ct_type = body.substr(body.find(search) + 14, body.find("\r\n\r\n") - body.find(search) - 14);
+	// body = body.substr(body.find("\r\n\r\n") + 4, body.size() - body.find("\r\n\r\n") - 4);
+	// response.ct_length = body.size(); // 수정 필요??
 }
 
 //새로운 시작 made me interesting. like win everything
@@ -866,17 +904,20 @@ string ClientControl::check_is_file()
 	// cout << "root : " << getRoot() << " / local : " << response.local_uri << endl;
 	tmp = getRoot() + response.local_uri;
 	fin >> tmp; //이거 tmp를 fin에 넣어야 하는거 아니야?
-	// cout << "this is local : " << tmp << endl;
+	 cout << "this is local : " << tmp << endl;
 	if (fin.is_open() && getRequest().method != "POST") // 수정 어케함?? 내용을 싹 밀어버려?
 	{
+		cout << "204\n";
 		setStateFlag("204");
 		setStateStr("No content"); //200OK도 고려
 	}
 	else
 	{
+		cout << "201\n";
 		setStateFlag("201");
 		setStateStr("Created");
 	}
+	fin.close();
 	return (tmp);
 }
 
@@ -900,7 +941,7 @@ void	ClientControl::processMethod()
 		return ;
 	}
 
-	if (checkAutoIndex())
+	if (checkAutoIndex()) //
 		return ;
 	
 	response.cgi = 0; // ??
@@ -924,7 +965,7 @@ void	ClientControl::processMethod()
 		{
 			processStatic(path_info);
 		}
-		else
+		else  
 		{			
 			processCGI(path_info);
 		}
@@ -948,6 +989,8 @@ void	ClientControl::processMethod()
 		if (!response.cgi) //파일이나 디렉토리체크 해야하나 ?? 근데 일단 청크처리 먼저 curl기준으로 구현해주고 테스터 돌리면 답이 나오지 않을까여 22
 		{
 			string aa;
+
+			// processPP(check_is_file());
 
 			aa = check_is_file();
 			//processPP(aa);

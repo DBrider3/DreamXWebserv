@@ -7,8 +7,8 @@
 
 // # define PHPCGI "/Users/daekim/subject/cadet/DreamXWebserv/webserv/tester/php-cgi"//바꿔
 // # define CGITESTER "/Users/daekim/subject/cadet/DreamXWebserv/webserv/tester/cgi_tester"
- # define PHPCGI "/Users/songju/Desktop/DreamXWebserv/webserv/tester/php-cgi"
- # define CGITESTER "/Users/songju/Desktop/DreamXWebserv/webserv/tester/cgi_tester"
+ # define PHPCGI "/Users/junghan/Desktop/DreamXWebserv/webserv/tester/php-cgi"
+ # define CGITESTER "/Users/junghan/Desktop/DreamXWebserv/webserv/tester/cgi_tester"
 //  # define PHPCGI "/Users/dcho/Born2Code/DreamXWebserv/webserv/tester/php-cgi"
 //  # define CGITESTER "/Users/dcho/Born2Code/DreamXWebserv/webserv/tester/cgi_tester"
 
@@ -23,6 +23,13 @@
 using namespace std;
 
 //template<int> //vector<int> 형을 return 하려고 하니까 template class 아니라고 에러 떠서 추가함
+
+typedef enum s_IOFlag
+{
+	REQUEST_RECEIVING,
+	REQUEST_COMPLETE,
+	RESPONSE_COMPLETE,
+}			t_IOFlag;
 
 typedef struct s_request {
 	string							method;
@@ -73,6 +80,8 @@ class ClientControl
 		int				server_fd;
 		int				read_flag;
 		int				client_body_size; //추가
+		int				resource_fd;
+		int				write_flag;
 
 		string			msg;
 		int				chunk_flag;
@@ -108,6 +117,8 @@ class ClientControl
 
 		string		getMsg();
 		int			getChunk();
+		int			getResourceFd();
+		int			getWrite();
 		/*
 		** setter part
 		*/
@@ -135,6 +146,8 @@ class ClientControl
 		void		setRoot(string root);
 		void		setClientBodySize(string body_size);
 		void		setLength(int n);
+		void		setResourceFd(int fd);
+		void		setWrite(int n);
 
 		void 		initRequestMsg(void);
 		void		processMethod(void);
@@ -167,6 +180,8 @@ class ClientControl
 		void		sendNobodyPage(void);
 		//int		getFile();
 		//int		postFile();
+
+		void	readResource(void);
 };
 
 
