@@ -265,13 +265,13 @@ void 	sendErrorPage(int socket_fd, string state_flag, string state_str)
 	bodyfd = open(local_uri.c_str(), O_RDONLY);
 
 	n = 0;
-	while ((n = read(bodyfd, buf, sizeof(buf) - 1)) > 0)
+	while ((n = read(bodyfd, buf, sizeof(buf) - 1)) > 0) //괘씸 ????
 	{
 		buf[9] = '\0';
 		ss << buf;
 		body += ss.str();
 		ss.str("");
-		memset(buf, 0, 10);
+		//memset(buf, 0, 10);
 	}
 	close(bodyfd);
 	// sprintf(r_header, ERROR_FMT, state_flag.c_str(), state_str.c_str());
@@ -296,9 +296,12 @@ void ClientControl::sendRedirectPage()
 
 int ClientControl::setClientsocket(vector<struct kevent> &change_list, uintptr_t server_socket, ServerBlock server_block)
 {
+	struct sockaddr_in  client_addr;
+	socklen_t			addr_size = sizeof(client_addr);
+
 	/* accept new client */
 	int client_socket;
-   	if ((client_socket = accept(server_socket, NULL, NULL)) == -1)
+   	if ((client_socket = accept(server_socket, (struct sockaddr*)&client_addr, &addr_size)) == -1)
 	{
 		sendErrorPage(server_socket, "500", "Internal server error"); //클라이언트 생성실패
 		return (-1);
@@ -329,6 +332,7 @@ vector<ClientControl>::iterator findClient(vector<ClientControl> &client_control
 
 	for (it = client_control.begin(); it != client_control.end(); it++)
 	{
+		//cout << "cf: "<< it->getClientFd() <<  "rf: " << it->getResourceFd() << "curr : "<< curr_fd << endl;
 		if (it->getResourceFd() == -1)
 		{
 			if (it->getClientFd() == curr_fd)
@@ -506,7 +510,7 @@ void	resetBeforeServer(int server_fd, vector<int>& before_server)
 /*
  * curr_fd가 전달하는 내용을 버퍼에 담아주는 함수입니다.
  */
-# define SIZE 1000000
+# define SIZE 5000000
 void ClientControl::readRequest()
 {
 	/*
@@ -551,26 +555,29 @@ void ClientControl::readRequest()
 
 void	ClientControl::readResource()
 {
-	char foo[1024];
+	char foo[1000000];
 	int res = 0;
 	int fd = getResourceFd();
 
 	memset(foo, 0, sizeof(foo));
-	while ((res = read(fd, foo, 1023)) > 0)
+	if ((res = read(fd, foo, 999999)) > 0)
 	{
 		foo[res] = 0;
 		body += static_cast<string> (foo);
-		memset(foo, 0, sizeof(foo));
+		//memset(foo, 0, sizeof(foo));
 	}
-	cout << "res : " << "(" << res << ")" << endl;
+	//cout << "res : " << "(" << res << ")" << endl;
 	if (res == -1)
 	{
 		cout <<"read error 🚀🚀🚀🚀🚀🚀🚀🚀" << endl;
 		setStateFlag("403");
 		setStateStr("Forbidden");
+		close(fd);
+		setResourceFd(-1);
 	}
-	else if (res == 0)
-	{ 
+	else if (res != 999999)
+	{
+		//cout << "EOF" << endl;
 		setStateFlag("200");
 		setStateStr("OK");
 		if (response.cgi && !(response.cgi == 2 && request.method == "GET"))
@@ -585,9 +592,11 @@ void	ClientControl::readResource()
 			response.ct_length = body.size(); // 수정 필요??
 			fclose(getFout());
 		}
+		close(fd);
+		setResourceFd(-1);
 	}
-	close(fd);
-	setResourceFd(-1);
+	// close(fd);
+	// setResourceFd(-1);
 }
 
 void Manager::runServer()
@@ -621,6 +630,7 @@ void Manager::runServer()
 	for (size_t i = 0; i < web_serv.ports.size(); i++)
 		changeEvents(change_list, web_serv.server_socket[i], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	int count = 0;
+	int if_count = 0;
 	while (1)
 	{
 		new_events = kevent(kq, &change_list[0], change_list.size(), event_list, 1024, NULL); // timeout 설정 확인
@@ -654,6 +664,7 @@ void Manager::runServer()
 				if ((idx = checkSocket(curr_event->ident, web_serv.server_socket)) > -1)// && checkBeforeServer(curr_event->ident, before_server))
 				{
 					client_control.push_back(ClientControl());
+					if_count++;
 					if (client_control.back().setClientsocket(change_list, curr_event->ident, http_block.getServerBlock()[idx]))
 						client_control.pop_back();
 				}
@@ -702,7 +713,7 @@ void Manager::runServer()
 			{
 				it = findClient(client_control, curr_event->ident);
 
-				// cout << "w_id : " << curr_event->ident << " / comp : " << (it != client_control.end()) << " / getWrite : " << it->getWrite() << endl; 
+				//cout << "w_id : " << curr_event->ident << " / comp : " << (it != client_control.end()) << endl; // << " / getWrite : " << it->getWrite() << endl; 
 				if (it != client_control.end() && it->getWrite() == 1)
 				{
 					cout << "write😃 !! event2" << endl;
@@ -726,13 +737,21 @@ void Manager::runServer()
 					// 	sendErrorPage(it->getClientFd(), "403", "Forbidden");
 					//resetBeforeServer(it->getServerFd(), before_server);
 					client_control.erase(it);//iterator로 삭제 가능
-					cout << "👶🏽👶🏽 count : " << ++count <<" 👶🏽👶🏽" <<endl;
-					//for (int i = 0; i < new_events; ++i)
-					//{
-					//	cout << "🧸🧸 ident :" << event_list[i].ident << " / filter : "<< event_list[i].filter << " 🧸🧸" << endl;
-					//}
+					cout << "👶🏽👶🏽 count : " << ++count <<" 👶🏽👶🏽 / server_count : " << --if_count <<endl;
+					// for (int i = 0; i < new_events; ++i)
+					// {
+					// 	cout << "🧸🧸 ident :" << event_list[i].ident << " / filter : "<< event_list[i].filter << " 🧸🧸" << endl;
+					// }
+					//sleep(1);
 				}
+				
 			}
+			// sleep(1);
+			// 	cout << "💡💡 curr_ident :" << curr_event->ident << " / curr_filter : "<< curr_event->filter << " 💡💡" << endl;
+			// 	for (int i = 0; i < new_events; ++i)
+			// 	{
+			// 		cout << "🧸🧸 ident :" << event_list[i].ident << " / filter : "<< event_list[i].filter << " 🧸🧸" << endl;
+			// 	}
 		}
 
 		// cout << "🔥🔥🔥🔥🔥🔥cli_cont" <<client_control.size() << endl;

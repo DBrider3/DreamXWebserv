@@ -3,6 +3,7 @@
 
 void handleSigpipe(int signo)
 {
+	cout << "앙 기모찌 뭐야 이거 ㅋㅋㅋㅋㅋ" << endl;
 	(void)signo;
 }
 
