@@ -135,10 +135,7 @@ int					ServerBlock::setLocationBlock(LocationBlock &tmp_location, vector<string
 //		else if (tmp[0] == "\t\t\terror_page")
 //		{
 //			for (size_t i = 1; i < tmp.size(); i++)
-//			{
 //				tmp_location.setErrorPage(tmp[i]);
-////				cout << tmp[i] << endl;
-//			}
 //		}
 		idx++;
 	}

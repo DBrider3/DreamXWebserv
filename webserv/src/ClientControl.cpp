@@ -63,6 +63,7 @@ ClientControl& ClientControl::operator = (const ClientControl& m)
 	body = m.body;
 	client_fd = m.client_fd;
 	server_fd = m.server_fd;
+	fout = m.fout;
 
 	/*
 	** response
@@ -159,7 +160,12 @@ int			ClientControl::getWrite()
 	return (write_flag);
 }
 
-void			ClientControl::setChunk(int chunk_flag)
+FILE*		ClientControl::getFout()
+{
+	return (fout);
+}
+
+void		ClientControl::setChunk(int chunk_flag)
 {
 	this->chunk_flag = chunk_flag;
 }
@@ -279,6 +285,11 @@ void		ClientControl::setWrite(int n)
 	write_flag = n;
 }
 
+void		ClientControl::setFout(FILE* fd)
+{
+	fout = fd;
+}
+
 void		ClientControl::findMime(void)
 {
 	size_t idx;
@@ -314,7 +325,6 @@ void		ClientControl::findMime(void)
 
 void		ClientControl::setEnv(void)
 {
-	// cout << ">>>>>>>>>>>>>>>>>>>> " << server_block.getRoot() + response.local_uri << endl;
 	env_set["PATH_INFO"] = server_block.getRoot() + response.local_uri;//response.local_uri;//
 	env_set["QUERY_STRING"] = request.query_str;
 	env_set["REQUEST_METHOD"] = request.method; // request.method
@@ -438,7 +448,6 @@ void		ClientControl::processMultipart(void)
 				multipart[idx].data.pop_back();
 				idx++;
 			}
-			// cout << "size : " << multipart.size() << endl;
 		}
 	}
 	saveFile();
@@ -497,12 +506,10 @@ int ClientControl::checkUri(string result)
 	result = "";
 	request_uri = getRequest().uri;
 
-	// cout << "uri" << request_uri << endl;
 //1. 점이 있는지 확인
 //2. 있으면 첫 / 부터 다음 / 까지
 //3. 없으면 첫 /부터 다음 / 까지 혹은 NULL까지
 //doyun - directory vector로 해서 /기준으로 끊어 담자 그렇게 해서 0번쨰 인덱스로 location block 찾고 혹시 하위에 추가적 경로가 붙더라도 인덱스로 찾아갈 수 있도록!
-	//cout << "🐞🐞🐞🐞🐞🐞🐞🐞checkuri in 1" << endl;
 	tmp = request_uri;
 	tmp.erase(0, 1);
 	if (tmp.find('/') == string::npos)
@@ -547,12 +554,8 @@ int ClientControl::checkUri(string result)
 	// 		directory = request_uri.substr(0, request_uri.find_last_of('/'));
 	// }
 
-	// cout << "direct :  " << directory << endl;
-	// cout << "file : " << file << endl;
-	//cout << "🐻🐻🐻🐻🐻🐻🐻checkuri in 2" << endl;
 	if (file == "") //디렉토리로 들어온 경우
 	{
-		// cout << "🐲🐲🐲🐲🐲🐲🐲checkuri in 3" << endl;
 		for (it = temp.begin(); it != temp.end(); it++)
 		{
 			//directory == it->getMatch()
@@ -570,7 +573,6 @@ int ClientControl::checkUri(string result)
 						setStateStr("Method Not Allowed");
 						return (-1);
 					}
-					//cout << "🐞🐞🐞🐞🐞🐞🐞🐞checkuri in 4" << endl;
 				}
 				else
 				{
@@ -614,17 +616,13 @@ int ClientControl::checkUri(string result)
 			} // for end
 		}
 		// ClientBodySize 
-		// cout << "call Before set function :: clientBodySize : " << it->getClientBodySize() << endl;
 		if (it != temp.end() && !(it->getClientBodySize().empty()))
 			setClientBodySize(it->getClientBodySize());
-		// cout << "call After set function :: clientBodySize : " << it->getClientBodySize() << endl;
 		if (it == temp.end())
 		{
 			if (directory == "/") //location으로 찾지못하더랃server의 root내에 있는 경로도 찾아야될거같아요
 			{
-				//cout << "🤡🤡🤡🤡 getIndex : " << getServerBlock().getIndex()[0] << endl;
 				setLocalUri("/" + getServerBlock().getIndex()[0]);
-				//cout << "🤡🤡🤡🤡 localuri : " << response.local_uri << endl;
 				return (0);
 			}
 			setStateFlag("404");
@@ -686,23 +684,15 @@ int ClientControl::checkUri(string result)
 				break ;
 			}
 		}
-		// cout << "call Before set function :: clientBodySize : " << it->getClientBodySize() << endl;
 		// ClientBodySize 
 		if (it != temp.end() && !(it->getClientBodySize().empty()))
 			setClientBodySize(it->getClientBodySize());
-		// cout << "call After set function :: clientBodySize : " << it->getClientBodySize() << endl;
 		setLocalUri(request_uri);
 	}
 	if (it->getRoot().size() > 0)
-	{
 		setRoot(it->getRoot());
-		// cout << "size Root : " << it->getRoot() << endl;
-	}
 	else
-	{
 		setRoot(getServerBlock().getRoot());
-		// cout << "Serv Root : " << getServerBlock().getRoot() << endl;
-	}
 	return (0);
 }
 
@@ -732,7 +722,6 @@ void ClientControl::deleteFile()
 	}
 	else
 	{
-				// cout << "cc 446" << endl;
 		setStateFlag("404");
 		setStateStr("Not found");
 	}
@@ -749,15 +738,14 @@ void		ClientControl::processStatic(string path_info)
 		// char c;
 		// while (fin.get(c))
 		// 	body += c;
-		// cout << "response ------------------------------\n" << body << "\n---------------------------------------\n" << endl;
 		//body = "abce";
 		fin.close();
 		// setStateFlag("200");
 		// setStateStr("OK");
 	}
 	else
-	{
-		// cout << "cc 465" << endl;
+	{		
+		fin.close();
 		setStateFlag("404");
 		setStateStr("Not found");
 		return ;
@@ -772,12 +760,11 @@ void		ClientControl::processCGI(string path_info)
 	
 	FILE *fIn = tmpfile();
 	long fdIn = fileno(fIn);
-	FILE *fOut = tmpfile();
-	long fdOut = fileno(fOut);
+	FILE *fout = tmpfile();
+	long fdOut = fileno(fout);
 	vector<string>::iterator it;
 
-	// cout << "cgi number : "<< response.cgi << endl;
-	sleep(1);
+	//sleep(1);
 	int request_size = 0;
 	if (response.cgi == 1)
 		cmd["php-cgi"] = path_info;
@@ -790,8 +777,6 @@ void		ClientControl::processCGI(string path_info)
 		}
 		lseek(fdIn, 0, SEEK_SET);
 	}
-	// cout << "나는야 패스인포!!!!!!!! ->> " << env_set["PATH_INFO"] << endl;
-	// cout << "rrrrrrequest body : " << request_size << endl;
 	pid = fork();
 	if (!pid)
 	{
@@ -811,6 +796,7 @@ void		ClientControl::processCGI(string path_info)
 
 		// memset(foo, 0, sizeof(foo));
 		setResourceFd(fdOut);
+		setFout(fout);
 		// while ((res = read(fdOut, foo, 1023)) > 0)
 		// {
 		// 	foo[res] = 0;
@@ -829,7 +815,6 @@ void		ClientControl::processCGI(string path_info)
 		// }
 	}
 	fclose(fIn);
-	fclose(fOut);
 	close(fdIn);
 	//close(fdOut);
 	// setStateFlag("200");
@@ -857,7 +842,6 @@ void	ClientControl::processChunk()
 	idx = -1;
 	sum = 0;
 	len = 0;
-	// cout << "😥😥😥😥😥😥😥😥😥😥😥😥😥in processChunk function😓😓😓😓😓😓😓😓😓😓😓😓😓😓😓" << endl;
 	while (request.body[++idx] != "0")
 	{
 		if (idx % 2 == 0)
@@ -876,8 +860,6 @@ void	ClientControl::processChunk()
 	}
 	request.ct_length = sum;
 	request.body = tmp;
-	// cout << "나는 야 컨텐츠 len : " << sum << endl;
-	// cout << "나는 야 body : " << request.body[0] << endl;
 }
 
 //새로운 끝
@@ -901,19 +883,15 @@ string ClientControl::check_is_file()
 	ifstream	fin;
 	string		tmp;
 
-	// cout << "root : " << getRoot() << " / local : " << response.local_uri << endl;
 	tmp = getRoot() + response.local_uri;
 	fin >> tmp; //이거 tmp를 fin에 넣어야 하는거 아니야?
-	 cout << "this is local : " << tmp << endl;
 	if (fin.is_open() && getRequest().method != "POST") // 수정 어케함?? 내용을 싹 밀어버려?
 	{
-		cout << "204\n";
 		setStateFlag("204");
 		setStateStr("No content"); //200OK도 고려
 	}
 	else
 	{
-		cout << "201\n";
 		setStateFlag("201");
 		setStateStr("Created");
 	}
@@ -926,7 +904,6 @@ void ClientControl::processPP(string file_name)
 	fstream file;
 	vector<string>::iterator it;
 
-	// cout << "file name : " << file_name << endl; 
 	file.open(file_name, std::ios::out);
 	for (it = request.body.begin(); it != request.body.end(); it++)
 		file << *it;
@@ -950,10 +927,6 @@ void	ClientControl::processMethod()
 
 
 	string path_info = server_block.getRoot() + response.local_uri; // root
-
-	// cout << "This is Root : " << server_block.getRoot() << endl;
-	// cout << "This is Local URI : " << response.local_uri << endl;
-	// cout << "This is Path Info : " << path_info << endl;
 
 	if (getRequest().method == "GET")
 	{
@@ -980,7 +953,6 @@ void	ClientControl::processMethod()
 		
 		if (getClientBodySize() != -1 && request.ct_length > getClientBodySize())
 		{
-			// cout << "in 413 function " << getClientBodySize() << endl;
 			setStateFlag("413");
 			setStateStr("Payload Too Large");
 			return ;
@@ -996,10 +968,7 @@ void	ClientControl::processMethod()
 			//processPP(aa);
 		}
 		else
-		{
-			//cout << "request body 0 : " << request.body[0] << "\n The... end... --------------------------------\n" << endl;
 			processCGI(path_info);
-		}
 		//헷갈리는 점 
 		//1. fd로 읽을 수 있는 mesage가 순차적으로 들어와서 한번 읽는다고 모든 chunked를 읽을 수 없다. -> chunked가 안끝났으면 디스커넥트 안되게???
 		//2. chunked된 mesage가 들어와서 한번 읽는거로 파싱이 가능하다.

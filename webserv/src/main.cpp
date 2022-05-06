@@ -1,6 +1,11 @@
 #include "../includes/Manager.hpp"
 #include "../includes/Utils.hpp"
 
+void handleSigpipe(int signo)
+{
+	(void)signo;
+}
+
 int main(int argc, char **argv)
 {
 	Manager manager;	
@@ -13,6 +18,7 @@ int main(int argc, char **argv)
 
 		else if (argc == 2)
 			conf = argv[1];
+		signal(SIGPIPE, handleSigpipe);
 		manager.fileOpen(conf);
 		manager.confParsing();
 	}

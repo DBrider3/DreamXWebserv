@@ -56,18 +56,12 @@ int		Manager::setHttpBlock(vector<string> buf)
 		if (tmp[0] == "\tindex")
 		{
 			for (size_t i = 1; i < tmp.size(); i++)
-			{
 				http_block.setIndex(tmp[i]);
-				//cout << tmp[i] << endl;
-			}
 		}
 		else if (tmp[0] == "\tlimit_except")
 		{
 			for (size_t i = 1; i < tmp.size(); i++)
-			{
 				http_block.setLimitExcept(tmp[i]);
-				//cout << tmp[i] << endl;
-			}
 		}
 		res++;
 	}
@@ -91,7 +85,10 @@ void	Manager::fileOpen(string conf)
 			fin.close();
 		}
 		else
+		{
+			fin.close();
 			throw(PrintError());
+		}
 	}
 	catch(const exception& e)
 	{

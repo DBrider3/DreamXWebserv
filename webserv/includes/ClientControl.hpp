@@ -82,6 +82,7 @@ class ClientControl
 		int				client_body_size; //추가
 		int				resource_fd;
 		int				write_flag;
+		FILE*			fout; //cgi 처리 시, file의 읽기가 종료되는 시점에서 fd를 닫아주기 위해 저장
 
 		string			msg;
 		int				chunk_flag;
@@ -119,6 +120,7 @@ class ClientControl
 		int			getChunk();
 		int			getResourceFd();
 		int			getWrite();
+		FILE*		getFout();
 		/*
 		** setter part
 		*/
@@ -148,6 +150,7 @@ class ClientControl
 		void		setLength(int n);
 		void		setResourceFd(int fd);
 		void		setWrite(int n);
+		void		setFout(FILE* fd);
 
 		void 		initRequestMsg(void);
 		void		processMethod(void);
