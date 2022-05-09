@@ -8,7 +8,7 @@
 
 void disconnectSocket(int socket_fd) //고쳐야함 소멸자불러야함
 {
-	cout << RED << "disconnected : " << socket_fd << EOC << endl;
+	cout << YELLOW << "🍀🍀🍀🍀🍀disconnected : " << socket_fd << EOC << endl;
 	close(socket_fd);
 }
 
@@ -557,13 +557,16 @@ void ClientControl::readRequest()
 	}
 	if (n == 0)
 	{
-		cout << RED << "☀️   Disconnected read   ☀️" << getClientFd() << EOC << endl;
+	//	cout << RED << "🏀   Disconnected read   🏀  " << getClientFd() << EOC << endl;
 		setEOF(DISCONNECTED);
+		disconnectSocket(getClientFd());
+		
 	}
 	if (n < 0)
 	{
 		 cout << "read error : " << getClientFd() << endl;
 		setEOF(DISCONNECTED);
+		disconnectSocket(getClientFd());
 	}
  	if (msg.rfind("\r\n\r\n") + 4 == msg.size()) //잘 읽음 // 완성된 뿐만 아니라  POST 바디까지 해줌.
 		parseRequest(msg);
@@ -701,12 +704,17 @@ void Manager::runServer()
 						// cout << "find 🔥!!" << endl;
 						it->setHttpBlock(this->http_block);
 						it->readRequest();
+						if (it->getEOF() == DISCONNECTED)
+						{
+							client_control.erase(it);
+							continue ;
+						}
 						// cout << "receiving 🔥!! " << it->getRead() << endl;
 						//cout << "r0_id : " << it->getClientFd() << endl;
 						if (!(it->getResponse().state_flag.empty()))
 						{
 							it->setWrite(1);
-							continue;
+							continue ;
 						}
 					}
 					if (it->getRead() == REQUEST_COMPLETE) //file 읽을 때
@@ -728,21 +736,20 @@ void Manager::runServer()
 					}
 					if (!(it->getResponse().state_flag.empty()))
 					{
-						//cout << "write💩🚜 !!" << endl;
+					//	cout << "write💩🚜 !!" << endl;
 						//cout << "rw_id : " << it->getClientFd() << endl;
 						it->setWrite(1);
 					}
-
+					// cout << "📒📒📒📒📒📒getEOF : " << it->getEOF() << "socket : " << it->getClientFd()<< endl;
 				}
 			}
 			else if (curr_event->filter == EVFILT_WRITE)
 			{
 				it = findClient(client_control, curr_event->ident);
-
 				//cout << "w_id : " << curr_event->ident << " / comp : " << (it != client_control.end()) << endl; // << " / getWrite : " << it->getWrite() << endl; 
 				if (it != client_control.end() && it->getWrite() == 1)
 				{
-					// cout << "write😃 !! event2" << endl;
+					//  cout << "write😃 !! event2" << endl;
 					if (!(it->getResponse().state_flag.empty()))
 					{
 						if (it->getRequest().method == "HEAD")
@@ -765,22 +772,23 @@ void Manager::runServer()
 					// client_control.erase(it);//iterator로 삭제 가능
 					
 					// reset function 
-					if (it->getEOF() == DISCONNECTED)
-					{
-						disconnectSocket(it->getClientFd());
-						client_control.erase(it);
-					}
-					else
-					{
+					// cout << "🥏🥏🥏🥏🥏🥏getEOF : " << it->getEOF() << "fd : "<<it->getClientFd() << endl;
+					// if (it->getEOF() == DISCONNECTED)
+					// {
+					// 	disconnectSocket(it->getClientFd());
+					// 	client_control.erase(it);
+					// }
+					// else
+					// {
 						it->resetClient(it->getClientFd(), it->getServerFd(), it->getServerBlock());
 						cout << BLUE << "count : " << ++count << EOC <<endl;
-					}
+					// }
 					//
 					// for (int i = 0; i < new_events; ++i)
 					// {
 					// 	cout << "🧸🧸 ident :" << event_list[i].ident << " / filter : "<< event_list[i].filter << " 🧸🧸" << endl;
 					// }
-					//sleep(1);
+					// sleep(1);
 				}
 				
 			}

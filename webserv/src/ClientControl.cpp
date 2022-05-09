@@ -20,6 +20,7 @@ ClientControl::ClientControl() //의문.1 생성자 호출할때 어떻게할겨
 	client_fd = 0;
 	server_fd = 0;
 	fout = NULL;
+	eof = 0;
 
 	response.local_uri = "";
 	response.date = "";
@@ -80,6 +81,7 @@ ClientControl& ClientControl::operator = (const ClientControl& m)
 	client_fd = m.client_fd;
 	server_fd = m.server_fd;
 	fout = m.fout;
+	eof = m.eof;
 
 	/*
 	** response
@@ -1032,6 +1034,7 @@ void	ClientControl::resetClient(int client_socket, int server_socket, ServerBloc
 	client_fd = 0;
 	server_fd = 0;
 	fout = NULL;
+	eof = 0;
 
 	response.local_uri = "";
 	response.date = "";
