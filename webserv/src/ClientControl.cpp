@@ -2,19 +2,25 @@
 
 ClientControl::ClientControl() //의문.1 생성자 호출할때 어떻게할겨? ????
 {
-	// request.query_str = "";
-	//response.cgi = 0;
-
-
-	client_body_size = -1;
-	msg = "";
-	chunk_flag = 0;
-	body = "";
+	env_set.clear();
+	server_index.clear(); //서버 블록 내 index 절대 경로 담아둠
+	//server_block();
+	//http_block;
+	port = "";
+	root = ""; //방금 추가 put & post
+	directory = "";
+	file = "";
 	read_flag = 0;
 	write_flag = 0;
 	resource_fd = -1;
+    client_body_size = -1;
+	msg = "";
+	chunk_flag = 0;
+	body = "";
 	client_fd = 0;
 	server_fd = 0;
+	fout = NULL;
+
 	response.local_uri = "";
 	response.date = "";
 	response.ct_length = 0;
@@ -23,6 +29,16 @@ ClientControl::ClientControl() //의문.1 생성자 호출할때 어떻게할겨
 	response.state_flag = ""; //현재 작업이 에러 시, 이벤트에 있는 read/write를 소모시키기 위해 플래그를 사용함.
 	response.state_str = ""; //빼야함
 	response.redirect_uri = "";
+	
+	request.method = "";
+	request.uri = "";
+	request.query_str = "";
+	request.version = "";
+	request.header.clear();
+	request.body.clear();
+	request.ct_length = 0;
+	
+	multipart.clear();
 }
 
 // ClientControl::ClientControl(const t_request req) // 생성자에서 request 객체 받기
@@ -165,6 +181,11 @@ FILE*		ClientControl::getFout()
 	return (fout);
 }
 
+int			ClientControl::getEOF()
+{
+	return (eof);
+}
+
 void		ClientControl::setChunk(int chunk_flag)
 {
 	this->chunk_flag = chunk_flag;
@@ -290,6 +311,11 @@ void		ClientControl::setFout(FILE* fd)
 	fout = fd;
 }
 
+void		ClientControl::setEOF(int eof)
+{
+	this->eof = eof;
+}
+
 void		ClientControl::findMime(void)
 {
 	size_t idx;
@@ -406,7 +432,7 @@ void		ClientControl::saveFile(void)
 		// 파일 체크 우선
 
 
-		file.open("/Users/junghan/Desktop/DreamXWebserv/webserv/save/" + multipart[idx].file_name, std::ios::out);//바꿔
+		file.open("/Users/songju/Desktop/DreamXWebserv/webserv/save/" + multipart[idx].file_name, std::ios::out);//바꿔
 		file << multipart[idx].data;
 		file.close();
 	//	if (file.fail())
@@ -568,7 +594,7 @@ int ClientControl::checkUri(string result)
 							break;
 					if (i == static_cast<int>(it->getLimitExcept().size()))
 					{
-						cout << "here1 -------------------\n";
+						//cout << "here1 -------------------\n";
 						setStateFlag("405");
 						setStateStr("Method Not Allowed");
 						return (-1);
@@ -581,7 +607,7 @@ int ClientControl::checkUri(string result)
 							break;
 					if (i == static_cast<int>(getHttpBlock().getLimitExcept().size()))
 					{
-						cout << "here2 -------------------\n";
+						//cout << "here2 -------------------\n";
 						setStateFlag("405");
 						setStateStr("Method Not Allowed");
 						return (-1);
@@ -646,7 +672,7 @@ int ClientControl::checkUri(string result)
 							break;
 					if (i == static_cast<int>(it->getLimitExcept().size()))
 					{
-						cout << "here3 -------------------\n";
+						//cout << "here3 -------------------\n";
 						setStateFlag("405");
 						setStateStr("Method Not Allowed");
 						return (-1);
@@ -659,7 +685,7 @@ int ClientControl::checkUri(string result)
 							break;
 					if (i == static_cast<int>(getHttpBlock().getLimitExcept().size()))
 					{
-						cout << "here4 -------------------\n";
+						//cout << "here4 -------------------\n";
 						setStateFlag("405");
 						setStateStr("Method Not Allowed");
 						return (-1);
@@ -700,17 +726,16 @@ void ClientControl::deleteFile()
 {
 	string root;
 	struct stat st;
-	string path_info = "/Users/junghan/Desktop/DreamXWebserv/webserv/state_pages/delete.html"; //바꿔
+	string path_info = "/Users/songju/Desktop/DreamXWebserv/webserv/state_pages/delete.html"; //바꿔
 
-	root = "/Users/junghan/Desktop/DreamXWebserv/webserv/save" + getRequest().uri;//바꿔
+	root = "/Users/songju/Desktop/DreamXWebserv/webserv/save" + getRequest().uri;//바꿔
 	if (!access(root.c_str(), F_OK)) //directory도 삭제가 되는지 확인해야함
 	{
 		if (!unlink(root.c_str()))
 		{
 			//findMime();
 			stat((path_info).c_str(), &st);
-			//response.ct_length = st.st_size;
-			response.ct_length = 4;
+			response.ct_length = st.st_size;
 			response.ct_type = "text/html";
 			processStatic(path_info);
 		}
@@ -985,4 +1010,51 @@ void	ClientControl::processMethod()
 		else
 			processCGI(path_info);
 	}
+}
+
+void	ClientControl::resetClient(int client_socket, int server_socket, ServerBlock server_block)
+{
+	env_set.clear();
+	server_index.clear(); //서버 블록 내 index 절대 경로 담아둠
+	//server_block();
+	//http_block;
+	port = "";
+	root = ""; //방금 추가 put & post
+	directory = "";
+	file = "";
+	read_flag = 0;
+	write_flag = 0;
+	resource_fd = -1;
+    client_body_size = -1;
+	msg = "";
+	chunk_flag = 0;
+	body = "";
+	client_fd = 0;
+	server_fd = 0;
+	fout = NULL;
+
+	response.local_uri = "";
+	response.date = "";
+	response.ct_length = 0;
+	response.ct_type = "";
+	response.cgi = 0;
+	response.state_flag = ""; //현재 작업이 에러 시, 이벤트에 있는 read/write를 소모시키기 위해 플래그를 사용함.
+	response.state_str = ""; //빼야함
+	response.redirect_uri = "";
+	
+	request.method = "";
+	request.uri = "";
+	request.query_str = "";
+	request.version = "";
+	request.header.clear();
+	request.body.clear();
+	request.ct_length = 0;
+	
+	multipart.clear();
+
+	setServerBlock(server_block);
+	setPort(server_block.getListen()[0]);
+	setClientFd(client_socket);
+	setServerFd(static_cast<int>(server_socket));
+	initRequestMsg();
 }

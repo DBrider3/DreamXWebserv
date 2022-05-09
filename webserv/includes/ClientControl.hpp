@@ -7,8 +7,10 @@
 
 // # define PHPCGI "/Users/daekim/subject/cadet/DreamXWebserv/webserv/tester/php-cgi"//바꿔
 // # define CGITESTER "/Users/daekim/subject/cadet/DreamXWebserv/webserv/tester/cgi_tester"
- # define PHPCGI "/Users/junghan/Desktop/DreamXWebserv/webserv/tester/php-cgi"
- # define CGITESTER "/Users/junghan/Desktop/DreamXWebserv/webserv/tester/cgi_tester"
+// # define PHPCGI "/Users/junghan/Desktop/DreamXWebserv/webserv/tester/php-cgi"
+// # define CGITESTER "/Users/junghan/Desktop/DreamXWebserv/webserv/tester/cgi_tester"
+# define PHPCGI "/Users/songju/Desktop/DreamXWebserv/webserv/tester/php-cgi"
+# define CGITESTER "/Users/songju/Desktop/DreamXWebserv/webserv/tester/cgi_tester"
 //  # define PHPCGI "/Users/dcho/Born2Code/DreamXWebserv/webserv/tester/php-cgi"
 //  # define CGITESTER "/Users/dcho/Born2Code/DreamXWebserv/webserv/tester/cgi_tester"
 
@@ -29,6 +31,7 @@ typedef enum s_IOFlag
 	REQUEST_RECEIVING,
 	REQUEST_COMPLETE,
 	RESPONSE_COMPLETE,
+	DISCONNECTED
 }			t_IOFlag;
 
 typedef struct s_request {
@@ -86,6 +89,7 @@ class ClientControl
 
 		string			msg;
 		int				chunk_flag;
+		int				eof;
 
 
 
@@ -121,6 +125,7 @@ class ClientControl
 		int			getResourceFd();
 		int			getWrite();
 		FILE*		getFout();
+		int			getEOF();
 		/*
 		** setter part
 		*/
@@ -151,6 +156,7 @@ class ClientControl
 		void		setResourceFd(int fd);
 		void		setWrite(int n);
 		void		setFout(FILE* fd);
+		void		setEOF(int eof);
 
 		void 		initRequestMsg(void);
 		void		processMethod(void);
@@ -185,6 +191,7 @@ class ClientControl
 		//int		postFile();
 
 		void	readResource(void);
+		void	resetClient(int client_socket, int server_socket, ServerBlock server_block);
 };
 
 

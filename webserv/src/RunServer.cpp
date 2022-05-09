@@ -8,11 +8,8 @@
 
 void disconnectSocket(int socket_fd) //고쳐야함 소멸자불러야함
 {
-	// usleep(50);
-	cout << "Disconnect Socket!!  socket_fd : " << socket_fd << endl;
-	// usleep(100);
+	cout << RED << "disconnected : " << socket_fd << EOC << endl;
 	close(socket_fd);
-
 }
 
 /*
@@ -168,7 +165,7 @@ void ClientControl::sendChunk(void)
 	// timeinfo2 = localtime(&temp1);
 		
 	// cout << "😮‍💨😮‍💨😮‍💨😮‍💨 5. chunk 쓰기 후 시간 : 😮‍💨😮‍💨😮‍💨😮‍💨" << asctime(timeinfo2);
-	disconnectSocket(client_fd);
+	// disconnectSocket(client_fd);
 	delete[] r_header;
 	// msg = "";
 	// body = "";
@@ -188,7 +185,8 @@ void ClientControl::sendNobodyPage(void)
 
 	sprintf(r_header, RESPONSE_FMT, response.state_flag.c_str(), response.state_str.c_str(), response.ct_length, "text/html", "");
 	write(client_fd, r_header, strlen(r_header));
-	disconnectSocket(client_fd);
+	// cout << "[🍈🍈🍈🍈🍈🍈nobody response🍈🍈🍈🍈🍈🍈]\n" << r_header << endl;
+	// disconnectSocket(client_fd);
 }
 
 void ClientControl::sendSuccessPage(void)
@@ -203,30 +201,28 @@ void ClientControl::sendSuccessPage(void)
 	}
 	else if (response.state_flag == "201")
 	{
-		//struct stat		st;
+		struct stat		st;
 		string			local_uri;
-		//char			buf[10];
-		//int				bodyfd;
+		char			buf[10];
+		int				bodyfd;
 		int				n;
-		//stringstream	ss;
+		stringstream	ss;
 
 		local_uri = "./state_pages/" + response.state_flag + ".html";
-		//stat(local_uri.c_str(), &st);
-		//response.ct_length = st.st_size;
-		response.ct_length = 4;
-		//bodyfd = open(local_uri.c_str(), O_RDONLY);
+		stat(local_uri.c_str(), &st);
+		response.ct_length = st.st_size;
+		bodyfd = open(local_uri.c_str(), O_RDONLY);
 
 		n = 0;
-		// while ((n = read(bodyfd, buf, sizeof(buf) - 1)) > 0)
-		// {
-		// 	buf[9] = '\0';
-		// 	ss << buf;
-		// 	body += ss.str();
-		// 	ss.str("");
-		// 	memset(buf, 0, 10);
-		// }
-		//close(bodyfd);
-		body = "abcd";
+		while ((n = read(bodyfd, buf, sizeof(buf) - 1)) > 0)
+		{
+			buf[9] = '\0';
+			ss << buf;
+			body += ss.str();
+			ss.str("");
+			memset(buf, 0, 10);
+		}
+		close(bodyfd);
 		sprintf(r_header, RESPONSE_FMT, response.state_flag.c_str(), response.state_str.c_str(), response.ct_length, "text/html", body.c_str());
 	}
 	//else if (response.cgi == 2)
@@ -236,10 +232,11 @@ void ClientControl::sendSuccessPage(void)
 		sprintf(r_header, RESPONSE_FMT, response.state_flag.c_str(), response.state_str.c_str(), response.ct_length, response.ct_type.c_str(), body.c_str());
 	}
 	write(client_fd, r_header, strlen(r_header));
+	// cout << "[🍈🍈🍈🍈🍈🍈success response🍈🍈🍈🍈🍈🍈]\n" << r_header << endl;
 	// msg = ""; // request body parsing variable: msg 초기화
 	// body = "";
-	cout << "잘 보냈다옹~ 🐱" << endl;
-	disconnectSocket(client_fd);
+	// cout << "잘 보냈다옹~ 🐱" << endl;
+	// disconnectSocket(client_fd);
 	delete[] r_header;
 
 }
@@ -271,13 +268,14 @@ void 	sendErrorPage(int socket_fd, string state_flag, string state_str)
 		ss << buf;
 		body += ss.str();
 		ss.str("");
-		//memset(buf, 0, 10);
+		memset(buf, 0, 10);
 	}
 	close(bodyfd);
 	// sprintf(r_header, ERROR_FMT, state_flag.c_str(), state_str.c_str());
 	sprintf(r_header, RESPONSE_FMT, state_flag.c_str(), state_str.c_str(), ct_len, "text/html", body.c_str());
 	write(socket_fd, r_header, strlen(r_header));
-	disconnectSocket(socket_fd);
+	// cout << "[🍈🍈🍈🍈🍈🍈error response🍈🍈🍈🍈🍈🍈]\n" << r_header << endl;
+	// disconnectSocket(socket_fd);
 }
 
 void ClientControl::sendRedirectPage()
@@ -286,8 +284,9 @@ void ClientControl::sendRedirectPage()
 
 	sprintf(r_header, REDIRECT_FMT, getResponse().state_flag.c_str(), getResponse().state_str.c_str(), getResponse().redirect_uri.c_str());
 	write(getClientFd(), r_header, strlen(r_header));
+	// cout << "[🍈🍈🍈🍈🍈🍈redirect response🍈🍈🍈🍈🍈🍈]\n" << r_header << endl;
 	// msg = "";
-	disconnectSocket(getClientFd());
+	// disconnectSocket(getClientFd());
 }
 
 /*
@@ -306,7 +305,8 @@ int ClientControl::setClientsocket(vector<struct kevent> &change_list, uintptr_t
 		sendErrorPage(server_socket, "500", "Internal server error"); //클라이언트 생성실패
 		return (-1);
 	}
-    cout << "accept new client: " << client_socket << endl;
+	//std::cout << "\033[32m server connection called \033[0m" << std::endl;
+    cout << GREEN << "accept new client: " << client_socket << EOC << endl;
 	setRead(0);
 	fcntl(client_socket, F_SETFL, O_NONBLOCK);
 
@@ -379,7 +379,6 @@ void ClientControl::parseRequest(string request)
 			return ;
 		}
 		//current = request.find("\r\n"); // \r\n == crlf 
-
 		//find 함수는 해당 위치부터 문자열을 찾지 못할 경우 npos를 반환한다.
 		while (current != string::npos)
 		{
@@ -392,22 +391,23 @@ void ClientControl::parseRequest(string request)
 		setMethod(strtok(const_cast<char*>(result[0].c_str()), " "));
 		setUri(strtok(NULL, " "));
 		setVersion(strtok(NULL, "\n"));
-		if (checkUri(request))
-			return ;
-		if (getRequest().uri.size() > 8190)
-		{
-			setStateFlag("414");
-			setStateStr("Request-URI too long");
-			return ;
-		}
-		if (getRequest().uri.find('?') != string::npos)
-		{
-			ss << getRequest().uri;
-			getline(ss, temp, '?');
-			setUri(temp);
-			getline(ss, temp, '\0');
-			setQuery(temp);
-		}
+		// if (checkUri(request))
+		// 	return ;
+		// cout << "🥗🥗🥗🥗parseRequest5\n";
+		// if (getRequest().uri.size() > 8190)
+		// {
+		// 	setStateFlag("414");
+		// 	setStateStr("Request-URI too long");
+		// 	return ;
+		// }
+		// if (getRequest().uri.find('?') != string::npos)
+		// {
+		// 	ss << getRequest().uri;
+		// 	getline(ss, temp, '?');
+		// 	setUri(temp);
+		// 	getline(ss, temp, '\0');
+		// 	setQuery(temp);
+		// }
 		/*
 		* Header 파싱
 		*/
@@ -433,7 +433,9 @@ void ClientControl::parseRequest(string request)
 			}
 			header_tmp[key] = val; //multipart 확인예정
 			if (key == "Transfer-Encoding" && val.front() == "chunked")
+			{
 				setChunk(1);
+			}
 		}
 		setHeader(header_tmp);
 	}
@@ -470,6 +472,22 @@ void ClientControl::parseRequest(string request)
 	// 		return ;
 	// 	}
 	// }
+		if (checkUri(request))
+		return ;
+	if (getRequest().uri.size() > 8190)
+	{
+		setStateFlag("414");
+		setStateStr("Request-URI too long");
+		return ;
+	}
+	if (getRequest().uri.find('?') != string::npos)
+	{
+		ss << getRequest().uri;
+		getline(ss, temp, '?');
+		setUri(temp);
+		getline(ss, temp, '\0');
+		setQuery(temp);
+	}
 	// time_t temp1;
 	// struct tm* timeinfo;
 	// time(&temp1);
@@ -532,22 +550,24 @@ void ClientControl::readRequest()
 	// }
 	n = 0;
 	// while ((n = read(getClientFd(), buf, SIZE - 1)) > 0)
-	if ((n = read(getClientFd(), buf, SIZE - 1)) >= 0)
+	if ((n = read(getClientFd(), buf, SIZE - 1)) > 0)
 	{
 		buf[n] = 0;
 		msg += static_cast<string> (buf);
 	}
+	if (n == 0)
+	{
+		cout << RED << "☀️   Disconnected read   ☀️" << getClientFd() << EOC << endl;
+		setEOF(DISCONNECTED);
+	}
+	if (n < 0)
+	{
+		 cout << "read error : " << getClientFd() << endl;
+		setEOF(DISCONNECTED);
+	}
  	if (msg.rfind("\r\n\r\n") + 4 == msg.size()) //잘 읽음 // 완성된 뿐만 아니라  POST 바디까지 해줌.
 		parseRequest(msg);
 }
-
-// int ClientControl::checkMethod(vector<string> method_limit)
-// {
-// 	for (vector<string>::iterator it = method_limit.begin(); it != method_limit.end(); it++)
-// 		if (getRequest().method == *it)
-// 			return (1);
-// 	return (0);
-// }
 
 /*
  * 서버 실행하는 함수입니다.
@@ -559,13 +579,14 @@ void	ClientControl::readResource()
 	int res = 0;
 	int fd = getResourceFd();
 
-	memset(foo, 0, sizeof(foo));
+	// memset(foo, 0, sizeof(foo));
 	if ((res = read(fd, foo, 999999)) > 0)
 	{
 		foo[res] = 0;
 		body += static_cast<string> (foo);
-		//memset(foo, 0, sizeof(foo));
+		// memset(foo, 0, sizeof(foo));
 	}
+	//cout << "response bodyyy ::::::::::::::::::::::::::::::: \n"<<foo << endl;
 	//cout << "res : " << "(" << res << ")" << endl;
 	if (res == -1)
 	{
@@ -631,9 +652,13 @@ void Manager::runServer()
 		changeEvents(change_list, web_serv.server_socket[i], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	int count = 0;
 	int if_count = 0;
+	struct timespec timeout;
+	timeout.tv_sec = 5;
+	timeout.tv_nsec = 0;
+
 	while (1)
 	{
-		new_events = kevent(kq, &change_list[0], change_list.size(), event_list, 1024, NULL); // timeout 설정 확인
+		new_events = kevent(kq, &change_list[0], change_list.size(), event_list, 1024, &timeout); // timeout 설정 확인
 		if (new_events == -1)
 			sendErrorPage(curr_event->ident, "500", "Internal server error"); //kq관리 실패
 		change_list.clear();
@@ -660,9 +685,9 @@ void Manager::runServer()
 			}
 			else if (curr_event->filter == EVFILT_READ)
 			{
-				//cout << "filter 🥰!!" << endl;
 				if ((idx = checkSocket(curr_event->ident, web_serv.server_socket)) > -1)// && checkBeforeServer(curr_event->ident, before_server))
 				{
+					//  cout << "read filter 🥰!!" << endl;
 					client_control.push_back(ClientControl());
 					if_count++;
 					if (client_control.back().setClientsocket(change_list, curr_event->ident, http_block.getServerBlock()[idx]))
@@ -670,12 +695,13 @@ void Manager::runServer()
 				}
 				else if ((it = findClient(client_control, curr_event->ident)) != client_control.end())
 				{
-					//cout << "find 🔥!!" << endl;
+					//  cout << "find 🔥!!" << endl;
 					if (it->getRead() == REQUEST_RECEIVING) //request 읽을 때
 					{
+						// cout << "find 🔥!!" << endl;
 						it->setHttpBlock(this->http_block);
 						it->readRequest();
-						//cout << "receiving 🔥!! " << it->getRead() << endl;
+						// cout << "receiving 🔥!! " << it->getRead() << endl;
 						//cout << "r0_id : " << it->getClientFd() << endl;
 						if (!(it->getResponse().state_flag.empty()))
 						{
@@ -685,7 +711,7 @@ void Manager::runServer()
 					}
 					if (it->getRead() == REQUEST_COMPLETE) //file 읽을 때
 					{
-						//cout << "read 🥰!!" << endl;
+						// cout << "read 🥰!!" << endl;
 						if (it->getResourceFd() == -1)//method 파악
 						{
 							//cout << "process 🥰!!" << endl;
@@ -716,12 +742,12 @@ void Manager::runServer()
 				//cout << "w_id : " << curr_event->ident << " / comp : " << (it != client_control.end()) << endl; // << " / getWrite : " << it->getWrite() << endl; 
 				if (it != client_control.end() && it->getWrite() == 1)
 				{
-					cout << "write😃 !! event2" << endl;
+					// cout << "write😃 !! event2" << endl;
 					if (!(it->getResponse().state_flag.empty()))
 					{
 						if (it->getRequest().method == "HEAD")
 							it->sendNobodyPage();
-						if (it->getResponse().state_flag == "301")
+						else if (it->getResponse().state_flag == "301")
 							it->sendRedirectPage();
 						else if (it->getResponse().state_flag[0] == '2')
 						{
@@ -736,8 +762,20 @@ void Manager::runServer()
 					// else
 					// 	sendErrorPage(it->getClientFd(), "403", "Forbidden");
 					//resetBeforeServer(it->getServerFd(), before_server);
-					client_control.erase(it);//iterator로 삭제 가능
-					cout << "👶🏽👶🏽 count : " << ++count <<" 👶🏽👶🏽 / server_count : " << --if_count <<endl;
+					// client_control.erase(it);//iterator로 삭제 가능
+					
+					// reset function 
+					if (it->getEOF() == DISCONNECTED)
+					{
+						disconnectSocket(it->getClientFd());
+						client_control.erase(it);
+					}
+					else
+					{
+						it->resetClient(it->getClientFd(), it->getServerFd(), it->getServerBlock());
+						cout << BLUE << "count : " << ++count << EOC <<endl;
+					}
+					//
 					// for (int i = 0; i < new_events; ++i)
 					// {
 					// 	cout << "🧸🧸 ident :" << event_list[i].ident << " / filter : "<< event_list[i].filter << " 🧸🧸" << endl;
