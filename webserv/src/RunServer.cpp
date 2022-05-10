@@ -371,13 +371,6 @@ void ClientControl::parseRequest(string request)
 		previous = 0;
 		current = request.find("\r\n"); // \r\n == crlf 
 
-		//요청 메시치 에러처러 : /r/n이 없이 들어오는 경우 에러처리 필요!! 요청 메시지가 중간에 누락되는 경우!
-		if (current == string::npos)
-		{
-			setStateFlag("400");
-			setStateStr("bad request");
-			return ;
-		}
 		//current = request.find("\r\n"); // \r\n == crlf 
 		//find 함수는 해당 위치부터 문자열을 찾지 못할 경우 npos를 반환한다.
 		while (current != string::npos)
@@ -535,6 +528,7 @@ void ClientControl::readRequest()
 	** read data from client
 	*/
 	char buf[SIZE];
+	size_t pos;
 	// string msg;
 	int n;
 
@@ -568,7 +562,8 @@ void ClientControl::readRequest()
 		setEOF(DISCONNECTED);
 		disconnectSocket(getClientFd());
 	}
- 	if (msg.rfind("\r\n\r\n") + 4 == msg.size()) //잘 읽음 // 완성된 뿐만 아니라  POST 바디까지 해줌.
+	pos = msg.rfind("\r\n\r\n");
+ 	if (pos != string::npos && pos + 4 == msg.size()) //잘 읽음 // 완성된 뿐만 아니라  POST 바디까지 해줌.
 		parseRequest(msg);
 }
 
@@ -656,7 +651,7 @@ void Manager::runServer()
 	int count = 0;
 	int if_count = 0;
 	struct timespec timeout;
-	timeout.tv_sec = 7;
+	timeout.tv_sec = 5;
 	timeout.tv_nsec = 0;
 
 	while (1)
@@ -752,6 +747,7 @@ void Manager::runServer()
 					//  cout << "write😃 !! event2" << endl;
 					if (!(it->getResponse().state_flag.empty()))
 					{
+						//cout <<"🍂"<< it->getResponse().state_flag << "🍂" << "🍁"<< it->getClientFd() <<"🍁" << "🌛" <<it->getRequest().uri << "🌜"<< endl;
 						if (it->getRequest().method == "HEAD")
 							it->sendNobodyPage();
 						else if (it->getResponse().state_flag == "301")

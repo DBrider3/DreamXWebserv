@@ -434,7 +434,7 @@ void		ClientControl::saveFile(void)
 		// 파일 체크 우선
 
 
-		file.open("/Users/songju/Desktop/DreamXWebserv/webserv/save/" + multipart[idx].file_name, std::ios::out);//바꿔
+		file.open("/Users/junghan/Desktop/DreamXWebserv/webserv/save/" + multipart[idx].file_name, std::ios::out);//바꿔
 		file << multipart[idx].data;
 		file.close();
 	//	if (file.fail())
@@ -728,7 +728,7 @@ void ClientControl::deleteFile()
 {
 	string root;
 	struct stat st;
-	string path_info = "/Users/songju/Desktop/DreamXWebserv/webserv/state_pages/delete.html"; //바꿔
+	string path_info = "/Users/junghan/Desktop/DreamXWebserv/webserv/state_pages/delete.html"; //바꿔
 
 	root = "/Users/songju/Desktop/DreamXWebserv/webserv/save" + getRequest().uri;//바꿔
 	if (!access(root.c_str(), F_OK)) //directory도 삭제가 되는지 확인해야함
