@@ -23,10 +23,6 @@ int checkSocket(int curr_fd, vector<int> server_socket)
 		if (server_socket[i] == curr_fd)
 			return (i);
 	return (-1);
-	// for (size_t i = 0; i < server_socket.size(); i++)
-	// 	if (server_socket[i] == curr_fd)
-	// 		return (1);
-	// return (0);
 }
 
 int checkBeforeServer(int curr_fd, vector<int> before_server)
@@ -76,123 +72,92 @@ void ClientControl::sendChunk(void)
 	size_t body_size;
 	char*	r_header = new char[response.ct_length + 1024];
 
-	// time_t temp2;
-	// struct tm* timeinfo;
-	// time(&temp2);
-	// timeinfo = localtime(&temp2);
-		
-	// cout << "😮‍💨😮‍💨😮‍💨😮‍💨 4. chunk 쓰기 전 시간 : 😮‍💨😮‍💨😮‍💨😮‍💨" << asctime(timeinfo);
-
 	sprintf(r_header, CHUNK_FMT, response.state_flag.c_str(), response.state_str.c_str(), response.ct_type.c_str());
 	write(client_fd, r_header, strlen(r_header));
 	body_size = body.size();
-	// while (1)
-	// {
-	// 	stringstream ss;
-	// 	size_t chunk_size;
-	// 	chunk_size = 100;	
-	// 	if (body.size() - chunk_size * i != 0)
-	// 	{
-	// 		if (body.size() - chunk_size * i < chunk_size)
-	// 		{
-	// 			tmp = body.substr(chunk_size * i, body.size() - chunk_size * i); //포인터 넘겨서 어찌저찌 하면 속도 엄청 올라간데요
-	// 		/*	tmp = "";
-	// 			for (size_t j = 0; j < (body_size - chunk_size * i); j++)
-	// 				tmp.insert(j, 1, body[chunk_size * i + j]);*/
-	// 			ss << hex << tmp.size();
-	// 		}
-	// 		else //
-	// 		{
-	// 			tmp = body.substr(chunk_size * i, chunk_size);
-	// 		/*	tmp = "";
-	// 			for (size_t j = 0; j < chunk_size; j++)
-	// 				tmp.insert(j, 1, body[chunk_size * i + j]);*/
-	// 			ss << hex << chunk_size;
-	// 		}
-	// 		chunk_body = ss.str() + "\r\n" + tmp + "\r\n";
-	// 		write (client_fd, chunk_body.c_str(), chunk_body.size());
-	// 	}
-	// 	if (body.size() - chunk_size * i < chunk_size)
-	// 		break ;
-	// 	i++;
-	// }
-	
-	//우리는 한번씩 잘라서 write하는데 현스키님은 아예 string에 다 담아서 했던거 같음
-	//while 밖에서 body size 갖는 변수 선언 size() 호출 줄이고 , 
-	//while 내부에서 body_size - i 크기로 body를 얼마나 tmp에 넣을지 정하고 또한 body_size - i 한 값만큼 16진수 적어주자
-	//size - i 한거 만큼 body 포인트 이동하며 string에 넣어주자
-	//tmp.size() == body_size - 2(chunk_size * i)이다.
-	
+
+	chunk_body = "";
+	tmp = "";
 	while (1)
 	{
 		stringstream ss;
 		size_t chunk_size;
-		chunk_size = 100;		
-		if (body_size - chunk_size * i != 0)
+		chunk_size = 150;
+		if (body.size() - chunk_size * i != 0)
 		{
-			if (body_size - chunk_size * i < chunk_size)
+			if (body.size() - chunk_size * i < chunk_size)
 			{
-				ss << hex << chunk_size;				
-				write(client_fd, ss.str().c_str(), ss.str().size());				
-				write(client_fd, "\r\n", 2);
-				write(client_fd, body.c_str(), body_size - 2 * (chunk_size * i));
-				write(client_fd, "\r\n", 2);
-				body += body[body_size - 2 * (chunk_size * i)];			
+				tmp = body.substr(chunk_size * i, body.size() - chunk_size * i); //포인터 넘겨서 어찌저찌 하면 속도 엄청 올라간데요
+			/*	tmp = "";
+				for (size_t j = 0; j < (body_size - chunk_size * i); j++)
+					tmp.insert(j, 1, body[chunk_size * i + j]);*/
+				ss << hex << tmp.size();
 			}
 			else //
-			{					
-				ss << hex << chunk_size;				
-				write(client_fd, ss.str().c_str(), ss.str().size());				
-				write(client_fd, "\r\n", 2);
-				write(client_fd, body.c_str(), chunk_size);
-				write(client_fd, "\r\n", 2);
-				body += body[chunk_size];
+			{
+				tmp = body.substr(chunk_size * i, chunk_size);
+			/*	tmp = "";
+				for (size_t j = 0; j < chunk_size; j++)
+					tmp.insert(j, 1, body[chunk_size * i + j]);*/
+				ss << hex << chunk_size;
 			}
-			//chunk_body = ss.str() + "\r\n" + tmp + "\r\n";
-			
-		
+			chunk_body = ss.str() + "\r\n" + tmp + "\r\n";
+			write (client_fd, chunk_body.c_str(), chunk_body.size());
+			chunk_body = "";
+			tmp = "";
 		}
-		if (body_size - chunk_size * i < chunk_size)
+		if (body.size() - chunk_size * i < chunk_size)
 			break ;
 		i++;
 	}
-	
-	//if (response.cgi != 2)
+
+	// while (1)
+	// {
+	// 	stringstream ss;
+	// 	size_t chunk_size;
+	// 	chunk_size = 100;	// 초기값 100 
+	// 	if (body_size - chunk_size * i != 0)
+	// 	{
+	// 		if (body_size - chunk_size * i < chunk_size)
+	// 		{
+	// 			ss << hex << chunk_size;				
+	// 			write(client_fd, ss.str().c_str(), ss.str().size());				
+	// 			write(client_fd, "\r\n", 2);
+	// 			write(client_fd, body.c_str(), body_size - 2 * (chunk_size * i));
+	// 			write(client_fd, "\r\n", 2);
+	// 			body += body[body_size - 2 * (chunk_size * i)];			
+	// 		}
+	// 		else
+	// 		{					
+	// 			ss << hex << chunk_size;				
+	// 			write(client_fd, ss.str().c_str(), ss.str().size());				
+	// 			write(client_fd, "\r\n", 2);
+	// 			write(client_fd, body.c_str(), chunk_size);
+	// 			write(client_fd, "\r\n", 2);
+	// 			body += body[chunk_size];
+	// 		}
+	// 	}
+	// 	if (body_size - chunk_size * i < chunk_size)
+	// 		break ;
+	// 	i++;
+	// }
+
 	write (client_fd, "0\r\n\r\n", strlen("0\r\n\r\n"));
-	// time_t temp1;
-	// struct tm* timeinfo2;
-	// time(&temp1);
-	// timeinfo2 = localtime(&temp1);
-		
-	// cout << "😮‍💨😮‍💨😮‍💨😮‍💨 5. chunk 쓰기 후 시간 : 😮‍💨😮‍💨😮‍💨😮‍💨" << asctime(timeinfo2);
-	// disconnectSocket(client_fd);
+
 	delete[] r_header;
-	// msg = "";
-	// body = "";
 }
 
 void ClientControl::sendNobodyPage(void)
 {
-	struct stat		st;
-	string			local_uri;
 	char			r_header[1024];
-	int				ct_len;
-
-	
-	local_uri = "./state_pages/" + response.state_flag + ".html";
-	stat(local_uri.c_str(), &st);
-	ct_len = st.st_size;
 
 	sprintf(r_header, RESPONSE_FMT, response.state_flag.c_str(), response.state_str.c_str(), response.ct_length, "text/html", "");
 	write(client_fd, r_header, strlen(r_header));
-	// cout << "[🍈🍈🍈🍈🍈🍈nobody response🍈🍈🍈🍈🍈🍈]\n" << r_header << endl;
-	// disconnectSocket(client_fd);
 }
 
 void ClientControl::sendSuccessPage(void)
 {
 	char*	r_header = new char[response.ct_length + 1024];
-	//memset(r_header, 0x00 , sizeof(r_header));
 	//chunk
 	
 	if (response.state_flag == "204")
@@ -203,7 +168,7 @@ void ClientControl::sendSuccessPage(void)
 	{
 		struct stat		st;
 		string			local_uri;
-		char			buf[10];
+		char			buf[100];
 		int				bodyfd;
 		int				n;
 		stringstream	ss;
@@ -216,27 +181,18 @@ void ClientControl::sendSuccessPage(void)
 		n = 0;
 		while ((n = read(bodyfd, buf, sizeof(buf) - 1)) > 0)
 		{
-			buf[9] = '\0';
+			buf[n] = '\0';
 			ss << buf;
 			body += ss.str();
 			ss.str("");
-			memset(buf, 0, 10);
+			memset(buf, 0, 100);
 		}
 		close(bodyfd);
 		sprintf(r_header, RESPONSE_FMT, response.state_flag.c_str(), response.state_str.c_str(), response.ct_length, "text/html", body.c_str());
 	}
-	//else if (response.cgi == 2)
-	//	sprintf(r_header, CHUNK_FMT, response.state_flag.c_str(), response.state_str.c_str(), response.ct_type.c_str());
 	else
-	{
 		sprintf(r_header, RESPONSE_FMT, response.state_flag.c_str(), response.state_str.c_str(), response.ct_length, response.ct_type.c_str(), body.c_str());
-	}
 	write(client_fd, r_header, strlen(r_header));
-	// cout << "[🍈🍈🍈🍈🍈🍈success response🍈🍈🍈🍈🍈🍈]\n" << r_header << endl;
-	// msg = ""; // request body parsing variable: msg 초기화
-	// body = "";
-	// cout << "잘 보냈다옹~ 🐱" << endl;
-	// disconnectSocket(client_fd);
 	delete[] r_header;
 
 }
@@ -246,7 +202,7 @@ void 	sendErrorPage(int socket_fd, string state_flag, string state_str)
 	struct stat		st;
 	string			local_uri;
 	string			body; //html읽은 내용 담을 변수
-	char			buf[10];
+	char			buf[100];
 	char			r_header[1024];
 	int				ct_len;
 	int				bodyfd;
@@ -258,24 +214,20 @@ void 	sendErrorPage(int socket_fd, string state_flag, string state_str)
 	stat(local_uri.c_str(), &st);
 	ct_len = st.st_size;
 
-
 	bodyfd = open(local_uri.c_str(), O_RDONLY);
 
 	n = 0;
 	while ((n = read(bodyfd, buf, sizeof(buf) - 1)) > 0) //괘씸 ????
 	{
-		buf[9] = '\0';
+		buf[n] = '\0';
 		ss << buf;
 		body += ss.str();
 		ss.str("");
-		memset(buf, 0, 10);
+		memset(buf, 0, 100);
 	}
 	close(bodyfd);
-	// sprintf(r_header, ERROR_FMT, state_flag.c_str(), state_str.c_str());
 	sprintf(r_header, RESPONSE_FMT, state_flag.c_str(), state_str.c_str(), ct_len, "text/html", body.c_str());
 	write(socket_fd, r_header, strlen(r_header));
-	// cout << "[🍈🍈🍈🍈🍈🍈error response🍈🍈🍈🍈🍈🍈]\n" << r_header << endl;
-	// disconnectSocket(socket_fd);
 }
 
 void ClientControl::sendRedirectPage()
@@ -284,9 +236,6 @@ void ClientControl::sendRedirectPage()
 
 	sprintf(r_header, REDIRECT_FMT, getResponse().state_flag.c_str(), getResponse().state_str.c_str(), getResponse().redirect_uri.c_str());
 	write(getClientFd(), r_header, strlen(r_header));
-	// cout << "[🍈🍈🍈🍈🍈🍈redirect response🍈🍈🍈🍈🍈🍈]\n" << r_header << endl;
-	// msg = "";
-	// disconnectSocket(getClientFd());
 }
 
 /*
@@ -305,7 +254,6 @@ int ClientControl::setClientsocket(vector<struct kevent> &change_list, uintptr_t
 		sendErrorPage(server_socket, "500", "Internal server error"); //클라이언트 생성실패
 		return (-1);
 	}
-	//std::cout << "\033[32m server connection called \033[0m" << std::endl;
     cout << GREEN << "accept new client: " << client_socket << EOC << endl;
 	setRead(0);
 	fcntl(client_socket, F_SETFL, O_NONBLOCK);
@@ -332,7 +280,6 @@ vector<ClientControl>::iterator findClient(vector<ClientControl> &client_control
 
 	for (it = client_control.begin(); it != client_control.end(); it++)
 	{
-		//cout << "cf: "<< it->getClientFd() <<  "rf: " << it->getResourceFd() << "curr : "<< curr_fd << endl;
 		if (it->getResourceFd() == -1)
 		{
 			if (it->getClientFd() == curr_fd)
@@ -384,23 +331,7 @@ void ClientControl::parseRequest(string request)
 		setMethod(strtok(const_cast<char*>(result[0].c_str()), " "));
 		setUri(strtok(NULL, " "));
 		setVersion(strtok(NULL, "\n"));
-		// if (checkUri(request))
-		// 	return ;
-		// cout << "🥗🥗🥗🥗parseRequest5\n";
-		// if (getRequest().uri.size() > 8190)
-		// {
-		// 	setStateFlag("414");
-		// 	setStateStr("Request-URI too long");
-		// 	return ;
-		// }
-		// if (getRequest().uri.find('?') != string::npos)
-		// {
-		// 	ss << getRequest().uri;
-		// 	getline(ss, temp, '?');
-		// 	setUri(temp);
-		// 	getline(ss, temp, '\0');
-		// 	setQuery(temp);
-		// }
+
 		/*
 		* Header 파싱
 		*/
@@ -426,9 +357,7 @@ void ClientControl::parseRequest(string request)
 			}
 			header_tmp[key] = val; //multipart 확인예정
 			if (key == "Transfer-Encoding" && val.front() == "chunked")
-			{
 				setChunk(1);
-			}
 		}
 		setHeader(header_tmp);
 	}
@@ -453,19 +382,12 @@ void ClientControl::parseRequest(string request)
 		for (it = result.begin(); it != result.end() && it->size() > 0; it++)
 			;
 	}
+
 	/*
 	* Body 파싱
 	*/
-	// if (getRequest().header["Content-Length"].size() > 0)
-	// {
-	// 	if(convStoi(*(getRequest().header["Content-Length"].begin())) > convStoi(getServerBlock().getClientBodySize()))
-	// 	{
-	// 		setStateFlag("413");
-	// 		setStateStr("Payload Too Large");
-	// 		return ;
-	// 	}
-	// }
-		if (checkUri(request))
+
+	if (checkUri(request))
 		return ;
 	if (getRequest().uri.size() > 8190)
 	{
@@ -481,31 +403,17 @@ void ClientControl::parseRequest(string request)
 		getline(ss, temp, '\0');
 		setQuery(temp);
 	}
-	// time_t temp1;
-	// struct tm* timeinfo;
-	// time(&temp1);
-	// timeinfo = localtime(&temp1);
-		
-	//cout << "😮‍💨😮‍💨😮‍💨😮‍💨 2. request 입력 후 시간 : 😮‍💨😮‍💨😮‍💨😮‍💨" << asctime(timeinfo);
-	
+
 	if (it == result.end())
 		return ; 
 	while (++it != result.end())
-	{		
 		setBody(*it);
-	}
 	if (getRequest().header["Content-Type"].size() == 2 && getRequest().body.size() == 0)
 	{
 		setStateFlag("403");
 		setStateStr("Forbidden");
 		return ;
 	}
-	// time_t temp2;
-	// struct tm* timeinfo2;
-	// time(&temp2);
-	// timeinfo2 = localtime(&temp2);
-		
-	//cout << "😮‍💨😮‍💨😮‍💨😮‍💨 3. 파싱 후 시간 😮‍💨😮‍💨😮‍💨😮‍💨 : " << asctime(timeinfo2);
 }
 
 void	resetBeforeServer(int server_fd, vector<int>& before_server)
@@ -529,42 +437,33 @@ void ClientControl::readRequest()
 	*/
 	char buf[SIZE];
 	size_t pos;
-	// string msg;
+	size_t msg_size;
 	int n;
 
-	
-	// if (msg == "")
-	// {
-	// 	time_t temp3;
-	// 	struct tm* timeinfo3;
-	// 	time(&temp3);
-	// 	timeinfo3 = localtime(&temp3);
-			
-	// 	//cout << "😮‍💨😮‍💨😮‍💨😮‍💨 1. requset 입력 전 시간 😮‍💨😮‍💨😮‍💨😮‍💨 : " << asctime(timeinfo3);
-	// }
 	n = 0;
-	// while ((n = read(getClientFd(), buf, SIZE - 1)) > 0)
 	if ((n = read(getClientFd(), buf, SIZE - 1)) > 0)
 	{
 		buf[n] = 0;
-		msg += static_cast<string> (buf);
+		msg += static_cast<string> (buf); //여기 스테틱캐스트가 꼭 필요했었나??
 	}
-	if (n == 0)
+	if (n == 0) // 구분할지 말지 
 	{
-	//	cout << RED << "🏀   Disconnected read   🏀  " << getClientFd() << EOC << endl;
 		setEOF(DISCONNECTED);
 		disconnectSocket(getClientFd());
-		
 	}
 	if (n < 0)
 	{
-		 cout << "read error : " << getClientFd() << endl;
+		cout << "read error : " << this->client_fd << endl;
 		setEOF(DISCONNECTED);
 		disconnectSocket(getClientFd());
 	}
-	pos = msg.rfind("\r\n\r\n");
- 	if (pos != string::npos && pos + 4 == msg.size()) //잘 읽음 // 완성된 뿐만 아니라  POST 바디까지 해줌.
-		parseRequest(msg);
+	msg_size = msg.size();
+	if (msg_size > 4 && msg[msg_size - 4] == '\r')
+	{
+		pos = msg.rfind("\r\n\r\n");
+ 		if (pos != string::npos && pos + 4 == msg_size) //잘 읽음 // 완성된 뿐만 아니라  POST 바디까지 해줌.
+			parseRequest(msg);
+	}
 }
 
 /*
@@ -573,30 +472,25 @@ void ClientControl::readRequest()
 
 void	ClientControl::readResource()
 {
-	char foo[1000000];
+	char foo[SIZE];
 	int res = 0;
 	int fd = getResourceFd();
 
-	// memset(foo, 0, sizeof(foo));
-	if ((res = read(fd, foo, 999999)) > 0)
+	if ((res = read(fd, foo, SIZE - 1)) > 0)
 	{
 		foo[res] = 0;
 		body += static_cast<string> (foo);
-		// memset(foo, 0, sizeof(foo));
 	}
-	//cout << "response bodyyy ::::::::::::::::::::::::::::::: \n"<<foo << endl;
-	//cout << "res : " << "(" << res << ")" << endl;
 	if (res == -1)
 	{
-		cout <<"read error 🚀🚀🚀🚀🚀🚀🚀🚀" << endl;
+		cout << "read error 🚀🚀🚀🚀🚀🚀🚀🚀" << endl;
 		setStateFlag("403");
 		setStateStr("Forbidden");
 		close(fd);
 		setResourceFd(-1);
 	}
-	else if (res != 999999)
+	else if (res != SIZE - 1) // EOF까지 읽었을 때 res가 SIZE - 1인 경우는 문제가 생길수 있다.
 	{
-		//cout << "EOF" << endl;
 		setStateFlag("200");
 		setStateStr("OK");
 		if (response.cgi && !(response.cgi == 2 && request.method == "GET"))
@@ -649,7 +543,6 @@ void Manager::runServer()
 	for (size_t i = 0; i < web_serv.ports.size(); i++)
 		changeEvents(change_list, web_serv.server_socket[i], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	int count = 0;
-	int if_count = 0;
 	struct timespec timeout;
 	timeout.tv_sec = 5;
 	timeout.tv_nsec = 0;
@@ -663,6 +556,7 @@ void Manager::runServer()
 		idx = 0;
 		for (int i = 0; i < new_events; ++i)
 		{
+			
 			curr_event = &event_list[i];
 
 			if (curr_event->flags & EV_ERROR)
@@ -685,18 +579,14 @@ void Manager::runServer()
 			{
 				if ((idx = checkSocket(curr_event->ident, web_serv.server_socket)) > -1)// && checkBeforeServer(curr_event->ident, before_server))
 				{
-					//  cout << "read filter 🥰!!" << endl;
 					client_control.push_back(ClientControl());
-					if_count++;
 					if (client_control.back().setClientsocket(change_list, curr_event->ident, http_block.getServerBlock()[idx]))
 						client_control.pop_back();
 				}
 				else if ((it = findClient(client_control, curr_event->ident)) != client_control.end())
 				{
-					//  cout << "find 🔥!!" << endl;
 					if (it->getRead() == REQUEST_RECEIVING) //request 읽을 때
 					{
-						// cout << "find 🔥!!" << endl;
 						it->setHttpBlock(this->http_block);
 						it->readRequest();
 						if (it->getEOF() == DISCONNECTED)
@@ -704,8 +594,6 @@ void Manager::runServer()
 							client_control.erase(it);
 							continue ;
 						}
-						// cout << "receiving 🔥!! " << it->getRead() << endl;
-						//cout << "r0_id : " << it->getClientFd() << endl;
 						if (!(it->getResponse().state_flag.empty()))
 						{
 							it->setWrite(1);
@@ -714,47 +602,33 @@ void Manager::runServer()
 					}
 					if (it->getRead() == REQUEST_COMPLETE) //file 읽을 때
 					{
-						// cout << "read 🥰!!" << endl;
 						if (it->getResourceFd() == -1)//method 파악
 						{
-							//cout << "process 🥰!!" << endl;
 							it->processMethod();
 							if (it->getResourceFd() != -1)
-							{
-								//cout << "resource_fd 🥰!!" << endl;
 								changeEvents(change_list, it->getResourceFd(), EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
-							}
 						}
 						else //read
 							it->readResource();
-						//cout << "r1_id : " << it->getClientFd() << endl;
 					}
 					if (!(it->getResponse().state_flag.empty()))
-					{
-					//	cout << "write💩🚜 !!" << endl;
-						//cout << "rw_id : " << it->getClientFd() << endl;
 						it->setWrite(1);
-					}
-					// cout << "📒📒📒📒📒📒getEOF : " << it->getEOF() << "socket : " << it->getClientFd()<< endl;
 				}
 			}
 			else if (curr_event->filter == EVFILT_WRITE)
 			{
 				it = findClient(client_control, curr_event->ident);
-				//cout << "w_id : " << curr_event->ident << " / comp : " << (it != client_control.end()) << endl; // << " / getWrite : " << it->getWrite() << endl; 
 				if (it != client_control.end() && it->getWrite() == 1)
 				{
-					//  cout << "write😃 !! event2" << endl;
 					if (!(it->getResponse().state_flag.empty()))
 					{
-						//cout <<"🍂"<< it->getResponse().state_flag << "🍂" << "🍁"<< it->getClientFd() <<"🍁" << "🌛" <<it->getRequest().uri << "🌜"<< endl;
 						if (it->getRequest().method == "HEAD")
 							it->sendNobodyPage();
 						else if (it->getResponse().state_flag == "301")
 							it->sendRedirectPage();
 						else if (it->getResponse().state_flag[0] == '2')
 						{
-							if (it->getResponse().ct_length > 10000) // && it->getResponse().cgi != 2)
+							if (it->getResponse().ct_length > 10000)// && it->getResponse().cgi != 2)
 								it->sendChunk();
 							else
 								it->sendSuccessPage();
@@ -762,43 +636,12 @@ void Manager::runServer()
 						else
 							sendErrorPage(it->getClientFd(), it->getResponse().state_flag, it->getResponse().state_str);
 					}
-					// else
-					// 	sendErrorPage(it->getClientFd(), "403", "Forbidden");
-					//resetBeforeServer(it->getServerFd(), before_server);
-					// client_control.erase(it);//iterator로 삭제 가능
-					
-					// reset function 
-					// cout << "🥏🥏🥏🥏🥏🥏getEOF : " << it->getEOF() << "fd : "<<it->getClientFd() << endl;
-					// if (it->getEOF() == DISCONNECTED)
-					// {
-					// 	disconnectSocket(it->getClientFd());
-					// 	client_control.erase(it);
-					// }
-					// else
-					// {
-						it->resetClient(it->getClientFd(), it->getServerFd(), it->getServerBlock());
-						cout << BLUE << "count : " << ++count << EOC <<endl;
-					// }
-					//
-					// for (int i = 0; i < new_events; ++i)
-					// {
-					// 	cout << "🧸🧸 ident :" << event_list[i].ident << " / filter : "<< event_list[i].filter << " 🧸🧸" << endl;
-					// }
-					// sleep(1);
+					it->resetClient(it->getClientFd(), it->getServerFd(), it->getServerBlock());
+					cout << BLUE << "count : " << ++count << EOC <<endl;
 				}
-				
 			}
-			// sleep(1);
-			// 	cout << "💡💡 curr_ident :" << curr_event->ident << " / curr_filter : "<< curr_event->filter << " 💡💡" << endl;
-			// 	for (int i = 0; i < new_events; ++i)
-			// 	{
-			// 		cout << "🧸🧸 ident :" << event_list[i].ident << " / filter : "<< event_list[i].filter << " 🧸🧸" << endl;
-			// 	}
 		}
-
-		// cout << "🔥🔥🔥🔥🔥🔥cli_cont" <<client_control.size() << endl;
 	}
 	//close(socket_fd);
-	//usleep(30);
 }
 

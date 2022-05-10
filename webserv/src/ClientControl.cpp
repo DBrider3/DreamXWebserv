@@ -4,8 +4,7 @@ ClientControl::ClientControl() //의문.1 생성자 호출할때 어떻게할겨
 {
 	env_set.clear();
 	server_index.clear(); //서버 블록 내 index 절대 경로 담아둠
-	//server_block();
-	//http_block;
+
 	port = "";
 	root = ""; //방금 추가 put & post
 	directory = "";
@@ -41,13 +40,6 @@ ClientControl::ClientControl() //의문.1 생성자 호출할때 어떻게할겨
 	
 	multipart.clear();
 }
-
-// ClientControl::ClientControl(const t_request req) // 생성자에서 request 객체 받기
-// {
-// 	// request.query_str = "";`
-// 	// response.cgi = 0;
-// 	// request = req;
-// }
 
 ClientControl::~ClientControl()
 {
@@ -113,67 +105,67 @@ ClientControl& ClientControl::operator = (const ClientControl& m)
 	return (*this);
 }
 
-ServerBlock 		ClientControl::getServerBlock(void)
+ServerBlock& 		ClientControl::getServerBlock(void)
 {
 	return (server_block);
 }
 
-HttpBlock 		ClientControl::getHttpBlock(void)
+HttpBlock& 		ClientControl::getHttpBlock(void)
 {
 	return (http_block);
 }
 
-t_request	ClientControl::getRequest(void)
+t_request&	ClientControl::getRequest(void)
 {
 	return (request);
 }
 
-t_response	ClientControl::getResponse(void)
+t_response&	ClientControl::getResponse(void)
 {
 	return (response);
 }
 
-int		ClientControl::getClientFd(void)
+int&		ClientControl::getClientFd(void)
 {
 	return (client_fd);
 }
 
-int		ClientControl::getRead()
+int&		ClientControl::getRead()
 {
 	return (read_flag);
 }
 
-string	ClientControl::getRoot()
+string&	ClientControl::getRoot()
 {
 	return (root);
 }
 
-int		ClientControl::getClientBodySize()
+int&		ClientControl::getClientBodySize()
 {
 	return (client_body_size);
 }
 
-string		ClientControl::getMsg()
+string&		ClientControl::getMsg()
 {
 	return (msg);
 }
 
-int			ClientControl::getChunk()
+int&			ClientControl::getChunk()
 {
 	return (chunk_flag);
 }
 
-int			ClientControl::getServerFd()
+int&			ClientControl::getServerFd()
 {
 	return(this->server_fd);
 }
 
-int			ClientControl::getResourceFd()
+int&			ClientControl::getResourceFd()
 {
 	return (resource_fd);
 }
 
-int			ClientControl::getWrite()
+int&			ClientControl::getWrite()
 {
 	return (write_flag);
 }
@@ -183,7 +175,7 @@ FILE*		ClientControl::getFout()
 	return (fout);
 }
 
-int			ClientControl::getEOF()
+int&			ClientControl::getEOF()
 {
 	return (eof);
 }
@@ -328,7 +320,6 @@ void		ClientControl::findMime(void)
 		response.cgi = 0;
 		return ;
 	}
-		//throw (PrintError());
 	ext = response.local_uri.substr(idx);
 	if (!(ext.empty())) // file
 	{
@@ -359,7 +350,6 @@ void		ClientControl::setEnv(void)
 	env_set["REDIRECT_STATUS"] = "200"; // 상태코드인데 아직 미정?!
 	env_set["SCRIPT_FILENAME"] = server_block.getRoot() + response.local_uri; // 절대 경로, 상대 경로 (우선 순위)
 	env_set["SERVER_PROTOCOL"] = request.version; // request.version
-	// env_set["PATH_INFO"] = "/Users/daekim/subject/cadet/DreamXWebserv/webserv/YoupiBanane";//setPathInfo(argv[3]); // 절대 경로, 상대 경로 (우선 순위)
 	env_set["CONTENT_TYPE"] = response.ct_type;
 	env_set["GATEWAY_INTERFACE"] = "CGI/1.1";
 	env_set["REMOTE_ADDR"] = "127.0.0.1"; // 그대로 넣어 주면 될듯(?)
@@ -387,13 +377,13 @@ char**		ClientControl::convToChar(map<string, string> m, int flag) //소송
 	char **return_value;
 	std::string first_temp;
 	std::string second_temp;
+	std::map<std::string, std::string>::iterator it;
 
 	if (!flag)
 	 	return_value = (char **)calloc((m.size() + 2), sizeof(char *));
 	else
 		return_value = (char **)calloc((m.size() + 1), sizeof(char *)); //new로 바꾸기
 	int i = 0;
-	std::map<std::string, std::string>::iterator it;
 	for (it = m.begin(); it != m.end(); it++)
 	{
 		if (flag)
@@ -429,12 +419,12 @@ void		ClientControl::saveFile(void)
 		if(extension != "jpg" && extension != "png" && extension != "jpeg"
 			&& extension != "gif" && extension != "txt")
 			continue ;
-		//php수정해야함. 만약 올리는 5개중 1개가 해당하는 확장자가 아니면 php에서 어떤파일이 이상한지 띄워줄것
+		// php수정해야함. 만약 올리는 5개중 1개가 해당하는 확장자가 아니면 php에서 어떤파일이 이상한지 띄워줄것
 		// 확장자가 txt인지 png인지 검사해야함
 		// 파일 체크 우선
 
 
-		file.open("/Users/junghan/Desktop/DreamXWebserv/webserv/save/" + multipart[idx].file_name, std::ios::out);//바꿔
+		file.open("/Users/daekim/subject/cadet/DreamXWebserv/webserv/save/" + multipart[idx].file_name, std::ios::out);//바꿔
 		file << multipart[idx].data;
 		file.close();
 	//	if (file.fail())
@@ -516,16 +506,10 @@ int ClientControl::findIndex(string uri)
 	return (-1);
 }
 
-// string checkIndex(Iterator it, ServerBlock sb)
-// {
-
-// }
-
 int ClientControl::checkUri(string result)
 {
 	string directory;
 	string file;
-	//string location_uri;
 	string tmp;
 	string request_uri;
 	vector<LocationBlock>::iterator it;
@@ -534,10 +518,6 @@ int ClientControl::checkUri(string result)
 	result = "";
 	request_uri = getRequest().uri;
 
-//1. 점이 있는지 확인
-//2. 있으면 첫 / 부터 다음 / 까지
-//3. 없으면 첫 /부터 다음 / 까지 혹은 NULL까지
-//doyun - directory vector로 해서 /기준으로 끊어 담자 그렇게 해서 0번쨰 인덱스로 location block 찾고 혹시 하위에 추가적 경로가 붙더라도 인덱스로 찾아갈 수 있도록!
 	tmp = request_uri;
 	tmp.erase(0, 1);
 	if (tmp.find('/') == string::npos)
@@ -562,31 +542,10 @@ int ClientControl::checkUri(string result)
 			file = "";
 	}
 
-	// file = request_uri.substr(request_uri.find_last_of('/') + 1); 
-
-	// if (file.size() != 0 && file.find('.') == string::npos)
-	// {
-	// 	directory = "/" + file;
-	// 	file = "";
-	// }
-	// else
-	// {
-	// 	if (file.size() == 0)
-	// 	{
-	// 		if (request_uri.size() == 1)
-	// 			directory = request_uri;
-	// 		else
-	// 			directory = request_uri.substr(0, request_uri.size() - 1);
-	// 	}
-	// 	else
-	// 		directory = request_uri.substr(0, request_uri.find_last_of('/'));
-	// }
-
 	if (file == "") //디렉토리로 들어온 경우
 	{
 		for (it = temp.begin(); it != temp.end(); it++)
 		{
-			//directory == it->getMatch()
 			if (directory.compare(it->getMatch()) == 0)
 			{
 				if (it->getLimitExcept().size() > 0)
@@ -596,7 +555,6 @@ int ClientControl::checkUri(string result)
 							break;
 					if (i == static_cast<int>(it->getLimitExcept().size()))
 					{
-						//cout << "here1 -------------------\n";
 						setStateFlag("405");
 						setStateStr("Method Not Allowed");
 						return (-1);
@@ -609,7 +567,6 @@ int ClientControl::checkUri(string result)
 							break;
 					if (i == static_cast<int>(getHttpBlock().getLimitExcept().size()))
 					{
-						//cout << "here2 -------------------\n";
 						setStateFlag("405");
 						setStateStr("Method Not Allowed");
 						return (-1);
@@ -674,7 +631,6 @@ int ClientControl::checkUri(string result)
 							break;
 					if (i == static_cast<int>(it->getLimitExcept().size()))
 					{
-						//cout << "here3 -------------------\n";
 						setStateFlag("405");
 						setStateStr("Method Not Allowed");
 						return (-1);
@@ -687,7 +643,6 @@ int ClientControl::checkUri(string result)
 							break;
 					if (i == static_cast<int>(getHttpBlock().getLimitExcept().size()))
 					{
-						//cout << "here4 -------------------\n";
 						setStateFlag("405");
 						setStateStr("Method Not Allowed");
 						return (-1);
@@ -695,12 +650,6 @@ int ClientControl::checkUri(string result)
 				}
 				if (it->getRedirect().size() != 0)
 				{
-					// if (result.find("\r\n\r\n") == string::npos)
-					// {
-					// 	setStateFlag("400");
-					// 	setStateStr("bad request");
-					// 	return (-1);
-					// }
 					if (*(it->getRedirect().begin()) != "")
 					{
 						setStateFlag("301");
@@ -728,9 +677,9 @@ void ClientControl::deleteFile()
 {
 	string root;
 	struct stat st;
-	string path_info = "/Users/junghan/Desktop/DreamXWebserv/webserv/state_pages/delete.html"; //바꿔
+	string path_info = "/Users/daekim/subject/cadet/DreamXWebserv/webserv/state_pages/delete.html"; //바꿔
 
-	root = "/Users/songju/Desktop/DreamXWebserv/webserv/save" + getRequest().uri;//바꿔
+	root = "/Users/daekim/subject/cadet/DreamXWebserv/webserv/save" + getRequest().uri;//바꿔
 	if (!access(root.c_str(), F_OK)) //directory도 삭제가 되는지 확인해야함
 	{
 		if (!unlink(root.c_str()))
@@ -761,14 +710,7 @@ void		ClientControl::processStatic(string path_info)
 	if (fin.is_open())
 	{
 		setResourceFd(open(path_info.c_str(), O_RDONLY));
-
-		// char c;
-		// while (fin.get(c))
-		// 	body += c;
-		//body = "abce";
 		fin.close();
-		// setStateFlag("200");
-		// setStateStr("OK");
 	}
 	else
 	{		
@@ -781,7 +723,6 @@ void		ClientControl::processStatic(string path_info)
 
 void		ClientControl::processCGI(string path_info)
 {
-	// cout << "in processCGI function 🥵" << endl;
 	pid_t pid;
 	map<string, string> cmd;
 	
@@ -791,11 +732,10 @@ void		ClientControl::processCGI(string path_info)
 	long fdOut = fileno(fout);
 	vector<string>::iterator it;
 
-	//sleep(1);
 	int request_size = 0;
 	if (response.cgi == 1)
 		cmd["php-cgi"] = path_info;
-	else if (response.cgi == 2) /////////////////여기????????????????
+	else if (response.cgi == 2)
 	{
 		for (it = request.body.begin(); it != request.body.end(); it++)
 		{
@@ -818,42 +758,12 @@ void		ClientControl::processCGI(string path_info)
 	{
 		waitpid(pid, NULL, 0);
 		lseek(fdOut, 0, SEEK_SET); //lseek는 파일 디스크립터의 읽기/쓰기 포인터 위치를 변경하는 데 사용되는 시스템 호출입니다
-		// char foo[1024];
-		// int res = 0;
-
-		// memset(foo, 0, sizeof(foo));
 		setResourceFd(fdOut);
 		setFout(fout);
-		// while ((res = read(fdOut, foo, 1023)) > 0)
-		// {
-		// 	foo[res] = 0;
-		// 	body += static_cast<string> (foo);
-		// 	memset(foo, 0, sizeof(foo));
-		// }
-		// if (res == -1)
-		// {
-		// 	fclose(fIn);
-		// 	fclose(fOut);
-		// 	close(fdIn);
-		// 	//close(fdOut);
-		// 	setStateFlag("403");
-		// 	setStateStr("Forbidden");
-		// 	return ;
-		// }
 	}
 	fclose(fIn);
 	close(fdIn);
-	//close(fdOut);
-	// setStateFlag("200");
-	// setStateStr("OK");
-	// string search = "";
-	// if (response.cgi == 1)
-	// 	search = "Content-type: ";
-	// else if (response.cgi == 2)
-	// 	search = "Content-Type: ";
-	// response.ct_type = body.substr(body.find(search) + 14, body.find("\r\n\r\n") - body.find(search) - 14);
-	// body = body.substr(body.find("\r\n\r\n") + 4, body.size() - body.find("\r\n\r\n") - 4);
-	// response.ct_length = body.size(); // 수정 필요??
+
 }
 
 //새로운 시작 made me interesting. like win everything
@@ -877,33 +787,11 @@ void	ClientControl::processChunk()
 			sum += len;
 		}
 		else
-		{
-//			if (request.body[idx].size() != len)
-//				return ;	//받은 hex랑 받은 body랑 길이가 다르다면 에러 표시를 해야됨
 			tmp.push_back(request.body[idx]);
-		}
-//		if (sum > 10000)
-//			return ; //누락되서 0이 없거나, 너무 크기가 크면 에러? 해야할까요
 	}
 	request.ct_length = sum;
 	request.body = tmp;
 }
-
-//새로운 끝
-/*
-**int i = 0;
-**string buf;
-
-**while (body[i] != "0")
-**{
-**	int h;
-	h << hex << body[i];-----------------------------------------------
-**	if (body[++i].size() != h)
-		error;
-	buf << body[i];
-	i++
-**}
-*/
 
 string ClientControl::check_is_file()
 {
@@ -944,7 +832,6 @@ void	ClientControl::processMethod()
 		deleteFile();
 		return ;
 	}
-
 	if (checkAutoIndex()) //
 		return ;
 	
@@ -962,17 +849,12 @@ void	ClientControl::processMethod()
 		response.ct_length = st.st_size;
 
 		if (response.cgi != 1) //static이거나 , 확장자가 ".bla"여서 cgi의 값이 2일때
-		{
 			processStatic(path_info);
-		}
 		else  
-		{			
 			processCGI(path_info);
-		}
 	} // get, post cgi function
 	else if (getRequest().method == "POST")
 	{
-		// cout << "----I'm in POST----" << endl;
 		if (request.header["Content-Type"].size() == 2)
 			processMultipart();
 		if (request.header["Transfer-Encoding"][0] == "chunked")
@@ -1004,7 +886,6 @@ void	ClientControl::processMethod()
 	}
 	else if (getRequest().method == "PUT")
 	{
-		// cout << "----I'm in PUT----" << endl;
 		if (request.header["Transfer-Encoding"][0] == "chunked")
 		 	processChunk();
 		if (!response.cgi)
@@ -1018,8 +899,7 @@ void	ClientControl::resetClient(int client_socket, int server_socket, ServerBloc
 {
 	env_set.clear();
 	server_index.clear(); //서버 블록 내 index 절대 경로 담아둠
-	//server_block();
-	//http_block;
+
 	port = "";
 	root = ""; //방금 추가 put & post
 	directory = "";

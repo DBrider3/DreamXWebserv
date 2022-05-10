@@ -5,10 +5,10 @@
 # include "HttpBlock.hpp"
 # include "ServerBlock.hpp"
 
-// # define PHPCGI "/Users/daekim/subject/cadet/DreamXWebserv/webserv/tester/php-cgi"//바꿔
-// # define CGITESTER "/Users/daekim/subject/cadet/DreamXWebserv/webserv/tester/cgi_tester"
- # define PHPCGI "/Users/junghan/Desktop/DreamXWebserv/webserv/tester/php-cgi"
- # define CGITESTER "/Users/junghan/Desktop/DreamXWebserv/webserv/tester/cgi_tester"
+# define PHPCGI "/Users/daekim/subject/cadet/DreamXWebserv/webserv/tester/php-cgi"//바꿔
+# define CGITESTER "/Users/daekim/subject/cadet/DreamXWebserv/webserv/tester/cgi_tester"
+//  # define PHPCGI "/Users/junghan/Desktop/DreamXWebserv/webserv/tester/php-cgi"
+//  # define CGITESTER "/Users/junghan/Desktop/DreamXWebserv/webserv/tester/cgi_tester"
 //# define PHPCGI "/Users/songju/Desktop/DreamXWebserv/webserv/tester/php-cgi"
 //# define CGITESTER "/Users/songju/Desktop/DreamXWebserv/webserv/tester/cgi_tester"
 //  # define PHPCGI "/Users/dcho/Born2Code/DreamXWebserv/webserv/tester/php-cgi"
@@ -17,7 +17,7 @@
 # define NOBODY_FMT "HTTP/1.1 %s %s\r\nContent-Length: %d\r\nContent-Type: %s"  //또 뭐넣어야함?
 # define RESPONSE_FMT "HTTP/1.1 %s %s\r\nContent-Length: %d\r\nContent-Type: %s\r\n\r\n%s"//이거 넣으면 헤더로 올라감
 # define REDIRECT_FMT "HTTP/1.1 %s %s\r\nLocation: %s"
-# define CHUNK_FMT "HTTP/1.1 %s %s\r\nTransfer-Encoding: chunked\nContent-Type: %s\r\n\r\n"
+# define CHUNK_FMT "HTTP/1.1 %s %s\r\nTransfer-Encoding: chunked\r\nContent-Type: %s\r\n\r\n"
 # define ERROR_FMT "HTTP/1.1 %s %s"
 
 // # define RESPONSE_FMT "HTTP/1.1 %d %s\nContent-Length: %d\nContent-Type: %s\n\n%s"
@@ -107,25 +107,23 @@ class ClientControl
 		/*
 		** getter part
 		*/
-		string				getServerIndex(void);
-		ServerBlock 		getServerBlock(void);
-		HttpBlock 			getHttpBlock(void);
-		t_request	getRequest(void);
-		t_response	getResponse(void);
-		int		getClientFd(void);
-		int		getServerFd();
-		int		getRead();
-		string	getRoot();
-		int		getClientBodySize();
-		// string	getDirectory();
-		// string	getFile();
+		string&			getServerIndex(void);
+		ServerBlock& 	getServerBlock(void);
+		HttpBlock& 		getHttpBlock(void);
+		t_request&		getRequest(void);
+		t_response&		getResponse(void);
+		int&			getClientFd(void);
+		int&			getServerFd();
+		int&			getRead();
+		string&			getRoot();
+		int&			getClientBodySize();
 
-		string		getMsg();
-		int			getChunk();
-		int			getResourceFd();
-		int			getWrite();
-		FILE*		getFout();
-		int			getEOF();
+		string&			getMsg();
+		int&			getChunk();
+		int&			getResourceFd();
+		int&			getWrite();
+		FILE*			getFout();
+		int&			getEOF();
 		/*
 		** setter part
 		*/
