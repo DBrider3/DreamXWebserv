@@ -19,7 +19,7 @@ int main(int argc, char **argv)
 
 		else if (argc == 2)
 			conf = argv[1];
-		signal(SIGPIPE, handleSigpipe);
+		// signal(SIGPIPE, handleSigpipe);
 		manager.fileOpen(conf);
 		manager.confParsing();
 	}

@@ -656,7 +656,7 @@ void Manager::runServer()
 	int count = 0;
 	int if_count = 0;
 	struct timespec timeout;
-	timeout.tv_sec = 5;
+	timeout.tv_sec = 7;
 	timeout.tv_nsec = 0;
 
 	while (1)
