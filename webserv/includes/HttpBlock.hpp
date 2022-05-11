@@ -23,7 +23,6 @@ class HttpBlock
 		/*
 		** getter part
 		*/
-		// vector<string>			getIndex();
 		vector<string>			getLimitExcept(void);
 		vector<ServerBlock>		getServerBlock(void);
 

@@ -1,6 +1,5 @@
 #include "../includes/Utils.hpp"
 
-
 class ClientControl;
 
 const char* PrintError::what() const throw()

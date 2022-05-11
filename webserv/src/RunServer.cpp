@@ -26,7 +26,11 @@ void ClientControl::sendChunk(void)
 	char*	r_header = new char[response.ct_length + 1024];
 
 	sprintf(r_header, CHUNK_FMT, response.state_flag.c_str(), response.state_str.c_str(), response.ct_type.c_str());
-	write(client_fd, r_header, strlen(r_header));
+	if (write(client_fd, r_header, strlen(r_header)) == -1)
+	{
+		setEOF(DISCONNECTED);
+		return ;
+	}
 	body_size = body.size();
 
 	while (1)
@@ -47,7 +51,11 @@ void ClientControl::sendChunk(void)
 				ss << hex << chunk_size;
 			}
 			chunk_body = ss.str() + "\r\n" + tmp + "\r\n";
-			write (client_fd, chunk_body.c_str(), chunk_body.size());
+			if (write (client_fd, chunk_body.c_str(), chunk_body.size()) == -1)
+			{
+				setEOF(DISCONNECTED);
+				return ;
+			}
 			usleep(10);
 		}
 		if (body.size() - chunk_size * i < chunk_size)
@@ -55,7 +63,11 @@ void ClientControl::sendChunk(void)
 		i++;
 	}
 
-	write (client_fd, "0\r\n\r\n", strlen("0\r\n\r\n"));
+	if (write (client_fd, "0\r\n\r\n", strlen("0\r\n\r\n")) == -1)
+	{
+		setEOF(DISCONNECTED);
+		return ;
+	}
 	delete[] r_header;
 }
 
@@ -64,14 +76,15 @@ void ClientControl::sendNobodyPage(void)
 	char			r_header[1024];
 
 	sprintf(r_header, RESPONSE_FMT, response.state_flag.c_str(), response.state_str.c_str(), response.ct_length, "text/html", "");
-	write(client_fd, r_header, strlen(r_header));
+	if(write(client_fd, r_header, strlen(r_header)) == -1)
+		setEOF(DISCONNECTED);
 }
 
 void ClientControl::sendSuccessPage(void)
 {
 	char*	r_header = new char[response.ct_length + 1024];
 	//chunk
-	
+
 	if (response.state_flag == "204")
 	{
 		sprintf(r_header, RESPONSE_FMT, response.state_flag.c_str(), response.state_str.c_str(), 0, "text/plain", "");
@@ -100,13 +113,18 @@ void ClientControl::sendSuccessPage(void)
 			memset(buf, 0, 100);
 		}
 		close(bodyfd);
+		if (n == -1)
+		{
+			setEOF(DISCONNECTED);
+			return ;
+		}
 		sprintf(r_header, RESPONSE_FMT, response.state_flag.c_str(), response.state_str.c_str(), response.ct_length, "text/html", body.c_str());
 	}
 	else
 		sprintf(r_header, RESPONSE_FMT, response.state_flag.c_str(), response.state_str.c_str(), response.ct_length, response.ct_type.c_str(), body.c_str());
-	write(client_fd, r_header, strlen(r_header));
+	if (write(client_fd, r_header, strlen(r_header)) == -1)
+		setEOF(DISCONNECTED);
 	delete[] r_header;
-
 }
 
 void ClientControl::sendRedirectPage()
@@ -114,7 +132,8 @@ void ClientControl::sendRedirectPage()
 	char			r_header[1024];
 
 	sprintf(r_header, REDIRECT_FMT, getResponse().state_flag.c_str(), getResponse().state_str.c_str(), getResponse().redirect_uri.c_str());
-	write(getClientFd(), r_header, strlen(r_header));
+	if(write(getClientFd(), r_header, strlen(r_header)) == -1 )
+		setEOF(DISCONNECTED);
 }
 
 /*
@@ -160,9 +179,8 @@ vector<string>	ClientControl::parseStartline(string request)
 	size_t			current;
 
 	previous = 0;
-	current = request.find("\r\n"); // \r\n == crlf 
+	current = request.find("\r\n"); // \r\n == crlf
 
-	//current = request.find("\r\n"); // \r\n == crlf 
 	//find 함수는 해당 위치부터 문자열을 찾지 못할 경우 npos를 반환한다.
 	while (current != string::npos)
 	{
@@ -189,7 +207,6 @@ void	ClientControl::parseHeader(vector<string>& result, vector<string>::iterator
 		string key;
 		vector<string> val;
 		string val_tmp;
-		//*it.find(':') == npos ;
 		getline(ss, key, ':');
 		ss.get(); //인덱스 +1 -> 콜론 뒤 공백에서 다음 인덱스로 이동
 		for (int i = 0; getline(ss, val_tmp, ' '); i++)
@@ -202,7 +219,7 @@ void	ClientControl::parseHeader(vector<string>& result, vector<string>::iterator
 			}
 			val.push_back(val_tmp);
 		}
-		header_tmp[key] = val; //multipart 확인예정
+		header_tmp[key] = val;
 		if (key == "Transfer-Encoding" && val.front() == "chunked")
 			setChunk(1);
 	}
@@ -215,13 +232,12 @@ void	ClientControl::parseChunk(string request, vector<string>& result, vector<st
 	size_t						current;
 
 	previous = 0;
-	current = request.find("\r\n"); // \r\n == crlf 
+	current = request.find("\r\n");
 	while (current != string::npos)
 	{
-		// 첫 인자의 위치부터 두번째 인자 길이만큼 substring을 반환
 		string substring = request.substr(previous, current - previous);
 		result.push_back(substring);
-		previous = current + 2; //previous 부터 "\r\n"이 나오는 위치를 찾는다.
+		previous = current + 2;
 		current = request.find("\r\n", previous);
 	}
 
@@ -254,10 +270,9 @@ int		ClientControl::parseUri(void)
 
 void ClientControl::parseRequest(string request)
 {
-	// stringstream ss;
 	vector<string> result; //요청메시지가 한 줄 한 줄 저장되는 변수
 	vector<string>::iterator it;
-	
+
 	setRead(1);
 	if (!getChunk())
 	{
@@ -277,7 +292,7 @@ void ClientControl::parseRequest(string request)
 	* Body 파싱
 	*/
 	if (it == result.end())
-		return ; 
+		return ;
 	while (++it != result.end())
 		setBody(*it);
 	if (getRequest().header["Content-Type"].size() == 2 && getRequest().body.size() == 0)
@@ -319,16 +334,16 @@ void ClientControl::readRequest()
 		buf[n] = 0;
 		msg += static_cast<string> (buf);
 	}
-	if (n == 0) // 구분할지 말지 
+	if (n == 0) // 구분할지 말지
 	{
 		setEOF(DISCONNECTED);
-		disconnectSocket(getClientFd());
+		return ;
 	}
 	if (n < 0)
 	{
 		cout << "read error : " << this->client_fd << endl;
 		setEOF(DISCONNECTED);
-		disconnectSocket(getClientFd());
+		return ;
 	}
 	msg_size = msg.size();
 	if (msg_size > 4 && msg[msg_size - 4] == '\r')
@@ -362,7 +377,7 @@ void	ClientControl::readResource()
 		close(fd);
 		setResourceFd(-1);
 	}
-	else if (res != SIZE - 1) // EOF까지 읽었을 때 res가 SIZE - 1인 경우는 문제가 생길수 있다.
+	else if (res != SIZE - 1)
 	{
 		setStateFlag("200");
 		setStateStr("OK");
@@ -375,7 +390,7 @@ void	ClientControl::readResource()
 				search = "Content-Type: ";
 			response.ct_type = body.substr(body.find(search) + 14, body.find("\r\n\r\n") - body.find(search) - 14);
 			body = body.substr(body.find("\r\n\r\n") + 4, body.size() - body.find("\r\n\r\n") - 4);
-			response.ct_length = body.size(); // 수정 필요??
+			response.ct_length = body.size();
 			fclose(getFout());
 		}
 		close(fd);

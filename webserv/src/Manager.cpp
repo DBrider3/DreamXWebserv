@@ -4,14 +4,17 @@ Manager::Manager()
 {
 
 }
+
 Manager::~Manager()
 {
 
 }
+
 Manager::Manager(const Manager& copy)
 {
 	*this = copy;
 }
+
 Manager& Manager::operator = (const Manager& m)
 {
 	if (this == &m)
@@ -22,10 +25,6 @@ Manager& Manager::operator = (const Manager& m)
 	web_serv.server_socket = m.web_serv.server_socket;
 	return (*this);
 }
-// string Manager::get_buffer(void)
-// {
-// 	return (buffer);
-// }
 
 HttpBlock	Manager::getHttpBlock()
 {
@@ -121,7 +120,7 @@ void	Manager::confParsing(void)
 	}
 }
 
-void 	sendErrorPage(int socket_fd, string state_flag, string state_str)
+int 	sendErrorPage(int socket_fd, string state_flag, string state_str)
 {
 	struct stat		st;
 	string			local_uri;
@@ -133,7 +132,6 @@ void 	sendErrorPage(int socket_fd, string state_flag, string state_str)
 	int				n;
 	stringstream	ss;
 
-	
 	local_uri = "./state_pages/" + state_flag + ".html";
 	stat(local_uri.c_str(), &st);
 	ct_len = st.st_size;
@@ -150,8 +148,12 @@ void 	sendErrorPage(int socket_fd, string state_flag, string state_str)
 		memset(buf, 0, 100);
 	}
 	close(bodyfd);
+	if (n == -1)
+		return (DISCONNECTED);
 	sprintf(r_header, RESPONSE_FMT, state_flag.c_str(), state_str.c_str(), ct_len, "text/html", body.c_str());
-	write(socket_fd, r_header, strlen(r_header));
+	if(write(socket_fd, r_header, strlen(r_header)) == -1)
+		return (DISCONNECTED);
+	return (0);
 }
 
 void disconnectSocket(int socket_fd) //고쳐야함 소멸자불러야함
@@ -159,6 +161,17 @@ void disconnectSocket(int socket_fd) //고쳐야함 소멸자불러야함
 	cout << YELLOW << "🍀🍀🍀🍀🍀disconnected : " << socket_fd << EOC << endl;
 	close(socket_fd);
 }
+
+/*
+ * disconnectSocket 하나의 함수로 합침
+ */
+//void disconnectSocket(vector<ClientControl> &client_control, vector<ClientControl>::iterator &it) //고쳐야함 소멸자불러야함
+//{
+//	cout << YELLOW << "🍀🍀🍀🍀🍀disconnected : " << it->getClientFd() << EOC << endl;
+//	close(it->getClientFd());
+//	it->resetClient(it->getClientFd(), it->getServerFd(), it->getServerBlock());
+//	client_control.erase(it);
+//}
 
 /*
  * 현재 fd가 서버소켓인지 검사하는 함수입니다.
@@ -243,6 +256,7 @@ int Manager::processRead(vector<ClientControl>& client_control, uintptr_t curr_i
 			it->readRequest();
 			if (it->getEOF() == DISCONNECTED)
 			{
+				disconnectSocket(it->getClientFd());
 				client_control.erase(it);
 				return (1);
 			}
@@ -272,7 +286,9 @@ int Manager::processRead(vector<ClientControl>& client_control, uintptr_t curr_i
 void Manager::processWrite(vector<ClientControl>& client_control, uintptr_t curr_id, int& count)
 {
 	vector<ClientControl>::iterator it;
-	
+	int error;
+
+	error = 0;
 	it = findClient(client_control, curr_id);
 	if (it != client_control.end() && it->getWrite() == 1)
 	{
@@ -284,13 +300,19 @@ void Manager::processWrite(vector<ClientControl>& client_control, uintptr_t curr
 				it->sendRedirectPage();
 			else if (it->getResponse().state_flag[0] == '2')
 			{
-				if (it->getResponse().ct_length > 4096)// && it->getResponse().cgi != 2)
+				if (it->getResponse().ct_length > 4096)
 					it->sendChunk();
 				else
 					it->sendSuccessPage();
 			}
 			else
-				sendErrorPage(it->getClientFd(), it->getResponse().state_flag, it->getResponse().state_str);
+				error = sendErrorPage(it->getClientFd(), it->getResponse().state_flag, it->getResponse().state_str);
+			if (it->getEOF() == DISCONNECTED || error == DISCONNECTED)
+			{
+				disconnectSocket(it->getClientFd());
+				client_control.erase(it);
+				return ;
+			}
 		}
 		it->resetClient(it->getClientFd(), it->getServerFd(), it->getServerBlock());
 		cout << BLUE << "count : " << ++count << EOC <<endl;
@@ -340,7 +362,7 @@ void Manager::runServer()
 		change_list.clear();
 		idx = 0;
 		for (int i = 0; i < new_events; ++i)
-		{	
+		{
 			curr_event = &event_list[i];
 			if (curr_event->flags & EV_ERROR)
 				processError(client_control, curr_event->ident, web_serv.server_socket);

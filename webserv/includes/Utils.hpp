@@ -23,7 +23,7 @@
 # include <sys/time.h>
 # include <ctime>
 
-#define _CRT_SECURE_NO_WARNINGS
+# define _CRT_SECURE_NO_WARNINGS 
 
 # define TRUE 1
 # define FALSE 0
@@ -50,9 +50,8 @@ class PrintError : public std::exception
 vector<string>		deleteSemicolon(vector<string> answer);
 vector<string>		split(string input, char delimiter);
 
-int    convStoi(string str);
-vector<string> split(string input, char delimiter);
-
-void exit_with_perror(const string &msg);
+int   				convStoi(string str);
+vector<string> 		split(string input, char delimiter);
+void 				exit_with_perror(const string &msg);
 
 #endif

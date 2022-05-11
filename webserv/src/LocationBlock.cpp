@@ -4,6 +4,7 @@ LocationBlock::LocationBlock(void)
 {
 
 }
+
 LocationBlock::~LocationBlock(void)
 {
 
@@ -13,6 +14,7 @@ LocationBlock::LocationBlock(const LocationBlock& copy)
 {
 	*this = copy;
 }
+
 LocationBlock& LocationBlock::operator = (const LocationBlock& lb)
 {
 	if (this == &lb)
@@ -32,11 +34,6 @@ string				LocationBlock::getMatch(void)
 	return (location_match);
 }
 
-
-//string				LocationBlock::getName(void)
-//{
-
-//}
 string				LocationBlock::getRoot(void)
 {
 	return (root);
@@ -61,10 +58,6 @@ string				LocationBlock::getClientBodySize(void)
 {
 	return (client_body_size);
 }
-//vector<string>		LocationBlock::getErrorPage(void)
-//{
-
-//}
 
 void				LocationBlock::setMatch(string str)
 {
@@ -95,8 +88,3 @@ void				LocationBlock::setClientBodySize(string str)
 {
 	client_body_size = str;
 }
-
-// void				LocationBlock::setErrorPage(string str)
-// {
-// 	error_page.push_back(str);
-// }

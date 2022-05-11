@@ -8,6 +8,7 @@
         "iosfwd": "cpp",
         "memory": "cpp",
         "istream": "cpp",
-        "map": "cpp"
+        "map": "cpp",
+        "ostream": "cpp"
     }
 }

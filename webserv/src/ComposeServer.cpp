@@ -4,13 +4,12 @@
 /*
  * 서버내 포트번호를 컨테이너에 담아주는 작업을 하는 함수입니다.
  */
-
 void Manager::composePort()
 {
 	int port;
 
 	for (size_t i = 0; i < http_block.getServerBlock().size(); i++)
-	{ // HttpBlock 내부에 getter필요
+	{
 		try
 		{
 			port = convStoi((http_block.getServerBlock()[i]).getListen()[0]);
@@ -28,7 +27,6 @@ void Manager::composePort()
 /*
  * 다중 서버에 따른 소켓을 생성해주는 함수입니다.
  */
-
 void Manager::composeSocket()
 {
 	struct sockaddr_in *server_addr = new sockaddr_in[web_serv.ports.size()];
@@ -79,7 +77,6 @@ void Manager::composeSocket()
 /*
  * Serversocket 구성 및 전처리 작업을 하는 함수입니다.
  */
-
 void Manager::composeServer()
 {
 	composePort();

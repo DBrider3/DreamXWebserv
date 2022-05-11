@@ -29,11 +29,6 @@ ServerBlock& ServerBlock::operator = (const ServerBlock& sb)
 	return (*this);
 }
 
-//vector<string>			ServerBlock::getServerName()
-//{
-
-//}
-
 vector<string>			ServerBlock::getListen()
 {
 	return (listen);

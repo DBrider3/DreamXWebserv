@@ -14,17 +14,13 @@
 //  # define PHPCGI "/Users/dcho/Born2Code/DreamXWebserv/webserv/tester/php-cgi"
 //  # define CGITESTER "/Users/dcho/Born2Code/DreamXWebserv/webserv/tester/cgi_tester"
 
-# define NOBODY_FMT "HTTP/1.1 %s %s\r\nContent-Length: %d\r\nContent-Type: %s"  //또 뭐넣어야함?
-# define RESPONSE_FMT "HTTP/1.1 %s %s\r\nContent-Length: %d\r\nContent-Type: %s\r\n\r\n%s"//이거 넣으면 헤더로 올라감
+# define NOBODY_FMT "HTTP/1.1 %s %s\r\nContent-Length: %d\r\nContent-Type: %s"
+# define RESPONSE_FMT "HTTP/1.1 %s %s\r\nContent-Length: %d\r\nContent-Type: %s\r\n\r\n%s"
 # define REDIRECT_FMT "HTTP/1.1 %s %s\r\nLocation: %s"
 # define CHUNK_FMT "HTTP/1.1 %s %s\r\nTransfer-Encoding: chunked\r\nContent-Type: %s\r\n\r\n"
 # define ERROR_FMT "HTTP/1.1 %s %s"
 
-// # define RESPONSE_FMT "HTTP/1.1 %d %s\nContent-Length: %d\nContent-Type: %s\n\n%s"
-
 using namespace std;
-
-//template<int> //vector<int> 형을 return 하려고 하니까 template class 아니라고 에러 떠서 추가함
 
 typedef enum s_IOFlag
 {
@@ -68,7 +64,6 @@ class ClientControl
 		t_response					response;
 		t_request 					request;
 		vector<t_multipart>			multipart;
-		// string						boundary_key;
 
 		map<string, string>			env_set;
 		vector<string>				server_index; //서버 블록 내 index 절대 경로 담아둠
@@ -76,13 +71,13 @@ class ClientControl
 		HttpBlock					http_block;
 		string						body;
 		string						port;
-		string						root; //방금 추가 put & post
+		string						root;
 		string						directory;
 		string						file;
 		int							client_fd;
 		int							server_fd;
 		int							read_flag;
-		int							client_body_size; //추가
+		int							client_body_size;
 		int							resource_fd;
 		int							write_flag;
 		FILE*						fout; //cgi 처리 시, file의 읽기가 종료되는 시점에서 fd를 닫아주기 위해 저장
@@ -99,7 +94,6 @@ class ClientControl
 		*/
 
 		ClientControl();
-		//ClientControl(const t_request req);
 		~ClientControl();
 		ClientControl(const ClientControl& copy);
 		ClientControl& operator = (const ClientControl& cr);
@@ -164,10 +158,6 @@ class ClientControl
 		void			parseHeader(vector<string>& result, vector<string>::iterator& it);
 		void			parseChunk(string request, vector<string>& result, vector<string>::iterator& it);
 		int				parseUri(void);
-		// vector<string>	parseStartline(string request);
-		// void			parseHeader(map<string, vector<string> >& header_tmp, string str);
-		// void			parseChunk(string request, vector<string>& result);
-		// int				parseUri(string request);
 		void			parseRequest(string msg);
 		void			sendRedirectPage(void);
 		int				checkMethod(vector<string> method);

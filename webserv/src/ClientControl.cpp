@@ -1,12 +1,12 @@
 #include "../includes/ClientControl.hpp"
 
-ClientControl::ClientControl() //의문.1 생성자 호출할때 어떻게할겨? ????
+ClientControl::ClientControl()
 {
 	env_set.clear();
 	server_index.clear(); //서버 블록 내 index 절대 경로 담아둠
 
 	port = "";
-	root = ""; //방금 추가 put & post
+	root = "";
 	directory = "";
 	file = "";
 	read_flag = 0;
@@ -29,7 +29,7 @@ ClientControl::ClientControl() //의문.1 생성자 호출할때 어떻게할겨
 	response.state_flag = ""; //현재 작업이 에러 시, 이벤트에 있는 read/write를 소모시키기 위해 플래그를 사용함.
 	response.state_str = ""; //빼야함
 	response.redirect_uri = "";
-	
+
 	request.method = "";
 	request.uri = "";
 	request.query_str = "";
@@ -37,7 +37,7 @@ ClientControl::ClientControl() //의문.1 생성자 호출할때 어떻게할겨
 	request.header.clear();
 	request.body.clear();
 	request.ct_length = 0;
-	
+
 	multipart.clear();
 }
 
@@ -97,7 +97,7 @@ ClientControl& ClientControl::operator = (const ClientControl& m)
 	request.header = m.request.header;
 	request.body = m.request.body;
 	request.ct_length = m.request.ct_length;
-	
+
 	/*
 	** multipart
 	*/
@@ -474,7 +474,7 @@ void		ClientControl::processMultipart(void)
 int	ClientControl::checkAutoIndex() //status 넣어주기
 {
 	string request_uri;
-	
+
 	request_uri = getRequest().uri;
 	if (request_uri == "/" && getServerBlock().getAutoindex() == "on") // autoindex
 	{
@@ -718,7 +718,7 @@ void		ClientControl::processStatic(string path_info)
 		fin.close();
 	}
 	else
-	{		
+	{
 		fin.close();
 		setStateFlag("404");
 		setStateStr("Not found");
@@ -730,7 +730,7 @@ void		ClientControl::processCGI(string path_info)
 {
 	pid_t pid;
 	map<string, string> cmd;
-	
+
 	FILE *fIn = tmpfile();
 	long fdIn = fileno(fIn);
 	FILE *fout = tmpfile();
@@ -744,7 +744,17 @@ void		ClientControl::processCGI(string path_info)
 	{
 		for (it = request.body.begin(); it != request.body.end(); it++)
 		{
-			write(fdIn, it->c_str(), it->size());
+			if(write(fdIn, it->c_str(), it->size()) == -1)
+			{
+				cout << "write error 🚀🚀🚀🚀🚀🚀🚀🚀" << endl;
+				setStateFlag("500"); //???
+				setStateStr("Internal server error");
+				fclose(fIn);
+				close(fdIn);
+				fclose(fout);
+				close(fdOut);
+				return ;
+			}
 			request_size += (int)it->size();
 		}
 		lseek(fdIn, 0, SEEK_SET);
@@ -770,9 +780,6 @@ void		ClientControl::processCGI(string path_info)
 	close(fdIn);
 
 }
-
-//새로운 시작 made me interesting. like win everything
-//오늘따라 하루가 길다
 
 void	ClientControl::processChunk()
 {
@@ -804,11 +811,11 @@ string ClientControl::check_is_file()
 	string		tmp;
 
 	tmp = getRoot() + response.local_uri;
-	fin >> tmp; //이거 tmp를 fin에 넣어야 하는거 아니야?
-	if (fin.is_open() && getRequest().method != "POST") // 수정 어케함?? 내용을 싹 밀어버려?
+	fin >> tmp;
+	if (fin.is_open() && getRequest().method != "POST")
 	{
 		setStateFlag("204");
-		setStateStr("No content"); //200OK도 고려
+		setStateStr("No content");
 	}
 	else
 	{
@@ -837,15 +844,15 @@ void	ClientControl::processMethod()
 		deleteFile();
 		return ;
 	}
-	if (checkAutoIndex()) //
+	if (checkAutoIndex())
 		return ;
-	
-	response.cgi = 0; // ??
+
+	response.cgi = 0;
 	findMime();
 	setEnv();
 
 
-	string path_info = server_block.getRoot() + response.local_uri; // root
+	string path_info = server_block.getRoot() + response.local_uri;
 
 	if (getRequest().method == "GET")
 	{
@@ -855,24 +862,24 @@ void	ClientControl::processMethod()
 
 		if (response.cgi != 1) //static이거나 , 확장자가 ".bla"여서 cgi의 값이 2일때
 			processStatic(path_info);
-		else  
+		else
 			processCGI(path_info);
-	} // get, post cgi function
+	}
 	else if (getRequest().method == "POST")
 	{
 		if (request.header["Content-Type"].size() == 2)
 			processMultipart();
 		if (request.header["Transfer-Encoding"][0] == "chunked")
 		 	processChunk();
-		
+
 		if (getClientBodySize() != -1 && request.ct_length > getClientBodySize())
 		{
 			setStateFlag("413");
 			setStateStr("Payload Too Large");
 			return ;
 		}
-		
-		if (!response.cgi) //파일이나 디렉토리체크 해야하나 ?? 근데 일단 청크처리 먼저 curl기준으로 구현해주고 테스터 돌리면 답이 나오지 않을까여 22
+
+		if (!response.cgi)
 		{
 			string aa;
 
@@ -883,11 +890,6 @@ void	ClientControl::processMethod()
 		}
 		else
 			processCGI(path_info);
-		//헷갈리는 점 
-		//1. fd로 읽을 수 있는 mesage가 순차적으로 들어와서 한번 읽는다고 모든 chunked를 읽을 수 없다. -> chunked가 안끝났으면 디스커넥트 안되게???
-		//2. chunked된 mesage가 들어와서 한번 읽는거로 파싱이 가능하다.
-	
-		
 	}
 	else if (getRequest().method == "PUT")
 	{
@@ -903,10 +905,10 @@ void	ClientControl::processMethod()
 void	ClientControl::resetClient(int client_socket, int server_socket, ServerBlock server_block)
 {
 	env_set.clear();
-	server_index.clear(); //서버 블록 내 index 절대 경로 담아둠
+	server_index.clear();
 
 	port = "";
-	root = ""; //방금 추가 put & post
+	root = "";
 	directory = "";
 	file = "";
 	read_flag = 0;
@@ -929,7 +931,7 @@ void	ClientControl::resetClient(int client_socket, int server_socket, ServerBloc
 	response.state_flag = ""; //현재 작업이 에러 시, 이벤트에 있는 read/write를 소모시키기 위해 플래그를 사용함.
 	response.state_str = ""; //빼야함
 	response.redirect_uri = "";
-	
+
 	request.method = "";
 	request.uri = "";
 	request.query_str = "";
@@ -937,7 +939,7 @@ void	ClientControl::resetClient(int client_socket, int server_socket, ServerBloc
 	request.header.clear();
 	request.body.clear();
 	request.ct_length = 0;
-	
+
 	multipart.clear();
 
 	setServerBlock(server_block);

@@ -28,7 +28,6 @@ class ServerBlock
 		/*
 		** getter part
 		*/
-		//vector<string>			getServerName();
 		vector<string>				getListen(void);
 		string						getClientBodySize(void);
 		string						getRoot(void);
@@ -47,7 +46,6 @@ class ServerBlock
 		void						setAutoindex(string str);
 		void						setErrorPage(string str);
 		int							setLocationBlock(LocationBlock &tmp_location, vector<string> buf, int idx);
-
 };
 
 #endif

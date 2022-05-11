@@ -12,7 +12,6 @@ class LocationBlock
 		vector<string>		index;
 		vector<string>		redirect;
 		vector<string>		limit_except;
-		//vector<string>		error_page;
 
 	public:
 		/*
@@ -32,7 +31,6 @@ class LocationBlock
 		vector<string>			getRedirect(void);
 		vector<string>			getLimitExcept(void);
 		string					getClientBodySize(void);
-		//vector<string>		getErrorPage();
 
 		/*
 		** setter part
@@ -43,7 +41,6 @@ class LocationBlock
 		void					setRedirect(string str);
 		void					setLimitExcept(string str);
 		void					setClientBodySize(string str);
-		//void					setErrorPage(string str);
 };
 
 #endif

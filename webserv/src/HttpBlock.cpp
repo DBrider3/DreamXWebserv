@@ -4,14 +4,17 @@ HttpBlock::HttpBlock()
 {
 
 }
+
 HttpBlock::~HttpBlock()
 {
 
 }
+
 HttpBlock::HttpBlock(const HttpBlock& copy)
 {
 	*this = copy;
 }
+
 HttpBlock& HttpBlock::operator = (const HttpBlock& hb)
 {
 	if (this == &hb)
@@ -21,7 +24,6 @@ HttpBlock& HttpBlock::operator = (const HttpBlock& hb)
 	server_block = hb.server_block;
 	return (*this);
 }
-
 
 void	HttpBlock::setIndex(string str)
 {
@@ -49,7 +51,6 @@ int			HttpBlock::setServerBlock(vector<string> buf, int idx)
 	** buf를 split으로 쪼개어 key값을 비교 후, value들을 tmp_server에 넣어줌
 	** push_back으로 server_block에 넣어줌
 	*/
-
 	ServerBlock tmp_server;
 
 	while (buf[idx] != "\t}")
