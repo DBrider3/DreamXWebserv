@@ -229,9 +229,9 @@ void	ClientControl::parseChunk(string request, vector<string>& result, vector<st
 		;
 }
 
-int		ClientControl::parseUri(string request)
+int		ClientControl::parseUri(void)
 {
-	if (checkUri(request))
+	if (checkUri())
 		return (1);
 	if (getRequest().uri.size() > 8190)
 	{
@@ -271,7 +271,7 @@ void ClientControl::parseRequest(string request)
 	}
 	else if (getChunk() == 1)
 		parseChunk(request, result, it);
-	if (parseUri(request))
+	if (parseUri())
 		return ;
 	/*
 	* Body 파싱
@@ -301,6 +301,7 @@ void	resetBeforeServer(int server_fd, vector<int>& before_server)
 /*
  * curr_fd가 전달하는 내용을 버퍼에 담아주는 함수입니다.
  */
+
 # define SIZE 5000000
 void ClientControl::readRequest()
 {

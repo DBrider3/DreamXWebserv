@@ -163,7 +163,7 @@ class ClientControl
 		vector<string>	parseStartline(string request);
 		void			parseHeader(vector<string>& result, vector<string>::iterator& it);
 		void			parseChunk(string request, vector<string>& result, vector<string>::iterator& it);
-		int				parseUri(string request);
+		int				parseUri(void);
 		// vector<string>	parseStartline(string request);
 		// void			parseHeader(map<string, vector<string> >& header_tmp, string str);
 		// void			parseChunk(string request, vector<string>& result);
@@ -171,7 +171,7 @@ class ClientControl
 		void			parseRequest(string msg);
 		void			sendRedirectPage(void);
 		int				checkMethod(vector<string> method);
-		int				checkUri(string result);
+		int				checkUri(void);
 		int				findIndex(string uri);
 		void			deleteFile(void);
 
@@ -198,6 +198,11 @@ class ClientControl
 
 		void			readResource(void);
 		void			resetClient(int client_socket, int server_socket, ServerBlock server_block);
+
+		// 추가된 부분
+		int				classifyDirUri(string& directory, string& request_uri, vector<LocationBlock>::iterator& it);
+		int				classifyFileUri(string& directory, string& file, string& request_uri, vector<LocationBlock>::iterator& it);
+		int				processLimitExcept(vector<LocationBlock>::iterator& it);
 };
 
 

@@ -506,106 +506,103 @@ int ClientControl::findIndex(string uri)
 	return (-1);
 }
 
-int ClientControl::checkUri(string result)
+void	initUriTarget(string& directory, string& file, string request_uri)
 {
-	string directory;
-	string file;
-	string tmp;
-	string request_uri;
-	vector<LocationBlock>::iterator it;
-	vector<LocationBlock> temp = getServerBlock().getLocationBlock();
-	int	i;
-	result = "";
-	request_uri = getRequest().uri;
-
-	tmp = request_uri;
-	tmp.erase(0, 1);
-	if (tmp.find('/') == string::npos)
+	request_uri.erase(0, 1); // 맨 앞 '/' 잘라 주는 놈
+	if (request_uri.find('/') == string::npos) // 뒤에 디렉토리 형식이 안들어오는 경우    /directory
 	{
-		if (tmp.find('.') != string::npos)
+		if (request_uri.find('.') != string::npos) // 확장자 타입이 명시된 경우   /file.txt
 		{
-			file = tmp;
+			file = request_uri;
 			directory = "/";
 		}
 		else
 		{
-			directory = "/" + tmp;
+			directory = "/" + request_uri; // 확장자 타입이 명시 되지 않아 디렉토리 뒤에 합쳐짐
 			file = "";
 		}
 	}
 	else
 	{
-		directory = "/" + tmp.substr(0, tmp.find('/')); 
-		if (tmp.find('.') != string::npos)
-			file = tmp.substr(tmp.find_last_of('/') + 1);
+		directory = "/" + request_uri.substr(0, request_uri.find('/')); // /directory/
+		if (request_uri.find('.') != string::npos)
+			file = request_uri.substr(request_uri.find_last_of('/') + 1); // 확장자 타입 명시된 경우
 		else
-			file = "";
+			file = ""; // 확장자 타입이 명시되지 않은 경우
 	}
+}
 
-	if (file == "") //디렉토리로 들어온 경우
+int		ClientControl::processLimitExcept(vector<LocationBlock>::iterator& it)
+{
+	size_t	i;
+
+	if (it->getLimitExcept().size() > 0)
 	{
-		for (it = temp.begin(); it != temp.end(); it++)
+		for (i = 0; i != it->getLimitExcept().size() ; i++)
+			if (getRequest().method == it->getLimitExcept()[i])
+				break;
+		if (i == it->getLimitExcept().size())
 		{
-			if (directory.compare(it->getMatch()) == 0)
-			{
-				if (it->getLimitExcept().size() > 0)
-				{
-					for (i = 0; i != static_cast<int>(it->getLimitExcept().size()) ; i++)
-						if (getRequest().method == it->getLimitExcept()[i])
-							break;
-					if (i == static_cast<int>(it->getLimitExcept().size()))
-					{
-						setStateFlag("405");
-						setStateStr("Method Not Allowed");
-						return (-1);
-					}
-				}
-				else
-				{
-					for (i = 0; i != static_cast<int>(getHttpBlock().getLimitExcept().size()) ; i++)
-						if (getRequest().method == getHttpBlock().getLimitExcept()[i])
-							break;
-					if (i == static_cast<int>(getHttpBlock().getLimitExcept().size()))
-					{
-						setStateFlag("405");
-						setStateStr("Method Not Allowed");
-						return (-1);
-					}
-				}
-				if (directory == "/") //인덱스 검사 부분 추가
-				{					
-					if (it->getIndex().size() != 0)
-						setLocalUri("/" + it->getIndex()[0]);// it = location block;
-					else
-						setLocalUri("/" + getServerBlock().getIndex()[0]);
-				}
-				else
-				{
-					if (it->getIndex().size() > 0)
-						setLocalUri(request_uri + "/" + it->getIndex()[0]); //디렉 붙여줌? 
-					else
-						setLocalUri(request_uri);
-				}
-
-				if (it->getRedirect().size() != 0)
-				{
-					if (*(it->getRedirect().begin()) != "")
-					{
-						setStateFlag("301");
-						setStateStr("Moved permanently");
-						setRedirectUri(it->getRedirect().back());
-						return (-1);
-					}
-				}
-				break ;
-			} // for end
+			setStateFlag("405");
+			setStateStr("Method Not Allowed");
+			return (-1);
 		}
-		// ClientBodySize 
-		if (it != temp.end() && !(it->getClientBodySize().empty()))
-			setClientBodySize(it->getClientBodySize());
-		if (it == temp.end())
+	}
+	else
+	{
+		for (i = 0; i != getHttpBlock().getLimitExcept().size() ; i++)
+			if (getRequest().method == getHttpBlock().getLimitExcept()[i])
+				break;
+		if (i == getHttpBlock().getLimitExcept().size())
 		{
-			if (directory == "/") //location으로 찾지못하더랃server의 root내에 있는 경로도 찾아야될거같아요
+			setStateFlag("405");
+			setStateStr("Method Not Allowed");
+			return (-1);
+		}
+	}
+	return (1);
+}
+
+int		ClientControl::classifyDirUri(string& directory, string& request_uri, vector<LocationBlock>::iterator& it)
+{
+	vector<LocationBlock> location_block = getServerBlock().getLocationBlock();
+
+	for (it = location_block.begin(); it != location_block.end(); it++)
+	{
+		if (directory.compare(it->getMatch()) == 0)
+		{
+			if (!(processLimitExcept(it)))
+				return (-1);
+			if (directory == "/") //인덱스 검사 부분 추가
+			{
+				if (it->getIndex().size() != 0)
+					setLocalUri("/" + it->getIndex()[0]);// it = location block;
+				else
+					setLocalUri("/" + getServerBlock().getIndex()[0]);
+			}
+			else
+			{
+				if (it->getIndex().size() > 0)
+					setLocalUri(request_uri + "/" + it->getIndex()[0]); //디렉 붙여줌?
+				else
+					setLocalUri(request_uri);
+			}
+
+			if (it->getRedirect().size() != 0)
+			{
+				if (*(it->getRedirect().begin()) != "")
+				{
+					setStateFlag("301");
+					setStateStr("Moved permanently");
+					setRedirectUri(it->getRedirect().back());
+					return (-1);
+				}
+			}
+			break ;
+		} // for end
+		if (it == location_block.end())
+		{
+			if (directory == "/")
 			{
 				setLocalUri("/" + getServerBlock().getIndex()[0]);
 				return (0);
@@ -615,57 +612,65 @@ int ClientControl::checkUri(string result)
 			return (-1);
 		}
 	}
+	return (1);
+}
+
+int		ClientControl::classifyFileUri(string& directory, string& file, string& request_uri, vector<LocationBlock>::iterator& it)
+{
+	vector<LocationBlock> location_block = getServerBlock().getLocationBlock();
+
+	for (it = location_block.begin(); it != location_block.end(); it++)
+	{
+		if ((directory.compare(it->getMatch()) == 0) \
+			|| (it->getMatch().find_last_of(".") != string::npos \
+			&& file.substr(file.find_last_of(".")) \
+			== it->getMatch().substr(it->getMatch().find_last_of("."))))
+		{
+			if (!(processLimitExcept(it)))
+				return (-1);
+			if (it->getRedirect().size() != 0)
+			{
+				if (*(it->getRedirect().begin()) != "")
+				{
+					setStateFlag("301");
+					setStateStr("Moved permanently");
+					setRedirectUri(it->getRedirect().back());
+					return (-1);
+				}
+			}
+			break ;
+		}
+	}
+	setLocalUri(request_uri);
+	return (1);
+}
+
+int ClientControl::checkUri(void)
+{
+	string	directory;
+	string	file;
+	string	request_uri;
+	int		result;
+	vector<LocationBlock>::iterator it;
+
+
+	request_uri = getRequest().uri;
+	initUriTarget(directory, file, request_uri);
+
+	if (file == "") //디렉토리로 들어온 경우
+	{
+		result = classifyDirUri(directory, request_uri, it);
+		if (result <= 0)
+			return (result);
+	}
 	else //파일로 들어온 경우
 	{
-		for (it = temp.begin(); it != temp.end(); it++)
-		{
-			if ((directory.compare(it->getMatch()) == 0) \
-				|| (it->getMatch().find_last_of(".") != string::npos \
-				&& file.substr(file.find_last_of(".")) \
-				== it->getMatch().substr(it->getMatch().find_last_of("."))))
-			{
-				if (it->getLimitExcept().size() > 0)
-				{
-					for (i = 0; i != static_cast<int>(it->getLimitExcept().size()) ; i++)
-						if (getRequest().method == it->getLimitExcept()[i])
-							break;
-					if (i == static_cast<int>(it->getLimitExcept().size()))
-					{
-						setStateFlag("405");
-						setStateStr("Method Not Allowed");
-						return (-1);
-					}
-				}
-				else
-				{
-					for (i = 0; i != static_cast<int>(getHttpBlock().getLimitExcept().size()) ; i++)
-						if (getRequest().method == getHttpBlock().getLimitExcept()[i])
-							break;
-					if (i == static_cast<int>(getHttpBlock().getLimitExcept().size()))
-					{
-						setStateFlag("405");
-						setStateStr("Method Not Allowed");
-						return (-1);
-					}
-				}
-				if (it->getRedirect().size() != 0)
-				{
-					if (*(it->getRedirect().begin()) != "")
-					{
-						setStateFlag("301");
-						setStateStr("Moved permanently");
-						setRedirectUri(it->getRedirect().back());
-						return (-1);
-					}
-				}
-				break ;
-			}
-		}
-		// ClientBodySize 
-		if (it != temp.end() && !(it->getClientBodySize().empty()))
-			setClientBodySize(it->getClientBodySize());
-		setLocalUri(request_uri);
+		result = classifyFileUri(directory, file, request_uri, it);
+		if (result < 0)
+			return (result);
 	}
+	if (it != getServerBlock().getLocationBlock().end() && !(it->getClientBodySize().empty()))
+		setClientBodySize(it->getClientBodySize());
 	if (it->getRoot().size() > 0)
 		setRoot(it->getRoot());
 	else
