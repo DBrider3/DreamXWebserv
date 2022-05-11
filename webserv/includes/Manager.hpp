@@ -1,7 +1,6 @@
 #ifndef MANAGER_HPP
 # define MANAGER_HPP
 
-# include "HttpBlock.hpp"
 # include "Utils.hpp"
 # include "ClientControl.hpp"
 
@@ -53,8 +52,25 @@ class Manager
 		void	composeSocket(void);
 		void 	runServer(void);
 
+		/*
+		** process part
+		*/
+		void	processError(vector<ClientControl>& client_control, uintptr_t curr_id, vector<int> server_sockets);
+		int		processRead(vector<ClientControl>& client_control, uintptr_t curr_id, vector<int> server_sockets, vector<struct kevent>& change_list);
+		void	processWrite(vector<ClientControl>& client_control, uintptr_t curr_id, int& count);
+
+
+
+
 //		t_request rmsg;
 		void 	check_msg(t_request rmsg);
 };
+
+		void	disconnectSocket(int socket_fd); //고쳐야함 소멸자불러야함
+		int 	checkSocket(int curr_fd, vector<int> server_socket);
+		void 	changeEvents(vector<struct kevent>& change_list, uintptr_t ident, int16_t filter,
+							uint16_t flags, uint32_t fflags, intptr_t data, void *udata);
+		void 	sendErrorPage(int socket_fd, string state_flag, string state_str);
+		vector<ClientControl>::iterator findClient(vector<ClientControl> &client_control, int curr_fd);
 
 #endif

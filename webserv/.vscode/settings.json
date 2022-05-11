@@ -6,6 +6,8 @@
         "new": "cpp",
         "string": "cpp",
         "iosfwd": "cpp",
-        "memory": "cpp"
+        "memory": "cpp",
+        "istream": "cpp",
+        "map": "cpp"
     }
 }
