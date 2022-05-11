@@ -5,14 +5,14 @@
 # include "HttpBlock.hpp"
 # include "ServerBlock.hpp"
 
-# define PHPCGI "/Users/daekim/subject/cadet/DreamXWebserv/webserv/tester/php-cgi"//바꿔
-# define CGITESTER "/Users/daekim/subject/cadet/DreamXWebserv/webserv/tester/cgi_tester"
+//# define PHPCGI "/Users/daekim/subject/cadet/DreamXWebserv/webserv/tester/php-cgi"//바꿔
+//# define CGITESTER "/Users/daekim/subject/cadet/DreamXWebserv/webserv/tester/cgi_tester"
 //   # define PHPCGI "/Users/junghan/Desktop/DreamXWebserv/webserv/tester/php-cgi"
 //   # define CGITESTER "/Users/junghan/Desktop/DreamXWebserv/webserv/tester/cgi_tester"
 //# define PHPCGI "/Users/songju/Desktop/DreamXWebserv/webserv/tester/php-cgi"
 //# define CGITESTER "/Users/songju/Desktop/DreamXWebserv/webserv/tester/cgi_tester"
-//  # define PHPCGI "/Users/dcho/Born2Code/DreamXWebserv/webserv/tester/php-cgi"
-//  # define CGITESTER "/Users/dcho/Born2Code/DreamXWebserv/webserv/tester/cgi_tester"
+  # define PHPCGI "/Users/dcho/DreamXWebserv/webserv/tester/php-cgi"
+  # define CGITESTER "/Users/dcho/DreamXWebserv/webserv/tester/cgi_tester"
 
 # define NOBODY_FMT "HTTP/1.1 %s %s\r\nContent-Length: %d\r\nContent-Type: %s"
 # define RESPONSE_FMT "HTTP/1.1 %s %s\r\nContent-Length: %d\r\nContent-Type: %s\r\n\r\n%s"
@@ -190,8 +190,8 @@ class ClientControl
 		void			resetClient(int client_socket, int server_socket, ServerBlock server_block);
 
 		// 추가된 부분
-		int				classifyDirUri(string& directory, string& request_uri, vector<LocationBlock>::iterator& it);
-		int				classifyFileUri(string& directory, string& file, string& request_uri, vector<LocationBlock>::iterator& it);
+		int				classifyDirUri(string& directory, string& request_uri, vector<LocationBlock>::iterator& it, vector<LocationBlock>& location_block);
+		int				classifyFileUri(string& directory, string& file, string& request_uri, vector<LocationBlock>::iterator& it, vector<LocationBlock>& location_block);
 		int				processLimitExcept(vector<LocationBlock>::iterator& it);
 };
 

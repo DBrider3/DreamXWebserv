@@ -1,79 +1,21 @@
 http {
 	index something;
-	limit_except GET POST DELETE;
+	limit_except GET;
 
 	server {
 		server_name localhost default_server;
 		listen 8082;
-		client_body_size 44040192;
-		root /Users/dcho/Born2Code/DreamXWebserv/webserv/state_pages;
+		#client_body_size 44040192;
+		root /Users/dcho/DreamXWebserv/webserv/state_pages;
 		#바꿔
 		error_page 404 /404.html;
 		index index.html test.html error.html;
-		autoindex on;
+		autoindex off;
 
-		location = /info {
-			index index.html
-			# return 301 dcho;
-		}
-
-		location = /form-upload.php {
-			root /Users/dcho/Born2Code/DreamXWebserv/webserv/state_pages;
-			index /form-upload.php;
-		}
-
-		location = /upload.php {
-			root /Users/dcho/Born2Code/DreamXWebserv/webserv/state_pages;
-			index /upload.php;
-		}
-
-		location = /form-action.php {
-			root /Users/dcho/Born2Code/DreamXWebserv/webserv/state_pages;
-			index form-action.php;
-		}
-
-		location = /error.php {
-			root /Users/dcho/Born2Code/DreamXWebserv/webserv/state_pages;
-			index error.php;
-		}
-
-		location = /up.php {
-			root /Users/dcho/Born2Code/DreamXWebserv/webserv/state_pages;
-			index up.php;
+		location / {
+			root /Users/dcho/DreamXWebserv/webserv/eval;
+			index index.html;
 		}
 	}
-
-	server {
-		server_name page2.com;
-		listen 8083;
-		client_body_size 44040192;
-		root /Users/dcho/Born2Code/DreamXWebserv/webserv/state_pages;
-		index index.html test.html error.html;
-		error_page 404 /404.html;
-		autoindex on;
-
-		location = /example {
-			#location block 안에 무슨 디렉티브가 오는지 정하자!
-			root /Users/dcho/Born2Code/DreamXWebserv/webserv/state_pages;
-			index value1.html;
-			return 301 http://page1.com;
-		}
-	}
-
-	// server {
-	// 	server_name page1.com;
-	// 	listen 8081;
-	// 	client_body_size 42m;
-	// 	root /;
-	// 	index index.html test.html error.html;
-	// 	error_page 404 /404.html;
-	// 	autoindex on;
-
-	// 	location = /uri {
-	// 		#location block 안에 무슨 디렉티브가 오는지 정하자!
-	// 		root value;
-	// 		index value;
-	// 		return 301 http://uri;
-	// 	}
-	// }
 }
+

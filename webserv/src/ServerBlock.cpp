@@ -120,7 +120,7 @@ int					ServerBlock::setLocationBlock(LocationBlock &tmp_location, vector<string
 		else if (tmp[0] == "\t\t\tlimit_except")
 		{
 			for (size_t i = 1; i < tmp.size(); i++)
-				tmp_location.setLimitExcept(tmp[i]);				
+				tmp_location.setLimitExcept(tmp[i]);
 		}
 		else if (tmp[0] == "\t\t\tclient_body_size")
 		{
