@@ -76,35 +76,26 @@ void ClientControl::sendChunk(void)
 	write(client_fd, r_header, strlen(r_header));
 	body_size = body.size();
 
-	chunk_body = "";
-	tmp = "";
 	while (1)
 	{
 		stringstream ss;
 		size_t chunk_size;
-		chunk_size = 150;
+		chunk_size = 4096;
 		if (body.size() - chunk_size * i != 0)
 		{
 			if (body.size() - chunk_size * i < chunk_size)
 			{
 				tmp = body.substr(chunk_size * i, body.size() - chunk_size * i); //포인터 넘겨서 어찌저찌 하면 속도 엄청 올라간데요
-			/*	tmp = "";
-				for (size_t j = 0; j < (body_size - chunk_size * i); j++)
-					tmp.insert(j, 1, body[chunk_size * i + j]);*/
 				ss << hex << tmp.size();
 			}
-			else //
+			else
 			{
 				tmp = body.substr(chunk_size * i, chunk_size);
-			/*	tmp = "";
-				for (size_t j = 0; j < chunk_size; j++)
-					tmp.insert(j, 1, body[chunk_size * i + j]);*/
 				ss << hex << chunk_size;
 			}
 			chunk_body = ss.str() + "\r\n" + tmp + "\r\n";
 			write (client_fd, chunk_body.c_str(), chunk_body.size());
-			chunk_body = "";
-			tmp = "";
+			usleep(10);
 		}
 		if (body.size() - chunk_size * i < chunk_size)
 			break ;
@@ -143,7 +134,6 @@ void ClientControl::sendChunk(void)
 	// }
 
 	write (client_fd, "0\r\n\r\n", strlen("0\r\n\r\n"));
-
 	delete[] r_header;
 }
 
@@ -628,7 +618,7 @@ void Manager::runServer()
 							it->sendRedirectPage();
 						else if (it->getResponse().state_flag[0] == '2')
 						{
-							if (it->getResponse().ct_length > 10000)// && it->getResponse().cgi != 2)
+							if (it->getResponse().ct_length > 4096)// && it->getResponse().cgi != 2)
 								it->sendChunk();
 							else
 								it->sendSuccessPage();
