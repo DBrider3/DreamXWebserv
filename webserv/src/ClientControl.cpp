@@ -424,7 +424,7 @@ void		ClientControl::saveFile(void)
 		// 파일 체크 우선
 
 
-		file.open("/Users/songju/Desktop/DreamXWebserv/webserv/save/" + multipart[idx].file_name, std::ios::out);//바꿔
+		file.open("/Users/daekim/subject/cadet/DreamXWebserv/webserv/save/" + multipart[idx].file_name, std::ios::out);//바꿔
 		file << multipart[idx].data;
 		file.close();
 	//	if (file.fail())
@@ -659,16 +659,19 @@ int ClientControl::checkUri(void)
 
 	if (file == "") //디렉토리로 들어온 경우
 	{
+		cout << "direc\n"; 
 		result = classifyDirUri(directory, request_uri, it, location_block);
 		if (result <= 0)
 			return (result);
 	}
 	else //파일로 들어온 경우
 	{
+		cout << "file\n";
 		result = classifyFileUri(file, request_uri, it, location_block);
 		if (result < 0)
 			return (result);
 	}
+	
 	if (it != getServerBlock().getLocationBlock().end() && !(it->getClientBodySize().empty()))
 		setClientBodySize(it->getClientBodySize());
 	if (it->getRoot().size() > 0)
@@ -682,9 +685,9 @@ void ClientControl::deleteFile()
 {
 	string root;
 	struct stat st;
-	string path_info = "/Users/songju/Desktop/DreamXWebserv/webserv/state_pages/delete.html"; //바꿔
+	string path_info = "/Users/daekim/subject/cadet/DreamXWebserv/webserv/state_pages/delete.html"; //바꿔
 
-	root = "/Users/songju/Desktop/DreamXWebserv/webserv/save" + getRequest().uri;//바꿔
+	root = "/Users/daekim/subject/cadet/DreamXWebserv/webserv/save" + getRequest().uri;//바꿔
 	if (!access(root.c_str(), F_OK)) //directory도 삭제가 되는지 확인해야함
 	{
 		if (!unlink(root.c_str()))

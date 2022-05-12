@@ -5,12 +5,12 @@
 # include "HttpBlock.hpp"
 # include "ServerBlock.hpp"
 
-//# define PHPCGI "/Users/daekim/subject/cadet/DreamXWebserv/webserv/tester/php-cgi"//바꿔
-//# define CGITESTER "/Users/daekim/subject/cadet/DreamXWebserv/webserv/tester/cgi_tester"
+# define PHPCGI "/Users/daekim/subject/cadet/DreamXWebserv/webserv/tester/php-cgi"//바꿔
+# define CGITESTER "/Users/daekim/subject/cadet/DreamXWebserv/webserv/tester/cgi_tester"
 //   # define PHPCGI "/Users/junghan/Desktop/DreamXWebserv/webserv/tester/php-cgi"
 //   # define CGITESTER "/Users/junghan/Desktop/DreamXWebserv/webserv/tester/cgi_tester"
-# define PHPCGI "/Users/songju/Desktop/DreamXWebserv/webserv/tester/php-cgi"
-# define CGITESTER "/Users/songju/Desktop/DreamXWebserv/webserv/tester/cgi_tester"
+// # define PHPCGI "/Users/songju/Desktop/DreamXWebserv/webserv/tester/php-cgi"
+// # define CGITESTER "/Users/songju/Desktop/DreamXWebserv/webserv/tester/cgi_tester"
 //   # define PHPCGI "/Users/dcho/DreamXWebserv/webserv/tester/php-cgi"
 //   # define CGITESTER "/Users/dcho/DreamXWebserv/webserv/tester/cgi_tester"
 

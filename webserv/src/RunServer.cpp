@@ -211,7 +211,9 @@ int		ClientControl::checkHost(string host)
 int		ClientControl::parseHeader(vector<string>& result, vector<string>::iterator& it)
 {
 	map<string, vector<string> >	header_tmp;
+	size_t							len;
 
+	len = 0;
 	for (it = result.begin() + 1; it != result.end() && it->size() > 0; it++) //수정함
 	{
 		stringstream ss(*it);
@@ -237,9 +239,15 @@ int		ClientControl::parseHeader(vector<string>& result, vector<string>::iterator
 		if (key == "Host")
 		{
 			if (checkHost(val.front()))
+			{
+				cout << "checkHost\n";
 				return (1);
+			}
 		}
 	}
+	if (len != 0 && result.back().size() == len && header_tmp["Content-Length"].front() != "0")
+		if (result.back()[len - 1] != '\n' && result.back()[len - 2] != '\r') // content_lenth로 비교하는 이유는 chunked는 content_lenth값이 들어오지 않기 때문에 chunked와 구별지어 적용시킬 수 있음 
+			result.back() += "\r\n\r\n";
 	setHeader(header_tmp);
 	return (0);
 }
@@ -302,7 +310,7 @@ void ClientControl::parseRequest(string request)
 			return ;
 		}
 	}
-	if (getChunk() == 1 && request.rfind("0\r\n\r\n") == string::npos)
+	if (getChunk() == 1 && request.compare((request.size() - 5), 5, "0\r\n\r\n"))
 	{
 		setRead(0);
  		return ;
@@ -347,8 +355,6 @@ void ClientControl::readRequest()
 	** read data from client
 	*/
 	char buf[SIZE];
-	size_t pos;
-	size_t msg_size;
 	int n;
 
 	n = 0;
@@ -368,13 +374,13 @@ void ClientControl::readRequest()
 		setEOF(DISCONNECTED);
 		return ;
 	}
-	msg_size = msg.size();
-	if (msg_size > 4 && msg[msg_size - 4] == '\r')
+	if (!getChunk())
 	{
-		pos = msg.rfind("\r\n\r\n");
- 		if (pos != string::npos && pos + 4 == msg_size)
+		if (msg.find("\r\n\r\n") != string::npos)
 			parseRequest(msg);
 	}
+	else
+		parseRequest(msg);
 	cout << msg << endl;
 }
 
