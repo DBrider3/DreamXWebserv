@@ -6,14 +6,14 @@ http {
 		server_name localhost default_server;
 		listen 8082;
 		#client_body_size 44040192;
-		root /Users/dcho/DreamXWebserv/webserv/state_pages;
+		root /Users/dcho/Born2Code/DreamXWebserv/webserv/state_pages;
 		#바꿔
 		error_page 404 /404.html;
 		index index.html test.html error.html;
 		autoindex off;
 
 		location / {
-			root /Users/dcho/DreamXWebserv/webserv/eval;
+			root /Users/dcho/Born2Code/DreamXWebserv/webserv/eval;
 			index index.html;
 		}
 	}

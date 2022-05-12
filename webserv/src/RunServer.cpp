@@ -352,7 +352,7 @@ void ClientControl::readRequest()
  		if (pos != string::npos && pos + 4 == msg_size)
 			parseRequest(msg);
 	}
-	cout << msg;
+	// cout << msg;
 }
 
 /*

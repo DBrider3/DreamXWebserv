@@ -9,8 +9,8 @@
 //# define CGITESTER "/Users/daekim/subject/cadet/DreamXWebserv/webserv/tester/cgi_tester"
 //   # define PHPCGI "/Users/junghan/Desktop/DreamXWebserv/webserv/tester/php-cgi"
 //   # define CGITESTER "/Users/junghan/Desktop/DreamXWebserv/webserv/tester/cgi_tester"
-# define PHPCGI "/Users/songju/Desktop/DreamXWebserv/webserv/tester/php-cgi"
-# define CGITESTER "/Users/songju/Desktop/DreamXWebserv/webserv/tester/cgi_tester"
+# define PHPCGI "/Users/dcho/Born2Code/DreamXWebserv/webserv/tester/php-cgi"
+# define CGITESTER "/Users/dcho/Born2Code/DreamXWebserv/webserv/tester/cgi_tester"
 //   # define PHPCGI "/Users/dcho/DreamXWebserv/webserv/tester/php-cgi"
 //   # define CGITESTER "/Users/dcho/DreamXWebserv/webserv/tester/cgi_tester"
 
