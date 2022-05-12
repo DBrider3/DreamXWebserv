@@ -252,6 +252,7 @@ void		ClientControl::setBody(string str)
 
 void		ClientControl::setLocalUri(string str)
 {
+	cout << "ClientControl::setLocalUri" << str << endl;
 	response.local_uri = str;
 }
 
@@ -314,6 +315,7 @@ void		ClientControl::findMime(void)
 {
 	size_t idx;
 	string ext = "";
+	cout << "ClientControl::findMime : " << response.local_uri << endl;
 	idx = response.local_uri.find_last_of(".");
 	if (idx == string::npos)
 	{
@@ -424,7 +426,7 @@ void		ClientControl::saveFile(void)
 		// 파일 체크 우선
 
 
-		file.open("/Users/dcho/DreamXWebserv/webserv/save/" + multipart[idx].file_name, std::ios::out);//바꿔
+		file.open("Users/songju/Desktop/DreamXWebserv/webserv/save/" + multipart[idx].file_name, std::ios::out);//바꿔
 		file << multipart[idx].data;
 		file.close();
 	//	if (file.fail())
@@ -585,7 +587,6 @@ int		ClientControl::classifyDirUri(string& directory, string& request_uri, vecto
 				else
 					setLocalUri(request_uri);
 			}
-
 			if (it->getRedirect().size() != 0)
 			{
 				if (*(it->getRedirect().begin()) != "")
@@ -679,9 +680,9 @@ void ClientControl::deleteFile()
 {
 	string root;
 	struct stat st;
-	string path_info = "/Users/dcho/DreamXWebserv/webserv/state_pages/delete.html"; //바꿔
+	string path_info = "Users/songju/Desktop/DreamXWebserv/webserv/state_pages/delete.html"; //바꿔
 
-	root = "/Users/dcho/DreamXWebserv/webserv/save" + getRequest().uri;//바꿔
+	root = "Users/songju/Desktop/DreamXWebserv/webserv/save" + getRequest().uri;//바꿔
 	if (!access(root.c_str(), F_OK)) //directory도 삭제가 되는지 확인해야함
 	{
 		if (!unlink(root.c_str()))
@@ -850,13 +851,13 @@ void	ClientControl::processMethod()
 
 
 	string path_info = server_block.getRoot() + response.local_uri;
-
+	cout << "root : " << root << " local_uri : " << response.local_uri << endl;
 	if (getRequest().method == "GET")
 	{
 		struct stat st;
 		stat((path_info).c_str(), &st);
 		response.ct_length = st.st_size;
-
+		cout << "path_info : " << path_info << endl;
 		if (response.cgi != 1) //static이거나 , 확장자가 ".bla"여서 cgi의 값이 2일때
 			processStatic(path_info);
 		else

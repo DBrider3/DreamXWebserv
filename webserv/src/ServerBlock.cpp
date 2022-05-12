@@ -124,8 +124,7 @@ int					ServerBlock::setLocationBlock(LocationBlock &tmp_location, vector<string
 		}
 		else if (tmp[0] == "\t\t\tclient_body_size")
 		{
-			for (size_t i = 1; i < tmp.size(); i++)
-				tmp_location.setClientBodySize(tmp[i]);
+			tmp_location.setClientBodySize(tmp[1]);
 		}
 //		else if (tmp[0] == "\t\t\terror_page")
 //		{

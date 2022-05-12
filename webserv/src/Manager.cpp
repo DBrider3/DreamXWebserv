@@ -268,7 +268,9 @@ int Manager::processRead(vector<ClientControl>& client_control, uintptr_t curr_i
 		}
 		if (it->getRead() == REQUEST_COMPLETE) //file 읽을 때
 		{
-			if (it->getResourceFd() == -1)//method 파악
+			if (!(it->getResponse().state_flag.empty()))
+				it->setWrite(1);
+			else if (it->getResourceFd() == -1)//method 파악
 			{
 				it->processMethod();
 				if (it->getResourceFd() != -1)
