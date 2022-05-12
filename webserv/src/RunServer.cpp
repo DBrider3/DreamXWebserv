@@ -196,7 +196,19 @@ vector<string>	ClientControl::parseStartline(string request)
 	return (result);
 }
 
-void	ClientControl::parseHeader(vector<string>& result, vector<string>::iterator& it)
+int		ClientControl::checkHost(string host)
+{
+	vector<string> server_name = getServerBlock().getServerName();
+	vector<string>::iterator it;
+	for (it = server_name.begin(); it != server_name.end(); it++)
+	{
+		if (*it == host)
+			return (0);
+	}
+	return (1);
+}
+
+int		ClientControl::parseHeader(vector<string>& result, vector<string>::iterator& it)
 {
 	map<string, vector<string> >	header_tmp;
 
@@ -222,8 +234,14 @@ void	ClientControl::parseHeader(vector<string>& result, vector<string>::iterator
 		header_tmp[key] = val;
 		if (key == "Transfer-Encoding" && val.front() == "chunked")
 			setChunk(1);
+		if (key == "Host")
+		{
+			if (checkHost(val.front()))
+				return (1);
+		}
 	}
 	setHeader(header_tmp);
+	return (0);
 }
 
 void	ClientControl::parseChunk(string request, vector<string>& result, vector<string>::iterator& it)
@@ -277,7 +295,12 @@ void ClientControl::parseRequest(string request)
 	if (!getChunk())
 	{
 		result = parseStartline(request);
-		parseHeader(result, it);
+		if (parseHeader(result, it))
+		{
+			setStateFlag("404");
+			setStateStr("Not found");
+			return ;
+		}
 	}
 	if (getChunk() == 1 && request.rfind("0\r\n\r\n") == string::npos)
 	{
@@ -352,7 +375,7 @@ void ClientControl::readRequest()
  		if (pos != string::npos && pos + 4 == msg_size)
 			parseRequest(msg);
 	}
-	// cout << msg;
+	cout << msg << endl;
 }
 
 /*

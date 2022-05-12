@@ -9,8 +9,8 @@
 //# define CGITESTER "/Users/daekim/subject/cadet/DreamXWebserv/webserv/tester/cgi_tester"
 //   # define PHPCGI "/Users/junghan/Desktop/DreamXWebserv/webserv/tester/php-cgi"
 //   # define CGITESTER "/Users/junghan/Desktop/DreamXWebserv/webserv/tester/cgi_tester"
-# define PHPCGI "/Users/dcho/Born2Code/DreamXWebserv/webserv/tester/php-cgi"
-# define CGITESTER "/Users/dcho/Born2Code/DreamXWebserv/webserv/tester/cgi_tester"
+# define PHPCGI "/Users/songju/Desktop/DreamXWebserv/webserv/tester/php-cgi"
+# define CGITESTER "/Users/songju/Desktop/DreamXWebserv/webserv/tester/cgi_tester"
 //   # define PHPCGI "/Users/dcho/DreamXWebserv/webserv/tester/php-cgi"
 //   # define CGITESTER "/Users/dcho/DreamXWebserv/webserv/tester/cgi_tester"
 
@@ -155,7 +155,7 @@ class ClientControl
 		int				checkAutoIndex(void);
 		void			readRequest(void);
 		vector<string>	parseStartline(string request);
-		void			parseHeader(vector<string>& result, vector<string>::iterator& it);
+		int				parseHeader(vector<string>& result, vector<string>::iterator& it);
 		void			parseChunk(string request, vector<string>& result, vector<string>::iterator& it);
 		int				parseUri(void);
 		void			parseRequest(string msg);
@@ -183,6 +183,7 @@ class ClientControl
 		string			check_is_file(void);
 		void			processChunk(void);
 		void			sendNobodyPage(void);
+		int				checkHost(string host);
 		//int		getFile();
 		//int		postFile();
 
@@ -191,7 +192,7 @@ class ClientControl
 
 		// 추가된 부분
 		int				classifyDirUri(string& directory, string& request_uri, vector<LocationBlock>::iterator& it, vector<LocationBlock>& location_block);
-		int				classifyFileUri(string& directory, string& file, string& request_uri, vector<LocationBlock>::iterator& it, vector<LocationBlock>& location_block);
+		int				classifyFileUri(string& file, string& request_uri, vector<LocationBlock>::iterator& it, vector<LocationBlock>& location_block);
 		int				processLimitExcept(vector<LocationBlock>::iterator& it);
 };
 

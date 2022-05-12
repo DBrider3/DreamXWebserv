@@ -34,6 +34,7 @@ class ServerBlock
 		vector<string>				getIndex(void);
 		string						getAutoindex(void);
 		vector<LocationBlock>		getLocationBlock(void);
+		vector<string>				getServerName(void);
 
 		/*
 		** setter part

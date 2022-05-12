@@ -299,7 +299,13 @@ void Manager::processWrite(vector<ClientControl>& client_control, uintptr_t curr
 			if (it->getRequest().method == "HEAD")
 				it->sendNobodyPage();
 			else if (it->getResponse().state_flag == "301")
+			{
 				it->sendRedirectPage();
+				disconnectSocket(it->getClientFd());
+				client_control.erase(it);
+				return ;
+
+			}
 			else if (it->getResponse().state_flag[0] == '2')
 			{
 				if (it->getResponse().ct_length > 4096)

@@ -59,6 +59,11 @@ vector<LocationBlock>	ServerBlock::getLocationBlock()
 	return (location_block);
 }
 
+vector<string>			ServerBlock::getServerName(void)
+{
+	return (server_name);
+}
+
 void					ServerBlock::setServerName(string str)
 {
 	server_name.push_back(str);
