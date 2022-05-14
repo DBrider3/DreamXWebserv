@@ -612,18 +612,22 @@ int		ClientControl::classifyDirUri(string& directory, string& request_uri, vecto
 	return (1);
 }
 
-int		ClientControl::classifyFileUri(string& file, string& request_uri, vector<LocationBlock>::iterator& it, vector<LocationBlock>& location_block)
+int		ClientControl::classifyFileUri(string& directory, string& file, string& request_uri, vector<LocationBlock>::iterator& it, vector<LocationBlock>& location_block)
 {
 	string tmp;
 
-	tmp = "/" + file;
+	tmp = directory + "/" + file;
+	//cout << tmp << endl;
+
 	for (it = location_block.begin(); it != location_block.end(); it++)
 	{ //왜 디렉토리 비교해요? file인데?
+		//cout << it->getMatch() << endl;
 		if ((it->getMatch().find_last_of(".") != string::npos \
 			&& it->getMatch()[1] == '*' \
 			&& file.substr(file.find_last_of(".")) \
 			== it->getMatch().substr(it->getMatch().find_last_of(".")))
-			|| (tmp.compare(it->getMatch()) == 0)) //디렉은 어째?
+			|| (tmp.compare(it->getMatch()) == 0)
+			|| (directory.compare(it->getMatch()) == 0)) //디렉은 어째?
 		{
 			if (!(processLimitExcept(it)))
 				return (-1);
@@ -659,15 +663,15 @@ int ClientControl::checkUri(void)
 
 	if (file == "") //디렉토리로 들어온 경우
 	{
-		cout << "direc\n"; 
+		//cout << "direc\n"; 
 		result = classifyDirUri(directory, request_uri, it, location_block);
 		if (result <= 0)
 			return (result);
 	}
 	else //파일로 들어온 경우
 	{
-		cout << "file\n";
-		result = classifyFileUri(file, request_uri, it, location_block);
+		//cout << "file\n";
+		result = classifyFileUri(directory, file, request_uri, it, location_block);
 		if (result < 0)
 			return (result);
 	}

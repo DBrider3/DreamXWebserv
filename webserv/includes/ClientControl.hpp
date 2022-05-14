@@ -7,8 +7,8 @@
 
 # define PHPCGI "/Users/daekim/subject/cadet/DreamXWebserv/webserv/tester/php-cgi"//바꿔
 # define CGITESTER "/Users/daekim/subject/cadet/DreamXWebserv/webserv/tester/cgi_tester"
-//   # define PHPCGI "/Users/junghan/Desktop/DreamXWebserv/webserv/tester/php-cgi"
-//   # define CGITESTER "/Users/junghan/Desktop/DreamXWebserv/webserv/tester/cgi_tester"
+  // # define PHPCGI "/Users/junghan/Desktop/DreamXWebserv/webserv/tester/php-cgi"
+  // # define CGITESTER "/Users/junghan/Desktop/DreamXWebserv/webserv/tester/cgi_tester"
 // # define PHPCGI "/Users/songju/Desktop/DreamXWebserv/webserv/tester/php-cgi"
 // # define CGITESTER "/Users/songju/Desktop/DreamXWebserv/webserv/tester/cgi_tester"
 //   # define PHPCGI "/Users/dcho/DreamXWebserv/webserv/tester/php-cgi"
@@ -192,7 +192,7 @@ class ClientControl
 
 		// 추가된 부분
 		int				classifyDirUri(string& directory, string& request_uri, vector<LocationBlock>::iterator& it, vector<LocationBlock>& location_block);
-		int				classifyFileUri(string& file, string& request_uri, vector<LocationBlock>::iterator& it, vector<LocationBlock>& location_block);
+		int				classifyFileUri(string& directory, string& file, string& request_uri, vector<LocationBlock>::iterator& it, vector<LocationBlock>& location_block);
 		int				processLimitExcept(vector<LocationBlock>::iterator& it);
 };
 

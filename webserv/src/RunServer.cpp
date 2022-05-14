@@ -376,12 +376,13 @@ void ClientControl::readRequest()
 	}
 	if (!getChunk())
 	{
+		//cout << msg << endl;
 		if (msg.find("\r\n\r\n") != string::npos)
 			parseRequest(msg);
 	}
 	else
 		parseRequest(msg);
-	cout << msg << endl;
+
 }
 
 /*
