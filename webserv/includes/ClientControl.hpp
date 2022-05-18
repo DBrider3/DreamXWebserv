@@ -5,8 +5,8 @@
 # include "HttpBlock.hpp"
 # include "ServerBlock.hpp"
 
-# define PHPCGI "/Users/daekim/subject/cadet/DreamXWebserv/webserv/tester/php-cgi"//바꿔
-# define CGITESTER "/Users/daekim/subject/cadet/DreamXWebserv/webserv/tester/cgi_tester"
+# define PHPCGI "/Users/doyun/Desktop/42doyun/5Circle/webserv/DreamXWebserv/webserv/tester/php-cgi"//바꿔
+# define CGITESTER "/Users/doyun/Desktop/42doyun/5Circle/webserv/DreamXWebserv/webserv/tester/cgi_tester"
   // # define PHPCGI "/Users/junghan/Desktop/DreamXWebserv/webserv/tester/php-cgi"
   // # define CGITESTER "/Users/junghan/Desktop/DreamXWebserv/webserv/tester/cgi_tester"
 // # define PHPCGI "/Users/songju/Desktop/DreamXWebserv/webserv/tester/php-cgi"
@@ -19,6 +19,8 @@
 # define REDIRECT_FMT "HTTP/1.1 %s %s\r\nLocation: %s"
 # define CHUNK_FMT "HTTP/1.1 %s %s\r\nTransfer-Encoding: chunked\r\nContent-Type: %s\r\n\r\n"
 # define ERROR_FMT "HTTP/1.1 %s %s"
+
+# define SIZE 5000000
 
 using namespace std;
 

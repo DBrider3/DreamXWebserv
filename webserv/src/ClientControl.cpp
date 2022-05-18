@@ -436,7 +436,7 @@ void		ClientControl::saveFile(void)
 		// 파일 체크 우선
 
 
-		file.open("/Users/daekim/subject/cadet/DreamXWebserv/webserv/save/" + multipart[idx].file_name, std::ios::out);//바꿔
+		file.open("/Users/doyun/Desktop/42doyun/5Circle/webserv/DreamXWebserv/webserv/save/" + multipart[idx].file_name, std::ios::out);//바꿔
 		file << multipart[idx].data;
 		file.close();
 	//	if (file.fail())
@@ -456,7 +456,6 @@ void		ClientControl::processMultipart(void)
 
 	boundary_key = "--" + request.header["Content-Type"][1];
 	end_code = boundary_key + "--";
-	t_multipart tmp;
 	while (request.body[res] != end_code)
 	{
 		if (request.body[res++] == boundary_key)
@@ -772,7 +771,7 @@ void ClientControl::deleteFile()
 {
 	string path;
 	struct stat st;
-	string path_info = "/Users/daekim/subject/cadet/DreamXWebserv/webserv/state_pages/delete.html"; //바꿔
+	string path_info = "/Users/doyun/Desktop/42doyun/5Circle/webserv/DreamXWebserv/webserv/state_pages/delete.html"; //바꿔
 
 	path = getRoot() + getRequest().uri;//바꿔
 	if (!access(path.c_str(), F_OK)) //directory도 삭제가 되는지 확인해야함

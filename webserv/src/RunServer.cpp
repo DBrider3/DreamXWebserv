@@ -23,7 +23,6 @@ void ClientControl::sendChunk(void)
 	string tmp;
 	string chunk_body;
 
-	size_t body_size;
 	char*	r_header = new char[response.ct_length + 1024];
 
 	sprintf(r_header, CHUNK_FMT, response.state_flag.c_str(), response.state_str.c_str(), response.ct_type.c_str());
@@ -32,7 +31,6 @@ void ClientControl::sendChunk(void)
 		setEOF(DISCONNECTED);
 		return ;
 	}
-	body_size = body.size();
 
 	while (1)
 	{

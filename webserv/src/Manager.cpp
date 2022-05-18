@@ -358,13 +358,10 @@ void Manager::runServer()
 	for (size_t i = 0; i < web_serv.ports.size(); i++)
 		changeEvents(change_list, web_serv.server_socket[i], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	int count = 0;
-	struct timespec timeout;
-	timeout.tv_sec = 5;
-	timeout.tv_nsec = 0;
 
 	while (1)
 	{
-		new_events = kevent(kq, &change_list[0], change_list.size(), event_list, 1024, &timeout); // timeout 설정 확인
+		new_events = kevent(kq, &change_list[0], change_list.size(), event_list, 1024, NULL); // timeout 설정 확인
 		if (new_events == -1)
 			sendErrorPage(curr_event->ident, "500", "Internal server error"); //kq관리 실패
 		change_list.clear();
@@ -383,5 +380,6 @@ void Manager::runServer()
 				processWrite(client_control, curr_event->ident, count);
 		}
 	}
-	//close(socket_fd);
+	for (size_t i = 0; i < web_serv.ports.size(); i++)
+		close(web_serv.server_socket[i]);
 }
