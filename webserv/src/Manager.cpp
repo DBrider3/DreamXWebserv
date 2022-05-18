@@ -72,8 +72,19 @@ void	Manager::fileOpen(string conf)
 	/*
 	** 인자 혹은 default파일을 열고 buffer에 저장
 	*/
+
 	try
 	{
+		struct stat sb;
+
+		if (stat(conf.c_str(), &sb) == -1)
+		{
+			perror("stat error");
+			throw(PrintError());
+		}
+		if (!S_ISREG(sb.st_mode))
+			throw(PrintError());
+
 		ifstream fin(conf);
 		if (fin.is_open())
 		{
@@ -161,17 +172,6 @@ void disconnectSocket(int socket_fd) //고쳐야함 소멸자불러야함
 	cout << YELLOW << "🍀🍀🍀🍀🍀disconnected : " << socket_fd << EOC << endl;
 	close(socket_fd);
 }
-
-/*
- * disconnectSocket 하나의 함수로 합침
- */
-//void disconnectSocket(vector<ClientControl> &client_control, vector<ClientControl>::iterator &it) //고쳐야함 소멸자불러야함
-//{
-//	cout << YELLOW << "🍀🍀🍀🍀🍀disconnected : " << it->getClientFd() << EOC << endl;
-//	close(it->getClientFd());
-//	it->resetClient(it->getClientFd(), it->getServerFd(), it->getServerBlock());
-//	client_control.erase(it);
-//}
 
 /*
  * 현재 fd가 서버소켓인지 검사하는 함수입니다.

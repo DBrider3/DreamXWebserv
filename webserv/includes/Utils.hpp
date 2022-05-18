@@ -23,6 +23,8 @@
 # include <sys/time.h>
 # include <ctime>
 
+# include <dirent.h> // OpenDIR
+
 # define _CRT_SECURE_NO_WARNINGS 
 
 # define TRUE 1

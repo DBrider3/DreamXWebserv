@@ -84,6 +84,7 @@ class ClientControl
 
 		string						msg;
 		int							chunk_flag;
+		int							multi_flag;
 		int							eof;
 
 
@@ -114,6 +115,7 @@ class ClientControl
 
 		string&			getMsg();
 		int&			getChunk();
+		int&			getMulti();
 		int&			getResourceFd();
 		int&			getWrite();
 		FILE*			getFout();
@@ -123,6 +125,7 @@ class ClientControl
 		*/
 		void 			setMsg(string msg);
 		void			setChunk(int chunk_flag);
+		void			setMulti(int Multi_flag);
 
 		void			setHttpBlock(HttpBlock http_block);
 		void 			setServerBlock(ServerBlock server_block);

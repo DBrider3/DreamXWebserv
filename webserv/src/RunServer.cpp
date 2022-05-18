@@ -12,6 +12,7 @@ void ClientControl::initRequestMsg()
 	setVersion("");
 	setMsg("");
 	setChunk(0);
+	setMulti(0);
 	setLength(0);
 	return ;
 }
@@ -83,7 +84,6 @@ void ClientControl::sendNobodyPage(void)
 void ClientControl::sendSuccessPage(void)
 {
 	char*	r_header = new char[response.ct_length + 1024];
-	//chunk
 
 	if (response.state_flag == "204")
 	{
@@ -230,6 +230,7 @@ int		ClientControl::parseHeader(vector<string>& result, vector<string>::iterator
 				ss_tmp << val_tmp;
 				getline(ss_tmp, val_tmp, '=');
 				getline(ss_tmp, val_tmp, '\0');
+				setMulti(1);
 			}
 			val.push_back(val_tmp);
 		}
@@ -239,10 +240,7 @@ int		ClientControl::parseHeader(vector<string>& result, vector<string>::iterator
 		if (key == "Host")
 		{
 			if (checkHost(val.front()))
-			{
-				cout << "checkHost\n";
 				return (1);
-			}
 		}
 	}
 	if (len != 0 && result.back().size() == len && header_tmp["Content-Length"].front() != "0")
@@ -315,7 +313,12 @@ void ClientControl::parseRequest(string request)
 		setRead(0);
  		return ;
 	}
-	else if (getChunk() == 1)
+	else if (getMulti() == 1 && request.compare((request.size() - 4), 4, "--\r\n"))
+	{
+		setRead(0);
+		return ;
+	}
+	else if (getChunk() == 1 || getMulti() == 1)
 		parseChunk(request, result, it);
 	if (parseUri())
 		return ;
@@ -374,9 +377,8 @@ void ClientControl::readRequest()
 		setEOF(DISCONNECTED);
 		return ;
 	}
-	if (!getChunk())
+	if (!getChunk() && !getMulti())
 	{
-		//cout << msg << endl;
 		if (msg.find("\r\n\r\n") != string::npos)
 			parseRequest(msg);
 	}
@@ -402,7 +404,6 @@ void	ClientControl::readResource()
 	}
 	if (res == -1)
 	{
-		cout << "read error 🚀🚀🚀🚀🚀🚀🚀🚀" << endl;
 		setStateFlag("403");
 		setStateStr("Forbidden");
 		close(fd);

@@ -15,6 +15,7 @@ ClientControl::ClientControl()
     client_body_size = -1;
 	msg = "";
 	chunk_flag = 0;
+	multi_flag = 0;
 	body = "";
 	client_fd = 0;
 	server_fd = 0;
@@ -69,6 +70,7 @@ ClientControl& ClientControl::operator = (const ClientControl& m)
     client_body_size = m.client_body_size;
 	msg = m.msg;
 	chunk_flag = m.chunk_flag;
+	multi_flag = m.multi_flag;
 	body = m.body;
 	client_fd = m.client_fd;
 	server_fd = m.server_fd;
@@ -155,6 +157,11 @@ int&			ClientControl::getChunk()
 	return (chunk_flag);
 }
 
+int&			ClientControl::getMulti()
+{
+	return (multi_flag);
+}
+
 int&			ClientControl::getServerFd()
 {
 	return(this->server_fd);
@@ -183,6 +190,11 @@ int&			ClientControl::getEOF()
 void		ClientControl::setChunk(int chunk_flag)
 {
 	this->chunk_flag = chunk_flag;
+}
+
+void		ClientControl::setMulti(int multi_flag)
+{
+	this->multi_flag = multi_flag;
 }
 
 void 		ClientControl::setMsg(string msg)
@@ -460,7 +472,7 @@ void		ClientControl::processMultipart(void)
 					multipart[idx].type = request.body[res].substr(request.body[res].find("Content-Type: ") + 14);
 					res++;
 				}
-				while (request.body[++res] != boundary_key && request.body[res] != end_code)
+				while (request.body[++res] != end_code && request.body[res] != boundary_key)
 					multipart[idx].data += request.body[res] + "\r\n";
 				multipart[idx].data.pop_back();
 				multipart[idx].data.pop_back();
@@ -473,17 +485,88 @@ void		ClientControl::processMultipart(void)
 
 int	ClientControl::checkAutoIndex() //status 넣어주기
 {
-	string request_uri;
+	string					request_uri;
+	DIR						*dir_ptr;
+	struct dirent			*file;
+	vector<string>			current_dir_file;
+	vector<string> 			indexfile;
+	string					path;
+	vector<LocationBlock>	location_block;
+
+	path = getRoot() + getRequest().uri;
 
 	request_uri = getRequest().uri;
 	if (request_uri == "/" && getServerBlock().getAutoindex() == "on") // autoindex
 	{
-		vector<string> temp;
+		/*	opendir error -> server error */
+		if((dir_ptr = opendir(path.c_str())) == NULL)
+		{
+			cerr << "error opendir" << endl;
+			setStateFlag("500");
+			setStateStr("Internal server error");
+			return (0);
+		}
 
-		temp = getServerBlock().getIndex();
-		for (vector<string>::iterator it = temp.begin(); it != temp.end(); it++)
-			setServerIndex(*it);
-		setLocalUri("/autoindex.html");
+		while ((file = readdir(dir_ptr)) != NULL)
+			current_dir_file.push_back(static_cast<string>(file->d_name));
+
+
+		/* server or location index setting */
+		indexfile = getServerBlock().getIndex();
+		location_block = getServerBlock().getLocationBlock();
+		for (vector<LocationBlock>::iterator it = location_block.begin(); it != location_block.end(); it++)
+		{
+			if (it->getMatch() == "/")
+			{
+				if (!it->getIndex().empty())
+					indexfile = it->getIndex();
+				break;
+			}
+		}
+
+		/* index file check */
+		for (vector<string>::iterator it = indexfile.begin(); it != indexfile.end(); it++)
+		{
+			for (vector<string>::iterator jt = current_dir_file.begin(); jt != current_dir_file.end(); jt++)
+			{
+				if (*it == *jt)
+				{
+					setLocalUri("/" + *it);
+					return (0);
+				}
+			}
+		}
+
+		/* body */
+		body += "<html>\r\n";
+		body += "<head>\r\n";
+		body += "<title>Index of " + request_uri + "</title>\r\n";
+		body += "</head>\r\n";
+		body += "<body bgcolor=\"white\">\r\n";
+		body += "<h1>Index of " + request_uri + "</h1>\r\n";
+		body += "<hr>\r\n";
+		body += "<pre>\r\n";
+
+		/* body write by files in current directory */
+
+		for (vector<string>::iterator it = current_dir_file.begin(); it != current_dir_file.end(); it++)
+		{
+			string	name;
+
+			name = *it;
+			body += "<a href=\"" + name + "\">" + name + "</a>\r\n";
+		}
+
+		body += "</pre>\r\n";
+		body += "<hr>\r\n";
+		body += "</body>\r\n";
+		body += "</html>";
+
+		setStateFlag("200");
+		setStateStr("OK");
+		response.ct_length = body.length();
+		closedir(dir_ptr);
+		setWrite(1);
 		return (1);
 	}
 	return (0);
@@ -598,7 +681,7 @@ int		ClientControl::classifyDirUri(string& directory, string& request_uri, vecto
 			break ;
 		} // for end
 	}
-	if (it == location_block.end())
+	if (it == location_block.end() && getRequest().method != "DELETE")
 	{
 		if (directory == "/")
 		{
@@ -616,18 +699,19 @@ int		ClientControl::classifyFileUri(string& directory, string& file, string& req
 {
 	string tmp;
 
-	tmp = directory + "/" + file;
-	//cout << tmp << endl;
+	if (directory == "/")
+		tmp = "/" + file;
+	else
+		tmp = directory + "/" + file;
 
 	for (it = location_block.begin(); it != location_block.end(); it++)
-	{ //왜 디렉토리 비교해요? file인데?
-		//cout << it->getMatch() << endl;
+	{
 		if ((it->getMatch().find_last_of(".") != string::npos \
 			&& it->getMatch()[1] == '*' \
 			&& file.substr(file.find_last_of(".")) \
 			== it->getMatch().substr(it->getMatch().find_last_of(".")))
 			|| (tmp.compare(it->getMatch()) == 0)
-			|| (directory.compare(it->getMatch()) == 0)) //디렉은 어째?
+			|| (directory.compare(it->getMatch()) == 0))
 		{
 			if (!(processLimitExcept(it)))
 				return (-1);
@@ -663,14 +747,12 @@ int ClientControl::checkUri(void)
 
 	if (file == "") //디렉토리로 들어온 경우
 	{
-		//cout << "direc\n"; 
 		result = classifyDirUri(directory, request_uri, it, location_block);
 		if (result <= 0)
 			return (result);
 	}
 	else //파일로 들어온 경우
 	{
-		//cout << "file\n";
 		result = classifyFileUri(directory, file, request_uri, it, location_block);
 		if (result < 0)
 			return (result);
@@ -682,19 +764,20 @@ int ClientControl::checkUri(void)
 		setRoot(it->getRoot());
 	else
 		setRoot(getServerBlock().getRoot());
+
 	return (0);
 }
 
 void ClientControl::deleteFile()
 {
-	string root;
+	string path;
 	struct stat st;
 	string path_info = "/Users/daekim/subject/cadet/DreamXWebserv/webserv/state_pages/delete.html"; //바꿔
 
-	root = "/Users/daekim/subject/cadet/DreamXWebserv/webserv/save" + getRequest().uri;//바꿔
-	if (!access(root.c_str(), F_OK)) //directory도 삭제가 되는지 확인해야함
+	path = getRoot() + getRequest().uri;//바꿔
+	if (!access(path.c_str(), F_OK)) //directory도 삭제가 되는지 확인해야함
 	{
-		if (!unlink(root.c_str()))
+		if (!unlink(path.c_str()))
 		{
 			//findMime();
 			stat((path_info).c_str(), &st);
@@ -753,8 +836,7 @@ void		ClientControl::processCGI(string path_info)
 		{
 			if(write(fdIn, it->c_str(), it->size()) == -1)
 			{
-				cout << "write error 🚀🚀🚀🚀🚀🚀🚀🚀" << endl;
-				setStateFlag("500"); //???
+				setStateFlag("500");
 				setStateStr("Internal server error");
 				fclose(fIn);
 				close(fdIn);
@@ -851,7 +933,7 @@ void	ClientControl::processMethod()
 		deleteFile();
 		return ;
 	}
-	if (checkAutoIndex())
+	if (getRequest().method == "GET" && checkAutoIndex())
 		return ;
 
 	response.cgi = 0;
@@ -886,11 +968,11 @@ void	ClientControl::processMethod()
 
 		if (!response.cgi)
 		{
-			string aa;
+			// string aa;
 
-			// processPP(check_is_file());
+			processPP(check_is_file());
 
-			aa = check_is_file();
+			// aa = check_is_file();
 			//processPP(aa);
 		}
 		else

@@ -9,6 +9,7 @@
         "memory": "cpp",
         "istream": "cpp",
         "map": "cpp",
-        "ostream": "cpp"
+        "ostream": "cpp",
+        "fstream": "cpp"
     }
 }

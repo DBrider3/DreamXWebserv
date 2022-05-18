@@ -3,18 +3,18 @@ http {
 	limit_except GET;
 
 	server {
-		server_name example.com http://example.com localhost;
+		server_name example.com http://example.com localhost:80;
 		listen 80;
 		#client_body_size 44040192;
 		root /Users/daekim/subject/cadet/DreamXWebserv/webserv/state_pages;
 		#바꿔
 		error_page 404 /404.html;
 		index index.html test.html error.html;
-		autoindex off;
+		autoindex on;
 
 		location / {
-			root /Users/daekim/subject/cadet/DreamXWebserv/webserv/eval;
-			index index.html;
+			root /Users/daekim/subject/cadet/DreamXWebserv/webserv/state_pages;
+			index index2.html;
 		}
 	}
 }
