@@ -43,15 +43,3 @@ void exit_with_perror(const string &msg)
 	cerr << msg << endl;
 	exit(42);
 }
-
-//string base64_encode(const string &in) { 
-//	typedef unsigned char uchar; 
-//	string out;
-//	int val = 0, valb = -6;
-//	for (uchar c : in) {
-//		val = (val << 8) + c;
-//		valb += 8;
-//		while (valb >= 0) {
-//		
-//		out.push_back("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"[(val >> valb) & 0x3F]); valb -= 6; } }
-//}

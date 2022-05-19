@@ -7,7 +7,8 @@ Manager::Manager()
 
 Manager::~Manager()
 {
-
+	for (size_t i = 0; i < web_serv.ports.size(); i++)
+		close(web_serv.server_socket[i]);
 }
 
 Manager::Manager(const Manager& copy)
@@ -135,7 +136,7 @@ int 	sendErrorPage(int socket_fd, string state_flag, string state_str)
 {
 	struct stat		st;
 	string			local_uri;
-	string			body; //html읽은 내용 담을 변수
+	string			body;
 	char			buf[100];
 	char			r_header[1024];
 	int				ct_len;
@@ -150,7 +151,7 @@ int 	sendErrorPage(int socket_fd, string state_flag, string state_str)
 	bodyfd = open(local_uri.c_str(), O_RDONLY);
 
 	n = 0;
-	while ((n = read(bodyfd, buf, sizeof(buf) - 1)) > 0) //괘씸 ????
+	while ((n = read(bodyfd, buf, sizeof(buf) - 1)) > 0)
 	{
 		buf[n] = '\0';
 		ss << buf;
@@ -226,8 +227,8 @@ void	Manager::processError(vector<ClientControl>& client_control, uintptr_t curr
 	if (checkSocket(curr_id, server_sockets) > -1)
 	{
 		cout << "err server" << endl;
-		sendErrorPage(curr_id, "500", "Internal server error"); //의문.1 서버 에러시, 어디로 명확하게 전달되는 것이 확인되지 않음. ????
-	}	//의문 .2 서버 에러시, 서버를 종료시켜야하나 ????
+		sendErrorPage(curr_id, "500", "Internal server error");
+	}
 	else
 	{
 		cout << "err client" << endl;
@@ -250,7 +251,7 @@ int Manager::processRead(vector<ClientControl>& client_control, uintptr_t curr_i
 	}
 	else if ((it = findClient(client_control, curr_id)) != client_control.end())
 	{
-		if (it->getRead() == REQUEST_RECEIVING) //request 읽을 때
+		if (it->getRead() == REQUEST_RECEIVING)
 		{
 			it->setHttpBlock(this->http_block);
 			it->readRequest();
@@ -266,17 +267,17 @@ int Manager::processRead(vector<ClientControl>& client_control, uintptr_t curr_i
 				return (1);
 			}
 		}
-		if (it->getRead() == REQUEST_COMPLETE) //file 읽을 때
+		if (it->getRead() == REQUEST_COMPLETE)
 		{
 			if (!(it->getResponse().state_flag.empty()))
 				it->setWrite(1);
-			else if (it->getResourceFd() == -1)//method 파악
+			else if (it->getResourceFd() == -1)
 			{
 				it->processMethod();
 				if (it->getResourceFd() != -1)
 					changeEvents(change_list, it->getResourceFd(), EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 			}
-			else //read
+			else
 				it->readResource();
 		}
 		if (!(it->getResponse().state_flag.empty()))
@@ -331,9 +332,9 @@ void Manager::runServer()
 {
 	int 					kq;
 	int						idx;
-	map<int, string>        clients; // map for client socket:data
-	vector<struct kevent>   change_list; // kevent vector for changelist
-	struct kevent           event_list[1024]; // kevent array for eventlistcompRespo
+	map<int, string>        clients;
+	vector<struct kevent>   change_list;
+	struct kevent           event_list[1024];
 	vector<int>				before_server;
 
 	int                     new_events;
@@ -361,9 +362,9 @@ void Manager::runServer()
 
 	while (1)
 	{
-		new_events = kevent(kq, &change_list[0], change_list.size(), event_list, 1024, NULL); // timeout 설정 확인
+		new_events = kevent(kq, &change_list[0], change_list.size(), event_list, 1024, NULL);
 		if (new_events == -1)
-			sendErrorPage(curr_event->ident, "500", "Internal server error"); //kq관리 실패
+			sendErrorPage(curr_event->ident, "500", "Internal server error");
 		change_list.clear();
 		idx = 0;
 		for (int i = 0; i < new_events; ++i)
@@ -380,6 +381,5 @@ void Manager::runServer()
 				processWrite(client_control, curr_event->ident, count);
 		}
 	}
-	for (size_t i = 0; i < web_serv.ports.size(); i++)
-		close(web_serv.server_socket[i]);
+	return ;
 }

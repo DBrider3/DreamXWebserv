@@ -3,7 +3,7 @@
 ClientControl::ClientControl()
 {
 	env_set.clear();
-	server_index.clear(); //서버 블록 내 index 절대 경로 담아둠
+	server_index.clear();
 
 	port = "";
 	root = "";
@@ -27,8 +27,8 @@ ClientControl::ClientControl()
 	response.ct_length = 0;
 	response.ct_type = "";
 	response.cgi = 0;
-	response.state_flag = ""; //현재 작업이 에러 시, 이벤트에 있는 read/write를 소모시키기 위해 플래그를 사용함.
-	response.state_str = ""; //빼야함
+	response.state_flag = "";
+	response.state_str = "";
 	response.redirect_uri = "";
 
 	request.method = "";
@@ -57,11 +57,11 @@ ClientControl& ClientControl::operator = (const ClientControl& m)
 	if (this == &m)
 		return (*this);
 	env_set = m.env_set;
-	server_index = m.server_index; //서버 블록 내 index 절대 경로 담아둠
+	server_index = m.server_index;
 	server_block = m.server_block;
 	http_block = m.http_block;
 	port = m.port;
-	root = m.root; //방금 추가 put & post
+	root = m.root;
 	directory = m.directory;
 	file = m.file;
 	read_flag = m.read_flag;
@@ -85,8 +85,8 @@ ClientControl& ClientControl::operator = (const ClientControl& m)
 	response.ct_length = m.response.ct_length;
 	response.ct_type = m.response.ct_type;
 	response.cgi = m.response.cgi;
-	response.state_flag = m.response.state_flag; //현재 작업이 에러 시, 이벤트에 있는 read/write를 소모시키기 위해 플래그를 사용함.
-	response.state_str = m.response.state_str; //빼야함
+	response.state_flag = m.response.state_flag;
+	response.state_str = m.response.state_str;
 	response.redirect_uri = m.response.redirect_uri;
 
 	/*
@@ -333,7 +333,7 @@ void		ClientControl::findMime(void)
 		return ;
 	}
 	ext = response.local_uri.substr(idx);
-	if (!(ext.empty())) // file
+	if (!(ext.empty()))
 	{
 		if (ext == ".html")
 			response.ct_type = "text/html";
@@ -350,28 +350,28 @@ void		ClientControl::findMime(void)
 		else if (ext == ".bla")
 			response.cgi = 2;
 		else
-			response.ct_type = "text/plain"; //bla 해야함
+			response.ct_type = "text/plain";
 	}
 }
 
 void		ClientControl::setEnv(void)
 {
-	env_set["PATH_INFO"] = server_block.getRoot() + response.local_uri;//response.local_uri;//
+	env_set["PATH_INFO"] = server_block.getRoot() + response.local_uri;
 	env_set["QUERY_STRING"] = request.query_str;
-	env_set["REQUEST_METHOD"] = request.method; // request.method
-	env_set["REDIRECT_STATUS"] = "200"; // 상태코드인데 아직 미정?!
-	env_set["SCRIPT_FILENAME"] = server_block.getRoot() + response.local_uri; // 절대 경로, 상대 경로 (우선 순위)
-	env_set["SERVER_PROTOCOL"] = request.version; // request.version
+	env_set["REQUEST_METHOD"] = request.method;
+	env_set["REDIRECT_STATUS"] = "200";
+	env_set["SCRIPT_FILENAME"] = server_block.getRoot() + response.local_uri;
+	env_set["SERVER_PROTOCOL"] = request.version;
 	env_set["CONTENT_TYPE"] = response.ct_type;
 	env_set["GATEWAY_INTERFACE"] = "CGI/1.1";
-	env_set["REMOTE_ADDR"] = "127.0.0.1"; // 그대로 넣어 주면 될듯(?)
+	env_set["REMOTE_ADDR"] = "127.0.0.1";
 	if (!request.query_str.empty())
-		env_set["REQUEST_URI"] = getRoot() + request.uri + "?" + request.query_str; // uri (상대 경로)
+		env_set["REQUEST_URI"] = getRoot() + request.uri + "?" + request.query_str;
 	else
 		env_set["REQUEST_URI"] = getRoot() + request.uri;
-	env_set["SERVER_PORT"] = port; // request.port
-	env_set["SERVER_SOFTWARE"] = "DreamX"; // 간지템
-	env_set["SCRIPT_NAME"] = response.local_uri; // uri (상대 경로)
+	env_set["SERVER_PORT"] = port;
+	env_set["SERVER_SOFTWARE"] = "DreamX";
+	env_set["SCRIPT_NAME"] = response.local_uri;
 	if (getRequest().header["X-Secret-Header-For-Test"].size())
 		env_set["HTTP_X_SECRET_HEADER_FOR_TEST"] = getRequest().header["X-Secret-Header-For-Test"][0];
 }
@@ -384,7 +384,7 @@ void		ClientControl::setEnv(void)
 ** (map 형식을 쓰는 이유는 문자열 처리를 쉽게 하기 위해서)
 ** flag: 0 (command), 1 (environment)
 */
-char**		ClientControl::convToChar(map<string, string> m, int flag) //소송
+char**		ClientControl::convToChar(map<string, string> m, int flag)
 {
 	char **return_value;
 	std::string first_temp;
@@ -392,9 +392,9 @@ char**		ClientControl::convToChar(map<string, string> m, int flag) //소송
 	std::map<std::string, std::string>::iterator it;
 
 	if (!flag)
-	 	return_value = (char **)calloc((m.size() + 2), sizeof(char *));
+	 	return_value = new char*[sizeof(char *) * (m.size() + 2)];
 	else
-		return_value = (char **)calloc((m.size() + 1), sizeof(char *)); //new로 바꾸기
+		return_value = new char*[sizeof(char *) * (m.size() + 1)];
 	int i = 0;
 	for (it = m.begin(); it != m.end(); it++)
 	{
@@ -402,14 +402,14 @@ char**		ClientControl::convToChar(map<string, string> m, int flag) //소송
 			first_temp = (*it).first + "=" + (*it).second;
 		else
 			first_temp = (*it).first;
-		char *p = (char *)malloc(first_temp.size() + 1); //new로 바꾸기
+		char *p = new char[sizeof(char) * (first_temp.size() + 1)];
 		strcpy(p, first_temp.c_str());
 		return_value[i] = p;
 		i++;
 		if (!(flag))
 		{
 			second_temp = (*it).second;
-			char *p2 = (char *)malloc(second_temp.size() + 1); //new 로 바꾸기
+			char *p2 = new char[sizeof(char) * (second_temp.size() + 1)];
 			strcpy(p2, second_temp.c_str());
 			return_value[i] = p2;
 			i++;
@@ -431,16 +431,9 @@ void		ClientControl::saveFile(void)
 		if(extension != "jpg" && extension != "png" && extension != "jpeg"
 			&& extension != "gif" && extension != "txt")
 			continue ;
-		// php수정해야함. 만약 올리는 5개중 1개가 해당하는 확장자가 아니면 php에서 어떤파일이 이상한지 띄워줄것
-		// 확장자가 txt인지 png인지 검사해야함
-		// 파일 체크 우선
-
-
-		file.open("/Users/doyun/Desktop/42doyun/5Circle/webserv/DreamXWebserv/webserv/save/" + multipart[idx].file_name, std::ios::out);//바꿔
+		file.open("/Users/dcho/Born2Code/DreamXWebserv/webserv/save/" + multipart[idx].file_name, std::ios::out);
 		file << multipart[idx].data;
 		file.close();
-	//	if (file.fail())
-			//실패 시, 에러페이지 서버에러인가?? 서버에러라면 cgi
 	}
 }
 
@@ -450,7 +443,6 @@ void		ClientControl::processMultipart(void)
 	string boundary_key;
 	string end_code;
 
-	// 개행은 ""으로 들어온다고 가정
 	int res = 0;
 	int idx = 0;
 
@@ -482,7 +474,7 @@ void		ClientControl::processMultipart(void)
 	saveFile();
 }
 
-int	ClientControl::checkAutoIndex() //status 넣어주기
+int	ClientControl::checkAutoIndex()
 {
 	string					request_uri;
 	DIR						*dir_ptr;
@@ -495,7 +487,7 @@ int	ClientControl::checkAutoIndex() //status 넣어주기
 	path = getRoot() + getRequest().uri;
 
 	request_uri = getRequest().uri;
-	if (request_uri == "/" && getServerBlock().getAutoindex() == "on") // autoindex
+	if (request_uri == "/" && getServerBlock().getAutoindex() == "on")
 	{
 		/*	opendir error -> server error */
 		if((dir_ptr = opendir(path.c_str())) == NULL)
@@ -590,27 +582,27 @@ int ClientControl::findIndex(string uri)
 
 void	initUriTarget(string& directory, string& file, string request_uri)
 {
-	request_uri.erase(0, 1); // 맨 앞 '/' 잘라 주는 놈
-	if (request_uri.find('/') == string::npos) // 뒤에 디렉토리 형식이 안들어오는 경우    /directory
+	request_uri.erase(0, 1);
+	if (request_uri.find('/') == string::npos)
 	{
-		if (request_uri.find('.') != string::npos) // 확장자 타입이 명시된 경우   /file.txt
+		if (request_uri.find('.') != string::npos)
 		{
 			file = request_uri;
 			directory = "/";
 		}
 		else
 		{
-			directory = "/" + request_uri; // 확장자 타입이 명시 되지 않아 디렉토리 뒤에 합쳐짐
+			directory = "/" + request_uri;
 			file = "";
 		}
 	}
 	else
 	{
-		directory = "/" + request_uri.substr(0, request_uri.find('/')); // /directory/
+		directory = "/" + request_uri.substr(0, request_uri.find('/'));
 		if (request_uri.find('.') != string::npos)
-			file = request_uri.substr(request_uri.find_last_of('/') + 1); // 확장자 타입 명시된 경우
+			file = request_uri.substr(request_uri.find_last_of('/') + 1);
 		else
-			file = ""; // 확장자 타입이 명시되지 않은 경우
+			file = "";
 	}
 }
 
@@ -653,17 +645,17 @@ int		ClientControl::classifyDirUri(string& directory, string& request_uri, vecto
 		{
 			if (!(processLimitExcept(it)))
 				return (-1);
-			if (directory == "/") //인덱스 검사 부분 추가
+			if (directory == "/")
 			{
 				if (it->getIndex().size() != 0)
-					setLocalUri("/" + it->getIndex()[0]);// it = location block;
+					setLocalUri("/" + it->getIndex()[0]);
 				else
 					setLocalUri("/" + getServerBlock().getIndex()[0]);
 			}
 			else
 			{
 				if (it->getIndex().size() > 0)
-					setLocalUri(request_uri + "/" + it->getIndex()[0]); //디렉 붙여줌?
+					setLocalUri(request_uri + "/" + it->getIndex()[0]);
 				else
 					setLocalUri(request_uri);
 			}
@@ -678,7 +670,7 @@ int		ClientControl::classifyDirUri(string& directory, string& request_uri, vecto
 				}
 			}
 			break ;
-		} // for end
+		}
 	}
 	if (it == location_block.end() && getRequest().method != "DELETE")
 	{
@@ -687,6 +679,7 @@ int		ClientControl::classifyDirUri(string& directory, string& request_uri, vecto
 			setLocalUri("/" + getServerBlock().getIndex()[0]);
 			return (0);
 		}
+		cout << "classifyDirUri" << endl;
 		setStateFlag("404");
 		setStateStr("Not Found");
 		return (-1);
@@ -740,17 +733,16 @@ int ClientControl::checkUri(void)
 	vector<LocationBlock> location_block = getServerBlock().getLocationBlock();
 	vector<LocationBlock>::iterator it;
 
-
 	request_uri = getRequest().uri;
 	initUriTarget(directory, file, request_uri);
-
-	if (file == "") //디렉토리로 들어온 경우
+	
+	if (file == "")
 	{
 		result = classifyDirUri(directory, request_uri, it, location_block);
 		if (result <= 0)
 			return (result);
 	}
-	else //파일로 들어온 경우
+	else
 	{
 		result = classifyFileUri(directory, file, request_uri, it, location_block);
 		if (result < 0)
@@ -771,14 +763,13 @@ void ClientControl::deleteFile()
 {
 	string path;
 	struct stat st;
-	string path_info = "/Users/doyun/Desktop/42doyun/5Circle/webserv/DreamXWebserv/webserv/state_pages/delete.html"; //바꿔
+	string path_info = "/Users/dcho/Born2Code/DreamXWebserv/webserv/state_pages/delete.html";
 
-	path = getRoot() + getRequest().uri;//바꿔
-	if (!access(path.c_str(), F_OK)) //directory도 삭제가 되는지 확인해야함
+	path = getRoot() + getRequest().uri;
+	if (!access(path.c_str(), F_OK))
 	{
 		if (!unlink(path.c_str()))
 		{
-			//findMime();
 			stat((path_info).c_str(), &st);
 			response.ct_length = st.st_size;
 			response.ct_type = "text/html";
@@ -792,6 +783,7 @@ void ClientControl::deleteFile()
 	}
 	else
 	{
+		cout << "deleteFile" << endl;
 		setStateFlag("404");
 		setStateStr("Not found");
 	}
@@ -809,6 +801,7 @@ void		ClientControl::processStatic(string path_info)
 	else
 	{
 		fin.close();
+		cout << "processStatic" << endl;
 		setStateFlag("404");
 		setStateStr("Not found");
 		return ;
@@ -860,7 +853,7 @@ void		ClientControl::processCGI(string path_info)
 	else
 	{
 		waitpid(pid, NULL, 0);
-		lseek(fdOut, 0, SEEK_SET); //lseek는 파일 디스크립터의 읽기/쓰기 포인터 위치를 변경하는 데 사용되는 시스템 호출입니다
+		lseek(fdOut, 0, SEEK_SET);
 		setResourceFd(fdOut);
 		setFout(fout);
 	}
@@ -946,7 +939,8 @@ void	ClientControl::processMethod()
 		struct stat st;
 		stat((path_info).c_str(), &st);
 		response.ct_length = st.st_size;
-		if (response.cgi != 1) //static이거나 , 확장자가 ".bla"여서 cgi의 값이 2일때
+		
+		if (response.cgi != 1)
 			processStatic(path_info);
 		else
 			processCGI(path_info);
@@ -966,14 +960,7 @@ void	ClientControl::processMethod()
 		}
 
 		if (!response.cgi)
-		{
-			// string aa;
-
 			processPP(check_is_file());
-
-			// aa = check_is_file();
-			//processPP(aa);
-		}
 		else
 			processCGI(path_info);
 	}
@@ -1014,8 +1001,8 @@ void	ClientControl::resetClient(int client_socket, int server_socket, ServerBloc
 	response.ct_length = 0;
 	response.ct_type = "";
 	response.cgi = 0;
-	response.state_flag = ""; //현재 작업이 에러 시, 이벤트에 있는 read/write를 소모시키기 위해 플래그를 사용함.
-	response.state_str = ""; //빼야함
+	response.state_flag = "";
+	response.state_str = "";
 	response.redirect_uri = "";
 
 	request.method = "";

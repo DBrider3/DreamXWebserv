@@ -91,13 +91,13 @@ int			HttpBlock::setServerBlock(vector<string> buf, int idx)
 				LocationBlock tmp_location;
 
 				tmp_location.setMatch(tmp[1]);
-				idx = tmp_server.setLocationBlock(tmp_location, buf, ++idx); //conf파일의 location블록에 해당하는 정보를 파싱
+				idx = tmp_server.setLocationBlock(tmp_location, buf, ++idx);
 			}
 		}
 		idx++;
 	}
 	server_block.push_back(tmp_server);
-	if (buf[++idx].empty()) //함수를 나가서 buf[idx]가 개행이 아닌 server_block을 가리키기 위함
+	if (buf[++idx].empty())
 		return ++idx;
 	return idx;
 }

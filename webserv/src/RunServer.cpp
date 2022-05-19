@@ -41,7 +41,7 @@ void ClientControl::sendChunk(void)
 		{
 			if (body.size() - chunk_size * i < chunk_size)
 			{
-				tmp = body.substr(chunk_size * i, body.size() - chunk_size * i); //포인터 넘겨서 어찌저찌 하면 속도 엄청 올라간데요
+				tmp = body.substr(chunk_size * i, body.size() - chunk_size * i);
 				ss << hex << tmp.size();
 			}
 			else
@@ -147,7 +147,7 @@ int ClientControl::setClientsocket(vector<struct kevent> &change_list, uintptr_t
 	int client_socket;
    	if ((client_socket = accept(server_socket, (struct sockaddr*)&client_addr, &addr_size)) == -1)
 	{
-		sendErrorPage(server_socket, "500", "Internal server error"); //클라이언트 생성실패
+		sendErrorPage(server_socket, "500", "Internal server error");
 		return (-1);
 	}
     cout << GREEN << "accept new client: " << client_socket << EOC << endl;
@@ -177,15 +177,13 @@ vector<string>	ClientControl::parseStartline(string request)
 	size_t			current;
 
 	previous = 0;
-	current = request.find("\r\n"); // \r\n == crlf
+	current = request.find("\r\n");
 
-	//find 함수는 해당 위치부터 문자열을 찾지 못할 경우 npos를 반환한다.
 	while (current != string::npos)
 	{
-		// 첫 인자의 위치부터 두번째 인자 길이만큼 substring을 반환
 		string substring = request.substr(previous, current - previous);
 		result.push_back(substring);
-		previous = current + 2; //previous 부터 "\r\n"이 나오는 위치를 찾는다.
+		previous = current + 2;
 		current = request.find("\r\n", previous);
 	}
 	setMethod(strtok(const_cast<char*>(result[0].c_str()), " "));
@@ -212,7 +210,7 @@ int		ClientControl::parseHeader(vector<string>& result, vector<string>::iterator
 	size_t							len;
 
 	len = 0;
-	for (it = result.begin() + 1; it != result.end() && it->size() > 0; it++) //수정함
+	for (it = result.begin() + 1; it != result.end() && it->size() > 0; it++)
 	{
 		stringstream ss(*it);
 		stringstream ss_tmp;
@@ -220,7 +218,7 @@ int		ClientControl::parseHeader(vector<string>& result, vector<string>::iterator
 		vector<string> val;
 		string val_tmp;
 		getline(ss, key, ':');
-		ss.get(); //인덱스 +1 -> 콜론 뒤 공백에서 다음 인덱스로 이동
+		ss.get();
 		for (int i = 0; getline(ss, val_tmp, ' '); i++)
 		{
 			if (key == "Content-Type" && i == 1)
@@ -242,7 +240,7 @@ int		ClientControl::parseHeader(vector<string>& result, vector<string>::iterator
 		}
 	}
 	if (len != 0 && result.back().size() == len && header_tmp["Content-Length"].front() != "0")
-		if (result.back()[len - 1] != '\n' && result.back()[len - 2] != '\r') // content_lenth로 비교하는 이유는 chunked는 content_lenth값이 들어오지 않기 때문에 chunked와 구별지어 적용시킬 수 있음 
+		if (result.back()[len - 1] != '\n' && result.back()[len - 2] != '\r')
 			result.back() += "\r\n\r\n";
 	setHeader(header_tmp);
 	return (0);
@@ -269,8 +267,6 @@ void	ClientControl::parseChunk(string request, vector<string>& result, vector<st
 
 int		ClientControl::parseUri(void)
 {
-	if (checkUri())
-		return (1);
 	if (getRequest().uri.size() > 8190)
 	{
 		setStateFlag("414");
@@ -287,12 +283,14 @@ int		ClientControl::parseUri(void)
 		getline(ss, temp, '\0');
 		setQuery(temp);
 	}
+	if (checkUri())
+		return (1);
 	return (0);
 }
 
 void ClientControl::parseRequest(string request)
 {
-	vector<string> result; //요청메시지가 한 줄 한 줄 저장되는 변수
+	vector<string> result;
 	vector<string>::iterator it;
 
 	setRead(1);
@@ -301,6 +299,7 @@ void ClientControl::parseRequest(string request)
 		result = parseStartline(request);
 		if (parseHeader(result, it))
 		{
+			cout << "parseRequest" << endl;
 			setStateFlag("404");
 			setStateStr("Not found");
 			return ;
@@ -364,7 +363,7 @@ void ClientControl::readRequest()
 		buf[n] = 0;
 		msg += static_cast<string> (buf);
 	}
-	if (n == 0) // 구분할지 말지
+	if (n == 0)
 	{
 		setEOF(DISCONNECTED);
 		return ;

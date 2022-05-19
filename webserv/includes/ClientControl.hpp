@@ -5,14 +5,8 @@
 # include "HttpBlock.hpp"
 # include "ServerBlock.hpp"
 
-# define PHPCGI "/Users/doyun/Desktop/42doyun/5Circle/webserv/DreamXWebserv/webserv/tester/php-cgi"//바꿔
-# define CGITESTER "/Users/doyun/Desktop/42doyun/5Circle/webserv/DreamXWebserv/webserv/tester/cgi_tester"
-  // # define PHPCGI "/Users/junghan/Desktop/DreamXWebserv/webserv/tester/php-cgi"
-  // # define CGITESTER "/Users/junghan/Desktop/DreamXWebserv/webserv/tester/cgi_tester"
-// # define PHPCGI "/Users/songju/Desktop/DreamXWebserv/webserv/tester/php-cgi"
-// # define CGITESTER "/Users/songju/Desktop/DreamXWebserv/webserv/tester/cgi_tester"
-//   # define PHPCGI "/Users/dcho/DreamXWebserv/webserv/tester/php-cgi"
-//   # define CGITESTER "/Users/dcho/DreamXWebserv/webserv/tester/cgi_tester"
+# define PHPCGI "/Users/dcho/Born2Code/DreamXWebserv/webserv/tester/php-cgi"
+# define CGITESTER "/Users/dcho/Born2Code/DreamXWebserv/webserv/tester/cgi_tester"
 
 # define NOBODY_FMT "HTTP/1.1 %s %s\r\nContent-Length: %d\r\nContent-Type: %s"
 # define RESPONSE_FMT "HTTP/1.1 %s %s\r\nContent-Length: %d\r\nContent-Type: %s\r\n\r\n%s"
@@ -49,8 +43,8 @@ typedef struct	s_response
 	int								ct_length;
 	string							ct_type;
 	int								cgi;
-	string							state_flag; //현재 작업이 에러 시, 이벤트에 있는 read/write를 소모시키기 위해 플래그를 사용함.
-	string							state_str; //빼야함
+	string							state_flag;
+	string							state_str;
 	string							redirect_uri;
 }				t_response;
 
@@ -68,7 +62,7 @@ class ClientControl
 		vector<t_multipart>			multipart;
 
 		map<string, string>			env_set;
-		vector<string>				server_index; //서버 블록 내 index 절대 경로 담아둠
+		vector<string>				server_index;
 		ServerBlock					server_block;
 		HttpBlock					http_block;
 		string						body;
@@ -170,8 +164,6 @@ class ClientControl
 		int				findIndex(string uri);
 		void			deleteFile(void);
 
-
-		// 추가
 		void			findMime(void);
 		void			setEnv(void);
 		char**			convToChar(map<string, string> m, int flag);
@@ -189,13 +181,10 @@ class ClientControl
 		void			processChunk(void);
 		void			sendNobodyPage(void);
 		int				checkHost(string host);
-		//int		getFile();
-		//int		postFile();
 
 		void			readResource(void);
 		void			resetClient(int client_socket, int server_socket, ServerBlock server_block);
 
-		// 추가된 부분
 		int				classifyDirUri(string& directory, string& request_uri, vector<LocationBlock>::iterator& it, vector<LocationBlock>& location_block);
 		int				classifyFileUri(string& directory, string& file, string& request_uri, vector<LocationBlock>::iterator& it, vector<LocationBlock>& location_block);
 		int				processLimitExcept(vector<LocationBlock>::iterator& it);

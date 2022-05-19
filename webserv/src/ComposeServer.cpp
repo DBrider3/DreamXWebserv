@@ -40,7 +40,7 @@ void Manager::composeSocket()
 			if (temp == -1)
 				throw (PrintError());
 			int option = 1;
-            setsockopt(temp, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(int)); // [변경사항]
+            setsockopt(temp, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(int));
 			web_serv.server_socket.push_back(temp);
 			memset(&server_addr[i], 0, sizeof(server_addr[i]));
 			server_addr[i].sin_family = AF_INET;

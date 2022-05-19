@@ -8,7 +8,6 @@ typedef struct s_servinfo
 {
 	vector<int>			ports;
 	vector<int>			server_socket;
-	//환경변수
 }			t_servinfo;
 
 class Manager
@@ -16,7 +15,7 @@ class Manager
 	private:
 		vector<string>	buffer;
 		HttpBlock		http_block;
-		t_servinfo		web_serv; //server_socket_fd 배열, port 번호 배열
+		t_servinfo		web_serv;
 
 	public:
 		/*
@@ -59,7 +58,7 @@ class Manager
 		void 	check_msg(t_request rmsg);
 };
 
-	void	disconnectSocket(int socket_fd); //고쳐야함 소멸자불러야함
+	void	disconnectSocket(int socket_fd);
 	int 	checkSocket(int curr_fd, vector<int> server_socket);
 	void 	changeEvents(vector<struct kevent>& change_list, uintptr_t ident, int16_t filter,
 						uint16_t flags, uint32_t fflags, intptr_t data, void *udata);
